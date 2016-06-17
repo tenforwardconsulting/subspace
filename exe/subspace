@@ -47,6 +47,18 @@ if ARGV[0] == "init"
   #copy "host_vars/production"
   #FileUtils.cp_r File.join(File.dirname(__FILE__), '..', 'template', 'provision'), "config"
 
+  puts """
+  Create your secrets:
+
+    cd config/provision && ansible-vault create vars/production.yml
+    cd config/provision && ansible-vault create vars/dev.yml
+
+  Then provision your server
+
+    cd config/provision && ansible-playbook dev.yml
+
+
+"""
 else
   puts "usage: subspace init"
 end
