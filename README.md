@@ -24,7 +24,9 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+    subspace init
+    cd config/provision && ansible-vault create vars/production.yml
+    cd config/provision && ansible-vault create vars/dev.yml
 
 ## Development
 

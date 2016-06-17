@@ -1,0 +1,14 @@
+---
+  - hosts: <%= @env %>
+    sudo: yes
+
+    vars_files:
+      - ./vars/<%= @env %>.yml
+
+    roles:
+      - common
+      - rails
+      - apache
+      - passenger
+      - postgresql
+      - delayed_job

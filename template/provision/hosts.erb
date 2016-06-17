@@ -1,0 +1,11 @@
+# Hosts that we are aware of -- correspond to hosts/<host>
+<% environments.each do |env|  -%>
+<%= env %>
+<% end -%>
+
+# Create a group for each environment which just contains that single host by default
+<% environments.each do |env| -%>
+[<%= env %>]
+<%= env %>
+
+<% end -%>

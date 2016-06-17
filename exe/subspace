@@ -1,7 +1,52 @@
 #!/usr/bin/env ruby
 
-if ARGV[1] == "init"
-  puts "Create a bunch of stuff"
+require 'fileutils'
+require 'erb'
+
+@provision_templatedir = File.join(File.dirname(__FILE__), '..', 'template', 'provision')
+@dest_dir = "config/provision"
+
+
+def gem_path
+  File.expand_path '../..', __FILE__
+end
+
+def template(src, dest = nil)
+  dest ||= src
+  template = ERB.new File.read(File.join(@provision_templatedir, "#{src}.erb")), nil, '-'
+  File.write File.join(@dest_dir, dest), template.result(binding)
+end
+
+def project_name
+  File.basename(Dir.pwd)
+end
+
+def copy(src, dest = nil)
+  dest ||= src
+  FileUtils.cp File.join(@provision_templatedir, src), File.join(@dest_dir, dest)
+end
+
+def environments
+  %w(production dev)
+end
+
+if ARGV[0] == "init"
+  FileUtils.mkdir_p File.join @dest_dir, "group_vars"
+  FileUtils.mkdir_p File.join @dest_dir, "host_vars"
+  FileUtils.mkdir_p File.join @dest_dir, "vars"
+
+  template "ansible.cfg"
+  template "hosts"
+  template "group_vars/all"
+  environments.each do |env|
+    @env = env
+    template "group_vars/template", "group_vars/#{env}"
+    template "host_vars/template", "host_vars/#{env}"
+    template "playbook.yml", "#{env}.yml"
+  end
+  #copy "host_vars/production"
+  #FileUtils.cp_r File.join(File.dirname(__FILE__), '..', 'template', 'provision'), "config"
+
 else
   puts "usage: subspace init"
 end
