@@ -1,0 +1,7 @@
+---
+  dependencies:
+    - {
+      role: zenoamaro.postgresql,
+      sudo: true,
+      notify: postgresql restart
+    }

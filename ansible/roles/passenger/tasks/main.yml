@@ -1,0 +1,66 @@
+---
+  - name: Create Rails Apache config
+    when: "{{ssl_enabled}} != true"
+    template:
+      src: ./templates/project.conf
+      dest: /etc/apache2/sites-available/{{project_name}}.conf
+    sudo: true
+    notify: apache restart
+
+  # Begin SSL tasks
+  - name: Enable mod_rewrite
+    apache2_module:
+      name: rewrite
+      state: present
+    sudo: true
+
+  - name: Enable mod_ssl
+    apache2_module:
+      name: ssl
+      state: present
+    sudo: true
+
+  - name: Create Apache ssl directory
+    when: "{{ssl_enabled}} == true"
+    file:
+      path: /etc/apache2/ssl
+      state: directory
+    sudo: true
+
+  - name: Copy SSL Certificate
+    when: "{{ssl_enabled}} == true"
+    copy:
+      src: "{{ssl_server_crt}}"
+      dest: /etc/apache2/ssl/server.crt
+    sudo: true
+
+  - name: Copy SSL Private Key
+    when: "{{ssl_enabled}} == true"
+    copy:
+      content: "{{ssl_private_key}}"
+      dest: /etc/apache2/ssl/server.key
+    sudo: true
+
+  - name: Copy SSL Intermediate Certificate
+    when: "{{ssl_enabled}} == true"
+    copy:
+      src: "{{ssl_intermediate_crt}}"
+      dest: /etc/apache2/ssl/intermediate.crt
+    sudo: true
+
+  - name: Create Rails Apache config (SSL Enabled)
+    when: "{{ssl_enabled}} == true"
+    template:
+      src: ./templates/project-ssl.conf
+      dest: /etc/apache2/sites-available/{{project_name}}.conf
+    sudo: true
+
+  # End SSL Configuration
+
+  - name: Symlink {{project_name}}.conf to sites-enabled
+    file:
+      src: /etc/apache2/sites-available/{{project_name}}.conf
+      dest: /etc/apache2/sites-enabled/{{project_name}}.conf
+      state: link
+    sudo: true
+    notify: apache restart

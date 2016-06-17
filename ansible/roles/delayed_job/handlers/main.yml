@@ -1,0 +1,4 @@
+---
+  - name: monit reload
+    command: monit reload
+    sudo: true

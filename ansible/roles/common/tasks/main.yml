@@ -1,0 +1,63 @@
+---
+  - name: Test connection
+    ping:
+
+  - name: Set hostname
+    command: hostname {{hostname}}
+    sudo: true
+
+  - name: update /etc/hostname
+    copy:
+      content: "{{hostname}}"
+      dest: /etc/hostname
+
+  - name: Set hostname for systemd
+    hostname:
+      name: "{{hostname}}"
+
+  - name: apt-get update
+    apt: update_cache=yes cache_valid_time=86400
+    sudo: true
+
+  - name: apt-get upgrade
+    apt: upgrade=full
+    sudo: true
+
+  - name: Set timezone variables
+    copy: content='America/Chicago'
+          dest=/etc/timezone
+          owner=root
+          group=root
+          mode=0644
+          backup=yes
+    notify:
+      - update timezone
+
+  - name: Add deploy user
+    user:
+      name: "{{deploy_user}}"
+      state: present
+      generate_ssh_key: yes
+      shell: /bin/bash
+    sudo: true
+
+  - name: Update authorized_keys for deploy user
+    copy:
+      src: ./files/authorized_keys
+      dest: "/home/{{deploy_user}}/.ssh/authorized_keys"
+      owner: "{{deploy_user}}"
+    sudo: true
+
+  - name: Add additional ssh keys for deploy user
+    authorized_key: user={{deploy_user}} key="{{item}}"
+    with_items: "{{additional_authorized_keys}}"
+    when: additional_authorized_keys
+
+  - name: Create directory to which to deploy
+    file:
+      path: /u/apps/{{project_name}}
+      owner: "{{deploy_user}}"
+      state: directory
+    sudo: true
+
+  - include: swap.yml

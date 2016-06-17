@@ -1,0 +1,41 @@
+- name: set swap_file variable
+  set_fact:
+    swap_file: /swapfile
+
+- name: check if swap file exists
+  stat:
+    path: /swapfile
+  register: swap_file_check
+
+- name: create swap file
+  sudo: yes
+  command: fallocate -l {{ swap_space }} /swapfile
+  when: not swap_file_check.stat.exists
+
+- name: set permissions on swap file
+  sudo: yes
+  file:
+    path: /swapfile
+    mode: 0600
+
+- name: format swap file
+  sudo: yes
+  command: mkswap /swapfile
+  when: not swap_file_check.stat.exists
+
+- name: add to fstab
+  sudo: yes
+  lineinfile:
+    dest: /etc/fstab
+    regexp: /swapfile
+    line: "/swapfile none swap sw 0 0"
+
+- name: turn on swap
+  sudo: yes
+  command: swapon -a
+
+- name: set swapiness
+  sudo: yes
+  sysctl:
+    name: vm.swappiness
+    value: "1"

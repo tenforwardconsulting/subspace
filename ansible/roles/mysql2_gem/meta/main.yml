@@ -1,0 +1,8 @@
+# This is broken https://github.com/ANXS/mysql/issues/20
+# ---
+#   dependencies:
+#     - {
+#       role: ANXS.mysql,
+#       sudo: true
+#     }
+

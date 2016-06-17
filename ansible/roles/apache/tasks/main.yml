@@ -1,0 +1,15 @@
+---
+  - name: Install apache2
+    apt:
+      pkg: apache2
+      state: present
+
+  - name: a2enmod headers
+    apache2_module:
+      name: headers
+      state: present
+
+  - name: a2enmod expires
+    apache2_module:
+      name: expires
+      state: present

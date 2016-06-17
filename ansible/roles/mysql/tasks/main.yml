@@ -1,0 +1,12 @@
+---
+  - name: Create database.yml
+    template:
+      src: ./templates/mysql_database.yml
+      dest: /u/apps/{{project_name}}/shared/config/database.yml
+    sudo: true
+    sudo_user: "{{deploy_user}}"
+
+  - name: Install mysql2 gem dependencies
+    apt:
+      name: libmysqlclient-dev
+    sudo: true

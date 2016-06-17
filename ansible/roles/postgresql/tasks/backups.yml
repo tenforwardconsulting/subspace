@@ -1,0 +1,33 @@
+---
+  - name: Create Backups directories
+    file:
+      owner: "{{deploy_user}}"
+      path: "/u/apps/{{project_name}}/shared/db/backups"
+      state: directory
+
+  - file: path=/u/apps/{{project_name}}/shared/db/backups/backup.hourly state=directory mode=0755 owner={{deploy_user}}
+  - file: path=/u/apps/{{project_name}}/shared/db/backups/backup.daily state=directory mode=0755 owner={{deploy_user}}
+  - file: path=/u/apps/{{project_name}}/shared/db/backups/backup.weekly state=directory mode=0755 owner={{deploy_user}}
+  - file: path=/u/apps/{{project_name}}/shared/db/backups/backup.monthly state=directory mode=0755 owner={{deploy_user}}
+
+
+  - name: Copy backup script
+    template:
+      owner: "{{deploy_user}}"
+      src: backup.sh
+      dest: "/u/apps/{{project_name}}/shared/db/backup.sh"
+      mode: 0755
+
+  - name: Remove old backup cron job because it had the wrong name
+    cron:
+      user: "{{deploy_user}}"
+      name: "check dirs"
+      state: "absent"
+
+  - name: Install backup cron job
+    when: backups_enabled
+    cron:
+      user: "{{deploy_user}}"
+      name: "Hourly backups"
+      minute: "0"
+      job: "/u/apps/{{project_name}}/shared/db/backup.sh"

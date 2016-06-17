@@ -1,0 +1,6 @@
+[defaults]
+
+inventory = hosts
+forks     = 10
+roles_path = <%= File.join(File.dirname(__FILE__), '..', 'ansible', 'roles' %>
+vault_password_file = .vault_pass

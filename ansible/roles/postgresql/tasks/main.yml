@@ -1,0 +1,39 @@
+---
+  - name: Create postgresql user
+    postgresql_user:
+      name: "{{database_user}}"
+      password: "{{database_password}}"
+      state: present
+    sudo: yes
+    sudo_user: postgres
+
+  - name: Create postgresql database
+    postgresql_db:
+      name: "{{database_name}}"
+      owner: "{{database_user}}"
+      template: template1
+      state: present
+    sudo: yes
+    sudo_user: postgres
+
+  - name: Grant all privileges on database to user
+    postgresql_privs:
+      database: "{{database_name}}"
+      privs: ALL
+      roles: "{{database_user}}"
+      state: present
+      type: database
+    sudo: yes
+    sudo_user: postgres
+
+  - name: "Enable postgres hstore"
+    sudo: yes
+    sudo_user: postgres
+    postgresql_ext:
+      db: "{{database_name}}"
+      name: hstore
+      state: present
+
+  - include: backups.yml
+
+

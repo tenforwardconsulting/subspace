@@ -1,0 +1,5 @@
+---
+  ssl_enabled: false
+  server_aliases: []
+  ssl_server_crt: ./files/{{project_name}}/server.crt
+  ssl_intermediate_crt: ./files/{{project_name}}/intermediate.crt

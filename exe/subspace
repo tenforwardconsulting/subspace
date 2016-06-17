@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+if ARGV[1] == "init"
+  puts "Create a bunch of stuff"
+else
+  puts "usage: subspace init"
+end

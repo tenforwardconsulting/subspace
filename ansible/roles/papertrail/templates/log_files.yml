@@ -1,0 +1,7 @@
+# Variables: papertrail_host, papertrail_port
+files:
+  - /var/log/apache2/error.log
+  - /u/apps/{{project_name}}/shared/log/{{rails_env}}.log
+destination:
+  host: {{papertrail_host}}
+  port: {{papertrail_port}}
