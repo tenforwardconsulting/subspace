@@ -1,4 +1,14 @@
 ---
+  - hosts: localhost
+    connection: local
+    gather_facts: False
+
+    vars_files:
+      - vars/aws.yml
+
+    roles:
+      - { role: aws, hostname: <%= @hostname %> }
+
   - hosts: <%= @env %>
     sudo: yes
 
@@ -7,6 +17,7 @@
 
     roles:
       - common
+      - ruby-common
       - rails
       - apache
       - passenger
