@@ -48,11 +48,6 @@
       owner: "{{deploy_user}}"
     sudo: true
 
-  - name: Add additional ssh keys for deploy user
-    authorized_key: user={{deploy_user}} key="{{item}}"
-    with_items: "{{additional_authorized_keys}}"
-    when: additional_authorized_keys
-
   - name: Create directory to which to deploy
     file:
       path: /u/apps/{{project_name}}
