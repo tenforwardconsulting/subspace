@@ -1,8 +1,8 @@
 ---
-  - name: Create Rails Apache config
+  - name: Create Apache config
     when: "{{ssl_enabled}} != true"
     template:
-      src: ./templates/project.conf
+      src: "{{template_src_path}}"
       dest: /etc/apache2/sites-available/{{project_name}}.conf
     sudo: true
     notify: apache restart
@@ -48,7 +48,7 @@
       dest: /etc/apache2/ssl/intermediate.crt
     sudo: true
 
-  - name: Create Rails Apache config (SSL Enabled)
+  - name: Create Apache config (SSL Enabled)
     when: "{{ssl_enabled}} == true"
     template:
       src: ./templates/project-ssl.conf

@@ -3,3 +3,4 @@
   server_aliases: []
   ssl_server_crt: ./files/{{project_name}}/server.crt
   ssl_intermediate_crt: ./files/{{project_name}}/intermediate.crt
+  template_src_path: ./templates/project.conf
