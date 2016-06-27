@@ -1,2 +1,3 @@
 ---
   swap_space: 536870912
+  deploy_user: deploy
