@@ -43,7 +43,7 @@
 
   - name: Update authorized_keys for deploy user
     copy:
-      src: ./files/authorized_keys
+      src: authorized_keys
       dest: "/home/{{deploy_user}}/.ssh/authorized_keys"
       owner: "{{deploy_user}}"
     sudo: true
