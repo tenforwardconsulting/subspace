@@ -1,0 +1,3 @@
+{% for key, value in appyml.iteritems() %}
+{{key}}: "{{value}}"
+{% endfor %}
