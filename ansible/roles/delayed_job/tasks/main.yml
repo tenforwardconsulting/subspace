@@ -12,7 +12,7 @@
 
   - name: Copy sudoers file so that deploy can restart services without entering password.
     copy:
-      src: ./files/deploy-service
+      src: deploy-service
       dest: /etc/sudoers.d/deploy-service
     sudo: true
 
@@ -27,6 +27,7 @@
     file:
       path: /etc/init/delayed-job.conf
       state: absent
+
   - name: Remove old monit files
     file:
       path: /etc/monit/conf.d/delayed_job
