@@ -1,6 +1,7 @@
 ---
-  ssl_enabled: false
   server_aliases: []
-  ssl_server_crt: ./files/{{project_name}}/server.crt
-  ssl_intermediate_crt: ./files/{{project_name}}/intermediate.crt
-  template_src_path: ./templates/project.conf
+  # TODO Replace with LetsEncrypt.
+  #ssl_enabled: false
+  #ssl_server_crt: ./files/{{project_name}}/server.crt
+  #ssl_intermediate_crt: ./files/{{project_name}}/intermediate.crt
+  template_src_path: project.conf
