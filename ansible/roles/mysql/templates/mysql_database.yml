@@ -1,0 +1,7 @@
+{{rails_env}}:
+  adapter: mysql2
+  encoding: utf8
+  host: {{database_host}}
+  database: {{database_name}}
+  username: {{database_user}}
+  password: {{database_password}}
