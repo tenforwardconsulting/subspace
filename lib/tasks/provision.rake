@@ -1,21 +1,12 @@
-# TODO...Get working. For some reason, these tasks can't be called in projects that include this gem.
 namespace :provision do
-  task :production do
-    Dir.chdir "config/provision" do
-      `ansible-playbook production.yml`
+  # Using staging as an environment is deprecated,
+  # but some older projects still use it.
+  [:production, :qa, :dev, :staging].each do |env|
+    desc "Provision #{env} server"
+    task env do
+      Dir.chdir "config/provision" do
+        system "ansible-playbook #{env}.yml"
+      end
     end
-  end
-
-  task :qa do
-
-  end
-
-  task :dev do
-
-  end
-
-  # Deprecated, but some older projects still have staging environments
-  task :staging do
-
   end
 end
