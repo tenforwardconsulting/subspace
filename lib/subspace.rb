@@ -1,5 +1,5 @@
 require "subspace/version"
+require "subspace/railtie"
 
 module Subspace
-  # Your code goes here...
 end

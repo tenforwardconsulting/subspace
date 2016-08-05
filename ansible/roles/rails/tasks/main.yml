@@ -23,14 +23,14 @@
 
   - name: Create database.yml
     template:
-      src: ./templates/database.yml
+      src: database.yml
       dest: /u/apps/{{project_name}}/shared/config/database.yml
     sudo: true
     sudo_user: "{{deploy_user}}"
 
   - name: Create application.yml
     template:
-      src: ./templates/application.yml
+      src: application.yml
       dest: /u/apps/{{project_name}}/shared/config/application.yml
     sudo: true
     sudo_user: "{{deploy_user}}"

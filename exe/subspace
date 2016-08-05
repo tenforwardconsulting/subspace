@@ -6,19 +6,18 @@ require 'erb'
 @provision_templatedir = File.join(File.dirname(__FILE__), '..', 'template', 'provision')
 @dest_dir = "config/provision"
 
-
 def gem_path
   File.expand_path '../..', __FILE__
+end
+
+def project_name
+  File.basename(Dir.pwd)
 end
 
 def template(src, dest = nil)
   dest ||= src
   template = ERB.new File.read(File.join(@provision_templatedir, "#{src}.erb")), nil, '-'
   File.write File.join(@dest_dir, dest), template.result(binding)
-end
-
-def project_name
-  File.basename(Dir.pwd)
 end
 
 def copy(src, dest = nil)
@@ -30,33 +29,55 @@ def environments
   %w(production dev)
 end
 
+def hostname(env)
+  "#{project_name.gsub('_', '-')}-#{env}"
+end
+
+def create_vault_pass
+  File.write File.join(@dest_dir, ".vault_pass"), SecureRandom.base64
+end
+
+def create_vars_file_for_env(env)
+  template "vars/template", "vars/#{env}.yml"
+  Dir.chdir @dest_dir do
+    `ansible-vault encrypt vars/#{env}.yml`
+  end
+end
+
 if ARGV[0] == "init"
   FileUtils.mkdir_p File.join @dest_dir, "group_vars"
   FileUtils.mkdir_p File.join @dest_dir, "host_vars"
   FileUtils.mkdir_p File.join @dest_dir, "vars"
 
+  copy ".gitignore"
   template "ansible.cfg"
   template "hosts"
   template "group_vars/all"
+  create_vault_pass
   environments.each do |env|
     @env = env
+    @hostname = hostname(env)
     template "group_vars/template", "group_vars/#{env}"
     template "host_vars/template", "host_vars/#{env}"
+    create_vars_file_for_env env
     template "playbook.yml", "#{env}.yml"
   end
-  #copy "host_vars/production"
-  #FileUtils.cp_r File.join(File.dirname(__FILE__), '..', 'template', 'provision'), "config"
 
   puts """
-  Create your secrets:
+  1. Create a server.
 
-    cd config/provision && ansible-vault create vars/production.yml
-    cd config/provision && ansible-vault create vars/dev.yml
+  2. Set your server's location:
 
-  Then provision your server
+    vim config/provision/host_vars/production
+    vim config/provision/host_vars/dev
+
+  3. Set up your authorized_keys:
+
+    vim config/provision/authorized_keys
+
+  4. Then provision your server:
 
     cd config/provision && ansible-playbook dev.yml
-
 
 """
 else

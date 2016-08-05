@@ -35,5 +35,3 @@
       state: present
 
   - include: backups.yml
-
-

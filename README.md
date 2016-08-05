@@ -4,8 +4,6 @@ Subspace is a rubygem meant to make provisioning as easy as Capistrano makes dep
 
 http://tvtropes.org/pmwiki/pmwiki.php/Main/SubspaceAnsible
 
-
-
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -25,8 +23,21 @@ Or install it yourself as:
 ## Usage
 
     subspace init
+    cp path/to/.vault_pass config/provision/ # Or get it from another person
     cd config/provision && ansible-vault create vars/production.yml
     cd config/provision && ansible-vault create vars/dev.yml
+
+## Directory Structure
+
+`ansible/roles`
+
+Contains all of our custom roles. When the gem is installed and `subspace init`
+is ran, the newly created `ansible.cfg` will be configured to look for these
+roles.
+
+`template`
+
+Contains the template files that get copied over when `subspace init` is ran.
 
 ## Development
 
@@ -38,8 +49,6 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/tenforwardconsulting/subspace. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
 
-
 ## License
 
 The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
-

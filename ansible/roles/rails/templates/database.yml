@@ -1,0 +1,19 @@
+{{rails_env}}:
+  adapter: postgresql
+  encoding: unicode
+  pool: {{database_pool}}
+  database: {{database_name}}
+  username: {{database_user}}
+  password: {{database_password}}
+  host: {{database_host}}
+
+{% if databaseyml_addendum is defined %}
+{% for dict in databaseyml_addendum %}
+{% for name, config in dict.iteritems() %}
+{{name}}:
+ {% for key, value in config.iteritems() %}
+ {{key}}: {{value}}
+ {% endfor %}
+{% endfor %}
+{% endfor %}
+{% endif %}
