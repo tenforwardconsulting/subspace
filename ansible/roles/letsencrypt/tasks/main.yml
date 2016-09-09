@@ -26,7 +26,7 @@
       mode: a+x
 
   - name: Run certbot
-    command: "{{certbot_dir}}/certbot-auto certonly --email {{letsencrypt_email}} --domains {{([server_name] + server_aliases) | join(',')}} --apache --agree-tos"
+    command: "{{certbot_dir}}/certbot-auto certonly --email {{letsencrypt_email}} --domains {{([server_name] + server_aliases) | join(',')}} --apache --agree-tos --non-interactive"
     args:
       creates: /etc/letsencrypt/live/{{server_name}}/cert.pem
 
