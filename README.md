@@ -20,12 +20,20 @@ Or install it yourself as:
 
     $ gem install subspace
 
-## Usage
+Then run
 
     subspace init
-    cp path/to/.vault_pass config/provision/ # Or get it from another person
-    cd config/provision && ansible-vault create vars/production.yml
-    cd config/provision && ansible-vault create vars/dev.yml
+
+## Usage
+
+* `subspace init`
+
+Initialize the project for subspace. Creates `config/provision` with all
+necessary files.
+
+* `rake provision:<environment>`
+
+Runs the playbook at `config/provision/<environment.yml>`.
 
 ## Directory Structure
 
