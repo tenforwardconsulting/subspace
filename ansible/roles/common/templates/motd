@@ -1,0 +1,9 @@
+###############################################################################
+This server is provisioned by subspace.
+
+If you need to make configuration changes to the server, including package
+updates, /etc/* configuration, user access, etc, please consult the
+config/provision directory in the app.
+
+For more information, refer to https://github.com/tenforwardconsulting/subspace
+###############################################################################

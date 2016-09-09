@@ -2,6 +2,12 @@
   - name: Test connection
     ping:
 
+  - name: Set MOTD
+    template:
+      src: motd
+      dest: /etc/motd
+    sudo: true
+
   - name: Set hostname
     command: hostname {{hostname}}
     sudo: true
