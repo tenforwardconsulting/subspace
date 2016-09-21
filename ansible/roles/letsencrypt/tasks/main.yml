@@ -42,14 +42,21 @@
       state: present
     sudo: true
 
-  - name: Create SSL Apache config
+  - name: Create SSL Apache config (1/2)
+    fetch:
+      src: /etc/apache2/sites-available/{{project_name}}.conf
+      dest: /tmp/apache.conf
+      flat: yes
+      fail_on_missing: yes
+
+  - name: Create SSL Apache config (2/2)
     template:
       src: project-le-ssl.conf
       dest: /etc/apache2/sites-available/{{project_name}}-le-ssl.conf
     sudo: true
     notify: apache restart
 
-  - name: Symlink {{project_name}}-le-ssl.conf to sites-enabled
+  - name: Symlink apache SSL config to sites-enabled
     file:
       src: /etc/apache2/sites-available/{{project_name}}-le-ssl.conf
       dest: /etc/apache2/sites-enabled/{{project_name}}-le-ssl.conf
