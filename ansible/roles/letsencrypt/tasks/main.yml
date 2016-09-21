@@ -88,6 +88,5 @@
     cron:
       name: Auto-renew SSL
       job: "{{certbot_dir}}/certbot-auto renew --quiet --no-self-upgrade"
-      minute: 30
-      hour: "0,12"
+      hour: 4
       state: present
