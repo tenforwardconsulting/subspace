@@ -24,11 +24,13 @@
       url: "https://dl.eff.org/certbot-auto"
       dest: "{{certbot_dir}}"
       mode: a+x
+    sudo: true
 
   - name: Run certbot
     command: "{{certbot_dir}}/certbot-auto certonly --email {{letsencrypt_email}} --domains {{([server_name] + server_aliases) | join(',')}} --apache --agree-tos --non-interactive"
     args:
       creates: /etc/letsencrypt/live/{{server_name}}/cert.pem
+    sudo: true
 
   - name: Enable mod_rewrite
     apache2_module:
@@ -87,7 +89,7 @@
   - name: Setup cron job to auto renew
     cron:
       name: Auto-renew SSL
-      job: "{{certbot_dir}}/certbot-auto renew --quiet --no-self-upgrade"
+      job: sudo "{{certbot_dir}}/certbot-auto renew --quiet --no-self-upgrade"
       minute: 30
       hour: "0,12"
       state: present
