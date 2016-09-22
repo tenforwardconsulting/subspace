@@ -1,2 +1,2 @@
 ---
-  certbot_dir: "/home/ubuntu"
+  certbot_dir: "/opt/certbot"
