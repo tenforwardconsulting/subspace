@@ -80,7 +80,7 @@
   - name: Force redirect to https (3/3)
     lineinfile:
       dest: /etc/apache2/sites-available/{{project_name}}.conf
-      line: "RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,QSA,R=permanent]"
+      line: "RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,QSA,NE,R=permanent]"
       state: present
       insertbefore: "</VirtualHost>"
     sudo: true
