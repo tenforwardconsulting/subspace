@@ -1,6 +1,7 @@
 module Subspace
   module Commands
     class Base < Commander::Command
+      include Ansible
       def template_dir
         File.join(gem_path, 'template', 'provision')
       end
@@ -17,14 +18,6 @@ module Subspace
         dest ||= src
         template = ERB.new File.read(File.join(template_dir, "#{src}.erb")), nil, '-'
         File.write File.join(dest_dir, dest), template.result(binding)
-      end
-
-      def ansible_command(command, *args)
-        Dir.chdir "config/provision" do
-          say ">> Running #{command} #{args.join(' ')}"
-          system(command, *args, out: $stdout, err: $stderr)
-          say "<< Done"
-        end
       end
     end
   end

@@ -1,0 +1,90 @@
+## Subspace configuration file
+#
+# This file contains all (most?) the configuration for provisioning servers to run this rails application.
+# It uses a simple DSL that should be easy to pick up if you're comfortable with things
+# like rails environments, devise config, capistrano, etc.
+#
+# When you run `subspace`, the following files be overwritten.  DO NOT MANUALLY MODIFY THESE FILES.
+#
+# config
+# - provision
+#   - group_vars/*
+#   - host_vars/*
+#   - ansible.cfg
+#   - hosts
+#   - playbook.yml
+
+# Step one: Configure your deployment environments.  We usually have a "dev" and a "production"
+# environment.  Sometimes we have a "staging" or qa.  You can do whatever you'd like.
+
+Subspace.configure do |config|
+  # Project level configuration
+
+  # Name of the project.  This will get used all over the place in path names, config file names, etc.
+  config.project_name = "<%= File.basename FileUtils.pwd =>"
+
+  # By default the name of the host and the group are the same for one-host groups
+  config.host :dev, {
+    ssh_host: "1.2.3.4",          # Ansible connects to this to provision
+    ssh_user: "deploy",           # ssh user
+    sudo: true,                   # probably should be true if user isn't root
+    hostname: "dev.example.com",  # This will get set in /etc/hostname
+    group: :dev                   # This is the environment, dev/staging/qa, etc.
+  }
+
+
+  config.group :dev, {
+    rails_env: "dev"
+  }
+
+  config.group :production, {
+    rails_env: "dev"
+  }
+  # Configure the ansible roles that the project will use.  This is where you can set up things like
+  # nginx vs apache, postgres vs mysql, etc. You can configure variables with each role or globally.
+  # In Ansible, all variables are global not scoped to a role, and you can override the defaults per-host or per-group.
+  # For convenience, we put all the default variables for each role in a block, but the following two lines have
+  # identical effect:
+  #
+  # config.role "myrole" {|vars| vars.option "new_value" }
+  # config.var :option. "new_value"
+
+  config.role "common", vars: {
+    # swap_space: 536870912,
+    # deploy_user: "deploy"
+  }
+
+  config.role "ruby-common", vars: {
+    # ruby_bundler_flags: "",
+    # ruby_free_min: "",
+    # ruby_gc_malloc_limit: "",
+    # ruby_heap_min_slots: ""
+  }
+
+  config.role "rails"
+  config.role "apache"
+  config.role "letsencrypt", groups: [:production], vars: {
+    certbot_dir: "/opt/certbot"
+  }
+  config.role "mtpereira.passenger"
+  config.role "postgresql", hosts: [:dev_db, :prod_db]
+  config.role "delayed_job", vars: {
+      delayed_job_command: "bin/delayed_job",
+      delayed_job_queues: ["default"]
+    }
+
+  config.role "logrotate"
+  config.var :logrotate_scripts, [{
+    name: "Rails Logs",
+    path: "/u/apps/{{project_name}}/shared/log/*.log",
+    options: [
+      "weekly"
+      "size 1M"
+      "missingok"
+      "compress"
+      "delaycompress"
+      "copytruncate"
+    ]
+  }]
+
+end
