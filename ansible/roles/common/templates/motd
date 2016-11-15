@@ -1,9 +1,15 @@
-###############################################################################
-This server is provisioned by subspace.
+This server brought to you by:
+ ____        _    ____
+/ ___| _   _| |__/ ___| _ __   __ _  ___ ___
+\___ \| | | | '_ \___ \| '_ \ / _` |/ __/ _ \
+ ___) | |_| | |_) |__) | |_) | (_| | (_|  __/
+|____/ \__,_|_.__/____/| .__/ \__,_|\___\___|
+                       |_|
 
-If you need to make configuration changes to the server, including package
-updates, /etc/* configuration, user access, etc, please consult the
-config/provision directory in the app.
+~~~ https://github.com/tenforwardconsulting/subspace ~~~
 
-For more information, refer to https://github.com/tenforwardconsulting/subspace
-###############################################################################
+If you need to make configuration changes to the server, please modify the
+config/provision directory in the app or risk the changes dissapearing.
+
+"Live long and hax0r"  ~ Dr. Spork
+
