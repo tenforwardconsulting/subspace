@@ -1,6 +1,6 @@
 # rails
-rails_env: <%= @env %>
-database_host: localhost
+rails_env: <%= config.rails_env || config.name %>
+database_host: "{{database_host}}"
 use_sudo: true
 
 # apache

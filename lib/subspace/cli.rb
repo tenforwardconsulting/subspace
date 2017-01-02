@@ -3,9 +3,11 @@
 require 'rubygems'
 require 'commander'
 
+require 'subspace'
 require 'subspace/commands/init'
 require 'subspace/commands/provision'
 require 'subspace/commands/ssh'
+require 'subspace/commands/configure'
 
 class Subspace::Cli
   include Commander::Methods
@@ -13,7 +15,7 @@ class Subspace::Cli
 
   def run
     program :name, 'subspace'
-    program :version, '0.0.1'
+    program :version, Subspace::VERSION
     program :description, 'Ansible-backed server provisioning tool for rails'
 
     command :init do |c|
@@ -39,6 +41,13 @@ class Subspace::Cli
       c.summary = 'ssh to the remote server as the administrative user'
       c.description = ''
       c.when_called Subspace::Commands::Ssh
+    end
+
+    command :configure do |c, args|
+      c.syntax = 'subspace configure'
+      c.summary = "Regenerate all of the ansible configuration files. You don't normally need to run this."
+      c.description = ''
+      c.when_called Subspace::Commands::Configure
     end
 
     run!
