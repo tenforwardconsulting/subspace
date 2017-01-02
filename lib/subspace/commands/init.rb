@@ -1,7 +1,6 @@
 require 'fileutils'
 require 'erb'
 require 'subspace/commands/base'
-puts "Required init"
 class Subspace::Commands::Init < Subspace::Commands::Base
   @@provision_templatedir = File.join(File.dirname(__FILE__), '..', 'template', 'provision')
   @@dest_dir = "config/provision"

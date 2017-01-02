@@ -1,7 +1,8 @@
+require 'subspace/commands/ansible'
 module Subspace
   module Commands
     class Base < Commander::Command
-      include Ansible
+      include Subspace::Commands::Ansible
       def template_dir
         File.join(gem_path, 'template', 'provision')
       end
