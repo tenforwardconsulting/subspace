@@ -52,14 +52,14 @@ if [ "$bucket" != "disabled" ] ; then
 else
   #destination is set so actually do the backup
   $(PGPASSWORD={{database_password}} pg_dump --verbose -Fc --host=localhost --username={{database_user}} --file $storage/$destination {{database_name}})
-
-  # then clean old ones
-  # hourly - for 48 hours
-  find $storage/backup.hourly/ -mmin +2880 -exec rm -rv {} \;
-  # daily - keep for 14 days
-  find $storage/backup.daily/ -mtime +14 -exec rm -rv {} \;
-  # weekly - keep for 60 days
-  find $storage/backup.weekly/ -mtime +60 -exec rm -rv {} \;
-  # monthly - keep for 300 days
-  find $storage/backup.monthly/ -mtime +300 -exec rm -rv {} \;
 fi
+
+# then clean old ones
+# hourly - for 48 hours
+find $storage/backup.hourly/ -mmin +2880 -exec rm -rv {} \;
+# daily - keep for 14 days
+find $storage/backup.daily/ -mtime +14 -exec rm -rv {} \;
+# weekly - keep for 60 days
+find $storage/backup.weekly/ -mtime +60 -exec rm -rv {} \;
+# monthly - keep for 300 days
+find $storage/backup.monthly/ -mtime +300 -exec rm -rv {} \;
