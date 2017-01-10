@@ -19,10 +19,17 @@
       - python-virtualenv
       - python2.7-dev
 
+  - name: Create certbot directory
+    file:
+      path: "{{certbot_dir}}"
+      state: directory
+      mode: 0755
+      owner: "{{deploy_user}}"
+
   - name: Get certbot
     get_url:
       url: "https://dl.eff.org/certbot-auto"
-      dest: "{{certbot_dir}}"
+      dest: "{{certbot_dir}}/certbot-auto"
       mode: a+x
     sudo: true
 
