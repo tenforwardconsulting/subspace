@@ -5,7 +5,6 @@ class Subspace::Commands::Configure < Subspace::Commands::Base
   end
 
   def run
-    require 'pry'; binding.pry
     Subspace.config.hosts.each do |host|
       update_host_configuration(host)
     end

@@ -38,6 +38,8 @@ class Subspace::Configuration
     end
   end
 
+  # I think a better way to do this is possibly to just write out all the host vars directly to a yaml file
+  # That provides more flexibility, although this method provides a whitelist.
   def binding_for(host: nil, group: nil)
     config = @vars.dup
     if host
