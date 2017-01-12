@@ -3,18 +3,21 @@
     apt_repository:
       repo: deb http://apt.newrelic.com/debian/ newrelic non-free
       state: present
+    sudo: true
 
   - name: Add New Relic apt key
     apt_key:
       url: https://download.newrelic.com/548C16BF.gpg
       state: present
+    sudo: true
 
   - name: Install New Relic server agent
     apt:
       pkg: newrelic-sysmond
       state: present
       update_cache: true
-      cache_valid_time: 86400
+    sudo: true
 
   - shell: "nrsysmond-config --set license_key={{newrelic_licence}}"
+    sudo: true
     notify: start newrelic agent
