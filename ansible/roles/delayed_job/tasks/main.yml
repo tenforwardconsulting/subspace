@@ -3,11 +3,13 @@
     apt:
       name: monit
       state: present
+    sudo: true
 
   - name: Install delayed_job monit script
     template:
       src: delayed-job-monit-rc
       dest: /etc/monit/conf.d/delayed_job_{{project_name}}_{{rails_env}}
+    sudo: true
     notify: monit reload
 
   - name: Copy sudoers file so that deploy can restart services without entering password.
@@ -27,8 +29,10 @@
     file:
       path: /etc/init/delayed-job.conf
       state: absent
+    sudo: true
 
   - name: Remove old monit files
     file:
       path: /etc/monit/conf.d/delayed_job
       state: absent
+    sudo: true
