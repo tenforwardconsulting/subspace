@@ -48,6 +48,12 @@
       shell: /bin/bash
     sudo: true
 
+  - name: Add deploy user to adm group so it can view logs in /var/log
+    user:
+      name: "{{deploy_user}}"
+      append: yes
+      groups: "adm"
+
   - name: Update authorized_keys for deploy user
     copy:
       src: authorized_keys
