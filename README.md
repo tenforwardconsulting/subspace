@@ -24,26 +24,6 @@ Then run
 
     subspace init
 
-## Updating
-
-After updating the subspace gem in your project, you will have to edit
-`config/provision/ansible.cfg` to change the roles path to use the new
-gem directory.
-
-e.g. Change
-
-```
-roles_path = ~/.rvm/gems/ruby-2.3.1@my-gemset/gems/subspace-0.1.2/ansible/roles:/etc/ansible/roles
-```
-
-to
-
-```
-roles_path = ~/.rvm/gems/ruby-2.3.1@my-gemset/gems/subspace-0.1.3/ansible/roles:/etc/ansible/roles
-```
-
-_This example assumes usage of RVM. The location of your gemsets may be different._
-
 ## Usage
 
 * `subspace init`
@@ -51,7 +31,7 @@ _This example assumes usage of RVM. The location of your gemsets may be differen
 Initialize the project for subspace. Creates `config/provision` with all
 necessary files.
 
-* `rake provision:<environment>`
+* `subspace provision <environment>`
 
 Runs the playbook at `config/provision/<environment.yml>`.
 
