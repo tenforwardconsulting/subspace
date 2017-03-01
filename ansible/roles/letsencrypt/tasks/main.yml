@@ -88,6 +88,6 @@
   - name: Setup cron job to auto renew
     cron:
       name: Auto-renew SSL
-      job: sudo {{certbot_dir}}/certbot-auto renew --no-self-upgrade
+      job: {{certbot_dir}}/certbot-auto renew --no-self-upgrade
       hour: 4
       state: present
