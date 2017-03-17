@@ -6,7 +6,7 @@ class Subspace::Commands::Provision < Subspace::Commands::Base
 
   def run
     update_ansible_cfg
-    ansible_command "ansible-playbook", "#{@environment}.yml"
+    ansible_command "ansible-playbook", "#{@environment}.yml", "--diff"
   end
 
   private
