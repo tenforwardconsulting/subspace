@@ -78,24 +78,16 @@
   - name: Force redirect to https (2/3)
     lineinfile:
       dest: /etc/apache2/sites-available/{{project_name}}.conf
-      line: "RewriteCond %{SERVER_NAME} ={{server_name}}"
+      line: "RewriteCond %{SERVER_NAME} ={{item}}\nRewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,QSA,NE,R=permanent]"
       state: present
       insertbefore: "</VirtualHost>"
     sudo: true
-    notify: apache restart
-
-  - name: Force redirect to https (3/3)
-    lineinfile:
-      dest: /etc/apache2/sites-available/{{project_name}}.conf
-      line: "RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,QSA,NE,R=permanent]"
-      state: present
-      insertbefore: "</VirtualHost>"
-    sudo: true
+    with_items: "{{ ([server_name] + server_aliases) }}"
     notify: apache restart
 
   - name: Setup cron job to auto renew
     cron:
       name: Auto-renew SSL
-      job: sudo "{{certbot_dir}}/certbot-auto renew --quiet --no-self-upgrade"
+      job: {{certbot_dir}}/certbot-auto renew --no-self-upgrade
       hour: 4
       state: present
