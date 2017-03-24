@@ -4,10 +4,12 @@ require 'rubygems'
 require 'commander'
 
 require 'subspace'
+require 'subspace/commands/base'
+require 'subspace/commands/configure'
 require 'subspace/commands/init'
+require 'subspace/commands/override'
 require 'subspace/commands/provision'
 require 'subspace/commands/ssh'
-require 'subspace/commands/configure'
 
 class Subspace::Cli
   include Commander::Methods
@@ -48,6 +50,13 @@ class Subspace::Cli
       c.summary = "Regenerate all of the ansible configuration files. You don't normally need to run this."
       c.description = ''
       c.when_called Subspace::Commands::Configure
+    end
+
+    command :override do |c, args|
+      c.syntax = 'subspace override [role]'
+      c.summary = 'Override a role configuration by copying the configuration locally'
+      c.description = 'Copies the default role configuration to config/provision/<role> where it can be modified.'
+      c.when_called Subspace::Commands::Override
     end
 
     run!

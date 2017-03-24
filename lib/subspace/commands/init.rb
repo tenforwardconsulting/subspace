@@ -1,21 +1,20 @@
 require 'fileutils'
 require 'erb'
-require 'subspace/commands/base'
 class Subspace::Commands::Init < Subspace::Commands::Base
   @@provision_templatedir = File.join(File.dirname(__FILE__), '..', 'template', 'provision')
-  @@dest_dir = "config/provision"
 
   def initialize(args, options)
     run
   end
 
   def run
-    FileUtils.mkdir_p File.join @@dest_dir, "group_vars"
-    FileUtils.mkdir_p File.join @@dest_dir, "host_vars"
-    FileUtils.mkdir_p File.join @@dest_dir, "vars"
+    FileUtils.mkdir_p File.join dest_dir, "group_vars"
+    FileUtils.mkdir_p File.join dest_dir, "host_vars"
+    FileUtils.mkdir_p File.join dest_dir, "vars"
+    FileUtils.mkdir_p File.join dest_dir, "roles"
 
     copy ".gitignore"
-    template "../provision.rb"
+    #template "../provision.rb"
     template "ansible.cfg"
     template "hosts"
     template "group_vars/all"
@@ -65,16 +64,16 @@ class Subspace::Commands::Init < Subspace::Commands::Base
   end
 
   def create_vault_pass
-    if File.exist? File.join(@@dest_dir, ".vault_pass")
+    if File.exist? File.join(dest_dir, ".vault_pass")
       say ".vault_pass already exists.  Skipping..."
     else
-      File.write File.join(@@dest_dir, ".vault_pass"), SecureRandom.base64
+      File.write File.join(dest_dir, ".vault_pass"), SecureRandom.base64
     end
   end
 
   def create_vars_file_for_env(env)
     template "vars/template", "vars/#{env}.yml"
-    Dir.chdir @@dest_dir do
+    Dir.chdir dest_dir do
       `ansible-vault encrypt vars/#{env}.yml`
     end
   end
