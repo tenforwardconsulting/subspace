@@ -1,0 +1,34 @@
+TODO:
+
+subspace init
+  - create ansible.cfg
+    - Add stuff from zach
+  - generate a password and create a file (add to gitignore)
+  - create config/provision
+    + entire directory tree
+  - generate example production.yml, dev.yml
+
+
+  - create the ansible-vault vars files somehow
+
+
+-- 8/21
+
+1. remove 10fw.net as the default hostname
+2. autocreate authorized_keys with ~/.ssh/id_rsa.pub
+3. add readme or something better than this
+4. combine dev and prod.yml into the same shared tasks and update the provision task to just pass in the hosts on the command line, i think that's a better more canonical "ansible" thing to do than have different playbooks for dev and prod.
+5. whats up with the "mtpereira.passenger" role?  if our role wants to depend on that one (see postgres) than file, but its confusing in the role list in dev.yml
+6. create a menu where we ask people what setup they want and they choose each step (apache+passenger) or (nginx+puma) or whatever (or have these in a giant provision.yml and just commented out). similarly they should pick their DB.  Heroku calls these things "buildpacks" and we should do a similar thing.
+7. dont use rake use subspace, eg `subspace provision dev`
+8. not sure why the rake task generates QA and Staging even when the configs dont exist.
+9. AWS stuff shouldn't be in there by default, its way too specific to our use case i think
+10. I can't edit the vault files after doing subspace init.  OK I see I have to be in the provision dir.  We should do that via subspace commands
+11. Needs to prompt for ruby version too or pull it from .ruby-version (does it do this or did festbuddy get lucky?)
+12. Need something like `subspace override <rolename>` that will just make a copy of the role in the provision dir so you can fux0r with it -- also need to think about what happens if we udpate subspace, does it automatically update roles for everyone?  Maybe it should always copy them locally and make you run `subspace update roles` to avoid `bundle update` wrecking people's production servers
+13. `One or more undefined variables: 'letsencrypt_email' is undefined`
+14. We need to figure out app.yml and the secrets file beacause it sucks, also not everyone uses figaro
+15. more options for SSL, like should it auto redirect, what hostnames are allowed, etc
+16. needs an option to set the project name instead of just using the directory
+  - ok this is the there, but the readme should force you to edit this file, and there needs to be a ton more options there (unless we go with provision.rb for configuration, which we could do)
+

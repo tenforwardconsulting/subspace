@@ -5,7 +5,7 @@ class Subspace::Commands::Ssh < Subspace::Commands::Base
   end
 
   def run
-    execute "ssh ubuntu@#{@host}"
+    exec "ssh ubuntu@#{@host}"
     #ansible_command "ansible", @host, '-a', "/bin/bash -l"
   end
 

@@ -3,3 +3,5 @@ inventory = hosts
 forks     = 10
 roles_path = ./roles:<%= File.join(gem_path, 'ansible', 'roles') %>:/etc/ansible/roles
 vault_password_file = .vault_pass
+ssh_args = -o ControlMaster=auto -o ControlPersist=300s
+pipelining = True
