@@ -1,0 +1,3 @@
+  - name: restart collectd
+    command: service collectd restart
+    sudo: true

@@ -10,6 +10,7 @@ require 'subspace/commands/init'
 require 'subspace/commands/override'
 require 'subspace/commands/provision'
 require 'subspace/commands/ssh'
+require 'subspace/commands/vars'
 
 class Subspace::Cli
   include Commander::Methods
@@ -34,7 +35,6 @@ class Subspace::Cli
       c.summary = ''
       c.description = ''
       c.example 'description', 'command example'
-      c.option '--some-switch', 'Some switch that does something'
       c.when_called Subspace::Commands::Provision
     end
 
@@ -57,6 +57,14 @@ class Subspace::Cli
       c.summary = 'Override a role configuration by copying the configuration locally'
       c.description = 'Copies the default role configuration to config/provision/<role> where it can be modified.'
       c.when_called Subspace::Commands::Override
+    end
+
+    command :vars do |c, args|
+      c.syntax = 'subspace vars [environment]'
+      c.summary = 'View or edit the encrypted variables for an environment'
+      c.description = ''
+      c.option '--edit', "Edit the variables instead of view"
+      c.when_called Subspace::Commands::Vars
     end
 
     run!
