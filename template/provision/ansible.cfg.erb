@@ -5,3 +5,4 @@ roles_path = ./roles:<%= File.join(gem_path, 'ansible', 'roles') %>:/etc/ansible
 vault_password_file = .vault_pass
 ssh_args = -o ControlMaster=auto -o ControlPersist=300s
 pipelining = True
+allow_world_readable_tmpfiles = True # back compatible to 1.9

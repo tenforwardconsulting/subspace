@@ -1,16 +1,15 @@
 ---
-  - name: Install collectd
-    apt:
-      pkg: collectd
-      state: present
-    sudo: true
-
   - name: Create hostname config
     template:
       src: hostname.conf
       dest: /etc/collectd/collectd.conf.d/hostname.conf
     sudo: true
-    notify: restart collectd
+
+  - name: Install collectd
+    apt:
+      pkg: collectd
+      state: present
+    sudo: true
 
   - name: Create graphite config
     template:
