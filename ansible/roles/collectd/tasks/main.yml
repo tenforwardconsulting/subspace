@@ -1,4 +1,11 @@
 ---
+  - name: Create collectd configuration dir
+    file:
+      path: /etc/collectd/collectd.conf.d
+      state: directory
+      mode: 0755
+
+  #required first so that collectd will start even if the FQDN of the host doesnt' resovle
   - name: Create hostname config
     template:
       src: hostname.conf
