@@ -15,7 +15,7 @@ describe Subspace::Configuration do
     end
   end
 
-  it "can create a binding for use in an ERB template" do
-    Subspace.config.bin
+  xit "can create a binding for use in an ERB template" do
+
   end
 end
