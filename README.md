@@ -6,6 +6,15 @@ http://tvtropes.org/pmwiki/pmwiki.php/Main/SubspaceAnsible
 
 ## Installation
 
+First, install ansible (>2.0)
+
+OSX:
+  brew install ansible
+
+linux:
+  apt-get install ansible
+
+
 Add this line to your application's Gemfile:
 
 ```ruby
@@ -34,6 +43,8 @@ necessary files.
 * `subspace provision <environment>`
 
 Runs the playbook at `config/provision/<environment.yml>`.
+
+# Development
 
 ## Directory Structure
 

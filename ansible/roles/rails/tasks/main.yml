@@ -18,19 +18,16 @@
     file:
       path: /u/apps/{{project_name}}/shared/config/
       state: directory
-    sudo: true
-    sudo_user: "{{deploy_user}}"
+      owner: "{{deploy_user}}"
 
   - name: Create database.yml
     template:
       src: database.yml
       dest: /u/apps/{{project_name}}/shared/config/database.yml
-    sudo: true
-    sudo_user: "{{deploy_user}}"
+      owner: "{{deploy_user}}"
 
   - name: Create application.yml
     template:
       src: application.yml
       dest: /u/apps/{{project_name}}/shared/config/application.yml
-    sudo: true
-    sudo_user: "{{deploy_user}}"
+      owner: "{{deploy_user}}"

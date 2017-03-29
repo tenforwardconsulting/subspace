@@ -2,3 +2,4 @@
   backups_enabled: true
   s3_db_backup_bucket: disabled
   s3_db_backup_prefix: "{{project_name}}/{{rails_env}}"
+  database_user: "{{project_name}}"

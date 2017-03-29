@@ -4,8 +4,8 @@
       name: "{{database_user}}"
       password: "{{database_password}}"
       state: present
-    sudo: yes
-    sudo_user: postgres
+    become: true
+    become_user: postgres
 
   - name: Create postgresql database
     postgresql_db:

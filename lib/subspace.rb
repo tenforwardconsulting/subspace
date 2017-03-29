@@ -1,4 +1,5 @@
 require "subspace/version"
+require "subspace/configuration"
 
 module Subspace
   def self.configure(&block)

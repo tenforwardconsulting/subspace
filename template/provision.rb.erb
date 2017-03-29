@@ -28,17 +28,21 @@ Subspace.configure do |config|
     ssh_host: "1.2.3.4",          # Ansible connects to this to provision
     ssh_user: "deploy",           # ssh user
     sudo: true,                   # probably should be true if user isn't root
-    hostname: "dev.example.com",  # This will get set in /etc/hostname
-    group: :dev                   # This is the environment, dev/staging/qa, etc.
+    hostname: "dev.example.com"   # This will get set in /etc/hostname
   }
 
 
+  # Configuration for a group of hosts
+  # These hosts
   config.group :dev, {
-    rails_env: "dev"
+    hosts: [:dev, :dev_web1],
+    vars: {
+      rails_env: "dev"
+    }
   }
 
   config.group :production, {
-    rails_env: "dev"
+
   }
   # Configure the ansible roles that the project will use.  This is where you can set up things like
   # nginx vs apache, postgres vs mysql, etc. You can configure variables with each role or globally.
@@ -63,28 +67,28 @@ Subspace.configure do |config|
 
   config.role "rails"
   config.role "apache"
-  config.role "letsencrypt", groups: [:production], vars: {
+  config.role "letsencrypt", groups: [:web], vars: {
     certbot_dir: "/opt/certbot"
   }
   config.role "mtpereira.passenger"
-  config.role "postgresql", hosts: [:dev_db, :prod_db]
+  config.role "postgresql", groups: [:db]
   config.role "delayed_job", vars: {
       delayed_job_command: "bin/delayed_job",
       delayed_job_queues: ["default"]
     }
 
   config.role "logrotate"
-  config.var :logrotate_scripts, [{
-    name: "Rails Logs",
-    path: "/u/apps/{{project_name}}/shared/log/*.log",
-    options: [
-      "weekly"
-      "size 1M"
-      "missingok"
-      "compress"
-      "delaycompress"
-      "copytruncate"
-    ]
-  }]
+  # config.var :logrotate_scripts, [{
+  #   name: "Rails Logs",
+  #   path: "/u/apps/{{project_name}}/shared/log/*.log",
+  #   options: [
+  #     "weekly",
+  #     "size 1M",
+  #     "missingok",
+  #     "compress",
+  #     "delaycompress",
+  #     "copytruncate",
+  #   ]
+  # }]
 
 end

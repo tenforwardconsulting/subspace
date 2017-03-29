@@ -1,0 +1,3 @@
+---
+  graphite_host: graphite.example.com
+  graphite_port: "2003"

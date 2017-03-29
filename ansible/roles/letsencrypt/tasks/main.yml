@@ -19,12 +19,11 @@
       - python-virtualenv
       - python2.7-dev
 
-  - name: Create certbot directory
+  - name: "Create certbot dir"
     file:
       path: "{{certbot_dir}}"
       state: directory
-      mode: 0755
-      owner: "{{deploy_user}}"
+      mode: 0750
 
   - name: Get certbot
     get_url:
@@ -33,8 +32,8 @@
       mode: a+x
     sudo: true
 
-  - name: Run certbot
-    command: "{{certbot_dir}}/certbot-auto certonly --email {{letsencrypt_email}} --domains {{([server_name] + server_aliases) | join(',')}} --apache --agree-tos --non-interactive --expand"
+  - name: Run default
+    command: "{{certbot_dir}}/certbot-auto certonly --email {{letsencrypt_email}} --domains {{([server_name] + server_aliases) | join(',')}} --apache --agree-tos --expand --non-interactive"
     args:
       creates: /etc/letsencrypt/live/{{server_name}}/cert.pem
     sudo: true
@@ -96,6 +95,8 @@
   - name: Setup cron job to auto renew
     cron:
       name: Auto-renew SSL
-      job: sudo "{{certbot_dir}}/certbot-auto renew --quiet --no-self-upgrade"
-      hour: 4
+      job: "{{certbot_dir}}/certbot-auto renew --quiet --no-self-upgrade"
+      hour: 0
+      minute: 33
       state: present
+    sudo: true

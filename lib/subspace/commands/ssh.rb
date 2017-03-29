@@ -1,3 +1,4 @@
+require 'yaml'
 class Subspace::Commands::Ssh < Subspace::Commands::Base
   def initialize(args, options)
     @host = args.first
@@ -5,7 +6,10 @@ class Subspace::Commands::Ssh < Subspace::Commands::Base
   end
 
   def run
-    ansible_command "ansible", @host, '-a', "/bin/bash -l"
+    host_vars = YAML.load_file("config/provision/host_vars/#{@host}")
+    cmd = "ssh #{host_vars["ansible_ssh_user"]}@#{host_vars["ansible_ssh_host"]}"
+    say cmd
+    exec cmd
   end
 
   private
