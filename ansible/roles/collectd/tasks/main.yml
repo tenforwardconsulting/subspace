@@ -32,3 +32,11 @@
     sudo: true
     notify: restart collectd
 
+  - name: create delayed_job_postgres config
+    template:
+      src: delayed_job_postgres.conf
+      dest: /etc/collectd/collectd.conf.d/delayed_job_postgres.conf
+    sudo: true
+    notify: restart collectd
+    when: collectd_enable_djpg is defined
+
