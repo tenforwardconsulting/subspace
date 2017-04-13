@@ -68,6 +68,12 @@
       append: yes
       groups: "adm"
 
+  - name: Add sudoers.d file so that deploy can restart services without entering password.
+    copy:
+      src: service
+      dest: /etc/sudoers.d/service
+    sudo: true
+
   - name: Update authorized_keys for deploy user
     copy:
       src: authorized_keys
