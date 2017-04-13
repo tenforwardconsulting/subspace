@@ -8,7 +8,7 @@
 #
 #   include /var/www/apps/{app_name}/shared/delayed_job.monitrc
 
-{% for queue in delayed_job_queues %}
+{% for queue in job_queues %}
 check process delayed_job_{{queue}}
   with pidfile /u/apps/{{project_name}}/shared/tmp/pids/delayed_job.{{queue}}.pid
   start program = "/bin/su - deploy -c 'cd /u/apps/{{project_name}}/current; RAILS_ENV={{rails_env}} bundle exec {{delayed_job_command}} --identifier={{queue}} --queue={{queue}} start'"

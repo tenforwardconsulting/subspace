@@ -1,4 +1,4 @@
 ---
-  sidekiq_queues:
+  job_queues:
     - default
     - mailers

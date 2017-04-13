@@ -4,5 +4,5 @@
 
 ### Optional
 
-* `sidekiq_queues`
+* `job_queues`
   The queues to process. Defaults to: ["default", "mailers"]

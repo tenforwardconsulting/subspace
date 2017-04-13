@@ -4,6 +4,6 @@
 
 ### Optional
 
-* `delayed_job_queues`
+* `job_queues`
   The delayed job queues to process.
   Defaults to: ["default"]

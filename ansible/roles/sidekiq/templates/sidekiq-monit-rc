@@ -1,4 +1,4 @@
-{% for queue in sidekiq_queues %}
+{% for queue in job_queues %}
 check process sidekiq_{{queue}}
   with pidfile /u/apps/{{project_name}}/shared/tmp/pids/sidekiq.{{queue}}.pid
   start program = "/bin/su - deploy -c 'cd /u/apps/{{project_name}}/current && bundle exec sidekiq --queue {{queue}} --pidfile /u/apps/{{project_name}}/shared/tmp/pids/sidekiq.{{queue}}.pid --environment {{rails_env}} --logfile /u/apps/{{project_name}}/shared/log/sidekiq.{{queue}}.log --daemon'" with timeout 30 seconds

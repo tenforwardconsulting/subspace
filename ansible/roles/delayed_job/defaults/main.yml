@@ -1,4 +1,4 @@
 ---
   delayed_job_command: bin/delayed_job
-  delayed_job_queues:
+  job_queues:
     - default
