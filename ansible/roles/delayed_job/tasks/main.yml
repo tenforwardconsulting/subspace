@@ -1,4 +1,6 @@
 ---
+  - set_fact: delayed_job_installed="true"
+
   - name: Install monit
     apt:
       name: monit

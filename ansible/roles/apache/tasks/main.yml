@@ -1,4 +1,6 @@
 ---
+  - set_fact: apache2_installed="true"
+
   - name: Install apache2
     apt:
       pkg: apache2
@@ -19,12 +21,25 @@
       src: "{{template_src_path}}"
       dest: /etc/apache2/sites-available/{{project_name}}.conf
     sudo: true
-    notify: apache restart
 
   - name: Symlink {{project_name}}.conf to sites-enabled
     file:
       src: /etc/apache2/sites-available/{{project_name}}.conf
       dest: /etc/apache2/sites-enabled/{{project_name}}.conf
+      state: link
+    sudo: true
+    notify: apache restart
+
+  - name: create server-status conf
+    template:
+      src: server_status.conf
+      dest: /etc/apache2/conf-available/server_status.conf
+    sudo: true
+
+  - name: enable server-status conf
+    file:
+      src: /etc/apache2/conf-available/server_status.conf
+      dest: /etc/apache2/conf-enabled/server_status.conf
       state: link
     sudo: true
     notify: apache restart
