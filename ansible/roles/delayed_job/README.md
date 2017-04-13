@@ -2,8 +2,6 @@
 
 ## Variables
 
-### Optional
+### Required
 
-* `job_queues`
-  The delayed job queues to process.
-  Defaults to: ["default"]
+`delayed_job_command`
