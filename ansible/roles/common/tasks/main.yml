@@ -12,6 +12,14 @@
     command: hostname {{hostname}}
     sudo: true
 
+  - name: Set hostname in /etc/hosts
+    lineinfile:
+      dest: "/etc/hosts"
+      line: "127.0.0.1 {{hostname}}"
+      state: present
+      insertafter: "127.0.0.1 localhost"
+    sudo: true
+
   - name: update /etc/hostname
     copy:
       content: "{{hostname}}"
