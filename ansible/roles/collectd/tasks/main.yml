@@ -38,5 +38,13 @@
       dest: /etc/collectd/collectd.conf.d/delayed_job_postgres.conf
     sudo: true
     notify: restart collectd
-    when: collectd_enable_djpg is defined
+    when: postgresql_installed is defined and delayed_job_installed is defined
+
+  - name: create apache2 config
+    template:
+      src: apache2.conf
+      dest: /etc/collectd/collectd.conf.d/apache2.conf
+    sudo: true
+    notify: restart collectd
+    when: apache2_installed is defined
 

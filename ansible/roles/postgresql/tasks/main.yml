@@ -1,4 +1,6 @@
 ---
+  - set_fact: postgresql_installed="true"
+
   - name: Create postgresql user
     postgresql_user:
       name: "{{database_user}}"
