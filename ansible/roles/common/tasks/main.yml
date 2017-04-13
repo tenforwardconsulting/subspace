@@ -70,7 +70,7 @@
 
   - name: Add sudoers.d file so that deploy can restart services without entering password.
     copy:
-      src: service
+      src: sudoers-service
       dest: /etc/sudoers.d/service
     sudo: true
 

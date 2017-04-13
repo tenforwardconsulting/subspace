@@ -3,3 +3,6 @@
     - {
       role: redis
     }
+    - {
+      role: monit
+    }

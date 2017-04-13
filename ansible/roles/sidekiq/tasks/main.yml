@@ -1,26 +1,7 @@
 ---
-  - name: Install monit
-    apt:
-      name: monit
-      state: present
-    sudo: true
-
   - name: Install sidekiq monit script
     template:
       src: sidekiq-monit-rc
       dest: /etc/monit/conf.d/sidekiq_{{project_name}}_{{rails_env}}
-    sudo: true
-    notify: monit
-
-  - name: Copy sudoers file so that deploy can restart services and use monit without entering password.
-    copy:
-      src: sidekiq-service
-      dest: /etc/sudoers.d/sidekiq-service
-    sudo: true
-
-  - name: Copy monit config to enable http from localhost
-    copy:
-      src: monit-http.conf
-      dest: /etc/monit/conf.d/monit-http.conf
     sudo: true
     notify: monit
