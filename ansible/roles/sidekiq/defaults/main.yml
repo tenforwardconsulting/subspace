@@ -1,0 +1,4 @@
+---
+  sidekiq_queues:
+    - default
+    - mailers

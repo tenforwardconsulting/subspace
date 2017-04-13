@@ -1,0 +1,13 @@
+{% for queue in sidekiq_queues %}
+check process sidekiq_{{queue}}
+  with pidfile /u/apps/{{project_name}}/shared/tmp/pids/sidekiq.{{queue}}.pid
+  start program = "/bin/su - deploy -c 'cd /u/apps/{{project_name}}/current && bundle exec sidekiq --queue {{queue}} --pidfile /u/apps/{{project_name}}/shared/tmp/pids/sidekiq.{{queue}}.pid --environment {{rails_env}} --logfile /u/apps/{{project_name}}/shared/log/sidekiq.{{queue}}.log --daemon'" with timeout 30 seconds
+  stop program = "/bin/su - deploy -c 'kill -s TERM `cat /u/apps/{{project_name}}/shared/tmp/pids/sidekiq.{{queue}}.pid`'" with timeout 30 seconds
+  if totalmem is greater than 500 MB for 2 cycles then restart
+  depends on redis_for_sidekiq
+{% endfor %}
+
+check process redis_for_sidekiq
+  with pidfile /u/apps/{{project_name}}/shared/tmp/pids/redis.pid
+  start program = "/bin/su - deploy -c 'redis-server --maxmemory-policy noeviction --daemonize yes --pidfile /u/apps/{{project_name}}/shared/tmp/pids/redis.pid --dir /u/apps/{{project_name}}/shared/tmp --logfile /u/apps/{{project_name}}/shared/log/redis.log'" with timeout 30 seconds
+  stop program = "/bin/su - deploy -c 'kill -s SIGTERM `cat /u/apps/{{project_name}}/shared/tmp/pids/redis.pid`'" with timeout 30 seconds

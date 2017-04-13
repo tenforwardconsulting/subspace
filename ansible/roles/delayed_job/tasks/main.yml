@@ -12,7 +12,7 @@
     sudo: true
     notify: monit reload
 
-  - name: Copy sudoers file so that deploy can restart services without entering password.
+  - name: Copy sudoers file so that deploy can restart services and use monit without entering password.
     copy:
       src: deploy-service
       dest: /etc/sudoers.d/deploy-service

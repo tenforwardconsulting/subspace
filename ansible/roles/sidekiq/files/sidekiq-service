@@ -1,0 +1,2 @@
+deploy ALL=(root) NOPASSWD: /usr/sbin/service
+deploy ALL=(root) NOPASSWD: /usr/bin/monit

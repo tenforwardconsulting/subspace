@@ -1,0 +1,12 @@
+---
+  - name: monit stop all
+    command: monit stop all
+    sudo: true
+
+  - name: monit reload
+    command: monit reload
+    sudo: true
+
+  - name: monit start all
+    command: monit start all
+    sudo: true
