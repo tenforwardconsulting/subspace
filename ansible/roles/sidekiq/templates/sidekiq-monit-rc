@@ -3,5 +3,4 @@ check process sidekiq_{{queue}}
   with pidfile /u/apps/{{project_name}}/shared/tmp/pids/sidekiq.{{queue}}.pid
   start program = "/bin/su - deploy -c 'cd /u/apps/{{project_name}}/current && bundle exec sidekiq --queue {{queue}} --pidfile /u/apps/{{project_name}}/shared/tmp/pids/sidekiq.{{queue}}.pid --environment {{rails_env}} --logfile /u/apps/{{project_name}}/shared/log/sidekiq.{{queue}}.log --daemon'" with timeout 30 seconds
   stop program = "/bin/su - deploy -c 'kill -s TERM `cat /u/apps/{{project_name}}/shared/tmp/pids/sidekiq.{{queue}}.pid`'" with timeout 30 seconds
-  if totalmem is greater than 500 MB for 2 cycles then restart
 {% endfor %}
