@@ -12,6 +12,14 @@
     command: hostname {{hostname}}
     sudo: true
 
+  - name: Set hostname in /etc/hosts
+    lineinfile:
+      dest: "/etc/hosts"
+      line: "127.0.0.1 {{hostname}}"
+      state: present
+      insertafter: "127.0.0.1 localhost"
+    sudo: true
+
   - name: update /etc/hostname
     copy:
       content: "{{hostname}}"
@@ -59,6 +67,12 @@
       name: "{{deploy_user}}"
       append: yes
       groups: "adm"
+
+  - name: Add sudoers.d file so that deploy can restart services without entering password.
+    copy:
+      src: sudoers-service
+      dest: /etc/sudoers.d/service
+    sudo: true
 
   - name: Update authorized_keys for deploy user
     copy:

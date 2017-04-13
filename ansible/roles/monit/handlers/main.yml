@@ -1,0 +1,3 @@
+---
+  - name: monit
+    shell: monit stop all && monit reload && monit start all

@@ -11,11 +11,4 @@ class Subspace::Commands::Ssh < Subspace::Commands::Base
     say cmd
     exec cmd
   end
-
-  private
-
-  def update_ansible_cfg
-    template "ansible.cfg"
-  end
-
 end
