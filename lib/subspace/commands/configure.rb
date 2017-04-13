@@ -24,9 +24,4 @@ class Subspace::Commands::Configure < Subspace::Commands::Base
     say "Generating config/provisiong/group_vars/#{group}"
     template "group_vars/template", "group_vars/#{group}", Subspace.config.binding_for(group: group)
   end
-
-  def update_ansible_cfg
-    template "ansible.cfg"
-  end
-
 end
