@@ -24,7 +24,3 @@
       dest: /etc/monit/conf.d/monit-http.conf
     sudo: true
     notify: monit
-
-  - name: Stop redis from not running via monit
-    command: update-rc.d redis-server disable
-    sudo: true
