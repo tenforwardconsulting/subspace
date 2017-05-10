@@ -23,7 +23,7 @@
     file:
       path: "{{certbot_dir}}"
       state: directory
-      mode: 0750
+      mode: 0755
 
   - name: Get certbot
     get_url:
@@ -34,8 +34,6 @@
 
   - name: Run default
     command: "{{certbot_dir}}/certbot-auto certonly --email {{letsencrypt_email}} --domains {{([server_name] + server_aliases) | join(',')}} --apache --agree-tos --expand --non-interactive"
-    args:
-      creates: /etc/letsencrypt/live/{{server_name}}/cert.pem
     sudo: true
 
   - name: Enable mod_rewrite
