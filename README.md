@@ -44,6 +44,41 @@ necessary files.
 
 Runs the playbook at `config/provision/<environment.yml>`.
 
+* `subspace vars <environment> [--edit] [--create]`
+
+Manage environment variables on different platforms.  The default action is simply to show the vars defined for an environemnt.  Pass --edit to edit them in the system editor.
+
+The new system uses a file in `config/provision/templates/application.yml.template` that contains environment variables for all environments.  The configuration that is not secret is visible and version controlled, while the secrets are stored in the vault files for their environments. The default file created by `subspace init`  looks like this:
+
+```
+# These environment variables are applied to all environments, and can be secret or not
+
+# This is secret and can be changed on all three environment easily by using subspace vars <env> --edit
+SECRET_KEY_BASE: {{secret_key_base}}
+
+#This is not secret, and is the same value for all environments
+ENABLE_SOME_FEATURE: false
+
+development:
+  INSECURE_VARIABLE: "this isn't secret"
+
+dev:
+  INSECURE_VARIABLE: "but it changes"
+
+production:
+  INSECURE_VARIABLE: "on different servers"
+
+```
+
+Further, you can use the extremely command to create a local copy of `config/application.yml`
+
+    # Create a local copy of config/application.yml with the secrets encrypted in vars/development.yml
+    $ subspace vars development --create
+
+This can get you up and running in development securely, the only thing you need to distribute to new team members is the vault password.
+
+NOTE: application.yml should be in the `.gitignore`, since subspace creates a new version on the server and symlinks it on top of whatever is checked in.
+
 # Development
 
 ## Directory Structure
