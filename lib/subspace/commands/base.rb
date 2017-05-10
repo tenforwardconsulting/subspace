@@ -8,12 +8,20 @@ module Subspace
         load "config/provision.rb"
       end
 
+      def playbook_dir
+        File.join(gem_path, 'ansible', 'playbooks')
+      end
+
       def template_dir
         File.join(gem_path, 'template', 'provision')
       end
 
       def gem_path
         File.expand_path '../../../..', __FILE__
+      end
+
+      def project_path
+        Dir.pwd # TODO make sure this is correct if they for whatever reason aren't running subspace from the project root??
       end
 
       def dest_dir

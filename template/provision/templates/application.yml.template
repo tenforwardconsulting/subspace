@@ -1,0 +1,12 @@
+# These environment variables are applied to all environments
+SECRET_KEY_BASE: {{secret_key_base}}
+
+development:
+  INSECURE_VARIABLE: "this isn't secret"
+
+dev:
+  INSECURE_VARIABLE: "but it changes"
+
+production:
+  INSECURE_VARIABLE: "on different servers"
+
