@@ -1,12 +1,27 @@
-# These environment variables are applied to all environments
-SECRET_KEY_BASE: {{secret_key_base}}
+# This file defines the environment variables available to the application at runtime
+# We use the figaro gem to load environment variables from application.yml.
 
+# These environment variables are available to all environments, and can be secret or not:
+
+# These are secret and can be changed per environment easily by using subspace vars <env> --edit
+SECRET_KEY_BASE: {{secret_key_base}}
+AWS_SECRET_KEY: {{aws_secret_key}}
+
+# These are not secret, and have the same value for all environments
+ENABLE_SOME_FEATURE: false
+MAX_USER_INVITES: 20
+DEFAULT_EMAIL_ADDRESS: test@example.com
+
+
+# These variable are not secret, but have different, static values for all environments
 development:
   INSECURE_VARIABLE: "this isn't secret"
+  AWS_BUCKET: my-app-development
 
 dev:
   INSECURE_VARIABLE: "but it changes"
+  AWS_BUCKET: my-app-dev
 
 production:
   INSECURE_VARIABLE: "on different servers"
-
+  AWS_BUCKET: my-app-production
