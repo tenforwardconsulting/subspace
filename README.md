@@ -21,17 +21,9 @@ Add this line to your application's Gemfile:
 gem 'subspace'
 ```
 
-And then execute:
-
-    $ bundle
-
 Or install it yourself as:
 
     $ gem install subspace
-
-Then run
-
-    subspace init
 
 ## Usage
 
@@ -78,6 +70,83 @@ Further, you can use the extremely command to create a local copy of `config/app
 This can get you up and running in development securely, the only thing you need to distribute to new team members is the vault password.
 
 NOTE: application.yml should be in the `.gitignore`, since subspace creates a new version on the server and symlinks it on top of whatever is checked in.
+
+# Roles
+
+This is a description of all the roles that are included by installing subspace, along with their configuration.
+
+## apache
+
+## collectd
+
+## common
+
+## delayed_job
+
+## letsencrypt
+
+## logrotate
+
+Installs logrotate and lets you configure logs for automatic rotation.  Example config for rails:
+
+    logrotate_scripts:
+      - name: rails
+        path: "/u/apps/{{project_name}}/shared/log/{{rails_env}}.log"
+        options:
+          - weekly
+          - size 100M
+          - missingok
+          - compress
+          - delaycompress
+          - copytruncate
+
+## memcache
+
+## monit
+
+## mysql
+
+## mysql2_gem
+
+## newrelic
+
+## nginx
+
+## papertrail
+
+## passenger
+
+## postgresql
+
+## puma
+
+## rails
+
+## redis
+
+## ruby-common
+
+Installs ruby on the machine.  YOu can set a version by picking off the download url and sha hash from ruby-lang.org
+
+  ruby_version: ruby-2.4.1
+  ruby_checksum: a330e10d5cb5e53b3a0078326c5731888bb55e32c4abfeb27d9e7f8e5d000250
+  ruby_download_location: 'https://cache.ruby-lang.org/pub/ruby/2.4/ruby-2.4.1.tar.gz'
+
+
+## sidekiq
+
+
+## Other Internal Roles
+
+Since ansible doesn't support versioning of roles, we cloned the role here so that it doesn't change unexpectedly.  We expect to update from upstream occasionally, please let us know if we're missing something we should have.
+
+You should not include these roles directly in your subspace config files.  For example, instead of including `zenoamaro.postgresql`, simply include our `postgresql` role which depens on zenoamaro's role.
+
+Thanks to the following repositories for making their roles available:
+* https://github.com/zenoamaro/ansible-postgresql
+* https://github.com/mtpereira/ansible-passenger
+
+
 
 # Development
 
