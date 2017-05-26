@@ -1,5 +1,6 @@
 ---
   - name: Install certbot dependencies
+    become: true
     apt:
       pkg: "{{item}}"
       state: present
@@ -20,75 +21,77 @@
       - python2.7-dev
 
   - name: "Create certbot dir"
+    become: true
     file:
       path: "{{certbot_dir}}"
       state: directory
       mode: 0750
 
   - name: Get certbot
+    become: true
     get_url:
       url: "https://dl.eff.org/certbot-auto"
       dest: "{{certbot_dir}}/certbot-auto"
       mode: a+x
-    sudo: true
 
   - name: Run default
+    become: true
     command: "{{certbot_dir}}/certbot-auto certonly --email {{letsencrypt_email}} --domains {{([server_name] + server_aliases) | join(',')}} --apache --agree-tos --expand --non-interactive"
     args:
       creates: /etc/letsencrypt/live/{{server_name}}/cert.pem
-    sudo: true
 
   - name: Enable mod_rewrite
+    become: true
     apache2_module:
       name: rewrite
       state: present
-    sudo: true
+
 
   - name: Enable mod_ssl
+    become: true
     apache2_module:
       name: ssl
       state: present
-    sudo: true
 
   - name: Create SSL Apache config
+    become: true
     template:
       src: project-le-ssl.conf
       dest: /etc/apache2/sites-available/{{project_name}}-le-ssl.conf
-    sudo: true
     notify: apache restart
 
   - name: Symlink {{project_name}}-le-ssl.conf to sites-enabled
+    become: true
     file:
       src: /etc/apache2/sites-available/{{project_name}}-le-ssl.conf
       dest: /etc/apache2/sites-enabled/{{project_name}}-le-ssl.conf
       state: link
-    sudo: true
     notify: apache restart
 
   - name: Force redirect to https (1/2)
+    become: true
     lineinfile:
       dest: /etc/apache2/sites-available/{{project_name}}.conf
       line: "RewriteEngine on"
       state: present
       insertbefore: "</VirtualHost>"
-    sudo: true
     notify: apache restart
 
   - name: Force redirect to https (2/2)
+    become: true
     lineinfile:
       dest: /etc/apache2/sites-available/{{project_name}}.conf
       line: "RewriteCond %{SERVER_NAME} ={{item}}\nRewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,QSA,NE,R=permanent]"
       state: present
       insertbefore: "</VirtualHost>"
-    sudo: true
     with_items: "{{ ([server_name] + server_aliases) }}"
     notify: apache restart
 
   - name: Setup cron job to auto renew
+    become: true
     cron:
       name: Auto-renew SSL
       job: "{{certbot_dir}}/certbot-auto renew --quiet --no-self-upgrade"
       hour: 0
       minute: 33
       state: present
-    sudo: true

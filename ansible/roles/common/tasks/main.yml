@@ -6,11 +6,11 @@
     template:
       src: motd
       dest: /etc/motd
-    sudo: true
+    become: true
 
   - name: Set hostname
     command: hostname {{hostname}}
-    sudo: true
+    become: true
 
   - name: Set hostname in /etc/hosts
     lineinfile:
@@ -18,30 +18,32 @@
       line: "127.0.0.1 {{hostname}}"
       state: present
       insertafter: "127.0.0.1 localhost"
-    sudo: true
+    become: true
 
   - name: update /etc/hostname
     copy:
       content: "{{hostname}}"
       dest: /etc/hostname
+    become: true
 
   - name: Set hostname for systemd
     hostname:
       name: "{{hostname}}"
+    become: true
 
   - name: install aptitude
     apt:
       pkg: aptitude
       state: present
-
+    become: true
 
   - name: apt-get update
     apt: update_cache=yes cache_valid_time=86400
-    sudo: true
+    become: true
 
   - name: apt-get upgrade
     apt: upgrade=full
-    sudo: true
+    become: true
 
   - name: Set timezone variables
     copy: content='America/Chicago'
@@ -50,7 +52,7 @@
           group=root
           mode=0644
           backup=yes
-    sudo: true
+    become: true
     notify:
       - update timezone
 
@@ -60,32 +62,33 @@
       state: present
       generate_ssh_key: yes
       shell: /bin/bash
-    sudo: true
+    become: true
 
   - name: Add deploy user to adm group so it can view logs in /var/log
     user:
       name: "{{deploy_user}}"
       append: yes
       groups: "adm"
+    become: true
 
   - name: Add sudoers.d file so that deploy can restart services without entering password.
     copy:
       src: sudoers-service
       dest: /etc/sudoers.d/service
-    sudo: true
+    become: true
 
   - name: Update authorized_keys for deploy user
     copy:
       src: authorized_keys
       dest: "/home/{{deploy_user}}/.ssh/authorized_keys"
       owner: "{{deploy_user}}"
-    sudo: true
+    become: true
 
   - name: Create directory to which to deploy
     file:
       path: /u/apps/{{project_name}}
       owner: "{{deploy_user}}"
       state: directory
-    sudo: true
+    become: true
 
   - include: swap.yml

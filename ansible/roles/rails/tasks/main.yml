@@ -12,22 +12,25 @@
       - libxslt-dev
       - nodejs
       - zlib1g-dev
-    sudo: true
+    become: true
 
   - name: Create /u/apps/{{project_name}}/shared/config
     file:
       path: /u/apps/{{project_name}}/shared/config/
       state: directory
-      owner: "{{deploy_user}}"
+    become: true
+    become_user: "{{deploy_user}}"
 
   - name: Create database.yml
     template:
       src: database.yml
       dest: /u/apps/{{project_name}}/shared/config/database.yml
-      owner: "{{deploy_user}}"
+    become: true
+    become_user: "{{deploy_user}}"
 
   - name: Create application.yml
     template:
       src: application.yml
       dest: /u/apps/{{project_name}}/shared/config/application.yml
-      owner: "{{deploy_user}}"
+    become: true
+    become_user: "{{deploy_user}}"

@@ -13,8 +13,8 @@
       owner: "{{database_user}}"
       template: template1
       state: present
-    sudo: yes
-    sudo_user: postgres
+    become: true
+    become_user: postgres
 
   - name: Grant all privileges on database to user
     postgresql_privs:
@@ -23,15 +23,16 @@
       roles: "{{database_user}}"
       state: present
       type: database
-    sudo: yes
-    sudo_user: postgres
+    become: true
+    become_user: postgres
 
   - name: "Enable postgres hstore"
-    sudo: yes
-    sudo_user: postgres
+    become: true
+    become_user: postgres
     postgresql_ext:
       db: "{{database_name}}"
       name: hstore
       state: present
 
   - include: backups.yml
+    become: true

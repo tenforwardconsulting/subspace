@@ -1,27 +1,27 @@
 - name: Install nginx
   apt: pkg=nginx state=latest
-  sudo: true
+  become: true
 
 - name: Remove the default app
   command: rm -rf /etc/nginx/sites-enabled/default
-  sudo: true
+  become: true
 
 - name: Remove the app's config, if exists
   command: rm -rf /etc/nginx/sites-enabled/default
-  sudo: true
+  become: true
 
 - name: Remove the app's symlink, if exists
   command: rm -rf /etc/nginx/sites-enabled/{{project_name}}
-  sudo: true
+  become: true
 
 - name: Configure nginx for the app
   template: src=nginx-project dest=/etc/nginx/sites-available/{{project_name}} group=www-data owner=www-data force=yes
-  sudo: true
+  become: true
 
 - name: Enable the app
   command: ln -s /etc/nginx/sites-available/{{project_name}} /etc/nginx/sites-enabled/{{project_name}}
-  sudo: true
+  become: true
 
 - name: Restart nginx
   action: service name=nginx state=restarted
-  sudo: true
+  become: true

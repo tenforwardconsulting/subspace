@@ -3,28 +3,31 @@
     apt:
       pkg: apache2
       state: present
+    become: true
 
   - name: a2enmod headers
     apache2_module:
       name: headers
       state: present
+    become: true
 
   - name: a2enmod expires
     apache2_module:
       name: expires
       state: present
+    become: true
 
   - name: Create Apache config
     template:
       src: "{{template_src_path}}"
       dest: /etc/apache2/sites-available/{{project_name}}.conf
-    sudo: true
     notify: apache restart
+    become: true
 
   - name: Symlink {{project_name}}.conf to sites-enabled
     file:
       src: /etc/apache2/sites-available/{{project_name}}.conf
       dest: /etc/apache2/sites-enabled/{{project_name}}.conf
       state: link
-    sudo: true
     notify: apache restart
+    become: true
