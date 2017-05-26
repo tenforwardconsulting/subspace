@@ -44,6 +44,146 @@ necessary files.
 
 Runs the playbook at `config/provision/<environment.yml>`.
 
+* `subspace vars <environment> [--edit] [--create]`
+
+Manage environment variables on different platforms.  The default action is simply to show the vars defined for an environemnt.  Pass --edit to edit them in the system editor.
+
+The new system uses a file in `config/provision/templates/application.yml.template` that contains environment variables for all environments.  The configuration that is not secret is visible and version controlled, while the secrets are stored in the vault files for their environments. The default file created by `subspace init`  looks like this:
+
+```
+# These environment variables are applied to all environments, and can be secret or not
+
+# This is secret and can be changed on all three environment easily by using subspace vars <env> --edit
+SECRET_KEY_BASE: {{secret_key_base}}
+
+#This is not secret, and is the same value for all environments
+ENABLE_SOME_FEATURE: false
+
+development:
+  INSECURE_VARIABLE: "this isn't secret"
+
+dev:
+  INSECURE_VARIABLE: "but it changes"
+
+production:
+  INSECURE_VARIABLE: "on different servers"
+
+```
+
+Further, you can use the extremely command to create a local copy of `config/application.yml`
+
+    # Create a local copy of config/application.yml with the secrets encrypted in vars/development.yml
+    $ subspace vars development --create
+
+This can get you up and running in development securely, the only thing you need to distribute to new team members is the vault password.
+
+NOTE: application.yml should be in the `.gitignore`, since subspace creates a new version on the server and symlinks it on top of whatever is checked in.
+
+# Host configuration
+
+We need to know some info about hosts, but not much.  See the files for details, it's mostly the hostname and the user that can administer the system, eg `ubuntu` on AWS/ubuntu, `ec2-user`, or even `root` (not recommended)
+
+# Role Configuration
+
+This is a description of all the roles that are included by installing subspace, along with their configuration.
+
+## common
+
+This role should almost always be there.  It ties a bunch of stuff together, runs apt-get update or yum upgrade, sets hostnames, and generally makes the server sane.
+
+    project_name: my_project
+    swap_space: 536870912
+    deploy_user: deploy
+
+Note: we grant the deploy user limited sudo access to run `service xyz restart` and also add it to the `adm` group so it can view logs in `/var/log`.
+
+## apache
+
+## collectd
+
+
+
+## delayed_job
+
+## letsencrypt
+
+## logrotate
+
+Installs logrotate and lets you configure logs for automatic rotation.  Example config for rails:
+
+    logrotate_scripts:
+      - name: rails
+        path: "/u/apps/{{project_name}}/shared/log/{{rails_env}}.log"
+        options:
+          - weekly
+          - size 100M
+          - missingok
+          - compress
+          - delaycompress
+          - copytruncate
+
+## memcache
+
+## monit
+
+## mysql
+
+## mysql2_gem
+
+## newrelic
+
+## nginx
+
+## papertrail
+
+## passenger
+
+## postgresql
+
+## puma
+
+## rails
+
+Provisions for a rails app.  This one is probably pretty important.
+
+Default values (these are usually fine)
+
+    database_pool: 5
+    database_name: "{{project_name}}_{{rails_env}}"
+    database_user: "{{project_name}}"
+    job_queues:
+      - default
+      - mailers
+
+Customize:
+
+    rails_env: [whatever]
+
+## redis
+
+## ruby-common
+
+Installs ruby on the machine.  YOu can set a version by picking off the download url and sha hash from ruby-lang.org
+
+    ruby_version: ruby-2.4.1
+    ruby_checksum: a330e10d5cb5e53b3a0078326c5731888bb55e32c4abfeb27d9e7f8e5d000250
+    ruby_download_location: 'https://cache.ruby-lang.org/pub/ruby/2.4/ruby-2.4.1.tar.gz'
+
+
+## sidekiq
+
+
+## Other Internal Roles
+
+Since ansible doesn't support versioning of roles, we cloned the role here so that it doesn't change unexpectedly.  We expect to update from upstream occasionally, please let us know if we're missing something we should have.
+
+You should not include these roles directly in your subspace config files.  For example, instead of including `zenoamaro.postgresql`, simply include our `postgresql` role which depens on zenoamaro's role.
+
+Thanks to the following repositories for making their roles available:
+* https://github.com/zenoamaro/ansible-postgresql
+* https://github.com/mtpereira/ansible-passenger
+
+
 # Development
 
 ## Directory Structure

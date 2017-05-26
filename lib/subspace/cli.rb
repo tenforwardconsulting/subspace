@@ -5,6 +5,7 @@ require 'commander'
 
 require 'subspace'
 require 'subspace/commands/base'
+require 'subspace/commands/bootstrap'
 require 'subspace/commands/configure'
 require 'subspace/commands/init'
 require 'subspace/commands/override'
@@ -26,8 +27,18 @@ class Subspace::Cli
       c.summary = ''
       c.description = ''
       c.example 'description', 'command example'
-      c.option '--some-switch', 'Some switch that does something'
       c.when_called Subspace::Commands::Init
+    end
+
+    command :bootstrap do |c|
+      c.syntax = 'subspace boostrap [host]'
+      c.summary = 'Install ansible requirements (python) and authorized_keys file'
+      c.description = 'Ansible has very few dependencies, but python is one that is not installed by
+      default on many linux images.  The bootstrap command will install python on a host as well as
+      copy the authorized_keys file.  You will possibly need to type a password here.'
+      c.option '--password', "Ask for a password instead of using ssh keys"
+      c.option '--yum', "Use yum instead of apt to install python"
+      c.when_called Subspace::Commands::Bootstrap
     end
 
     command :provision do |c|
