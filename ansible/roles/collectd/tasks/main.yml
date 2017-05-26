@@ -1,5 +1,6 @@
 ---
   - name: Create collectd configuration dir
+    become: true
     file:
       path: /etc/collectd/collectd.conf.d
       state: directory
@@ -10,33 +11,33 @@
     template:
       src: hostname.conf
       dest: /etc/collectd/collectd.conf.d/hostname.conf
-    sudo: true
+    become: true
 
   - name: Install collectd
     apt:
       pkg: collectd
       state: present
-    sudo: true
+    become: true
 
   - name: Create graphite config
     template:
       src: graphite.conf
       dest: /etc/collectd/collectd.conf.d/graphite.conf
-    sudo: true
+    become: true
     notify: restart collectd
 
   - name: Create df config
     template:
       src: df.conf
       dest: /etc/collectd/collectd.conf.d/df.conf
-    sudo: true
+    become: true
     notify: restart collectd
 
   - name: create delayed_job_postgres config
     template:
       src: delayed_job_postgres.conf
       dest: /etc/collectd/collectd.conf.d/delayed_job_postgres.conf
-    sudo: true
+    become: true
     notify: restart collectd
     when: collectd_enable_djpg is defined
 
