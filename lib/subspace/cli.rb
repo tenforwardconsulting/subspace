@@ -73,8 +73,11 @@ class Subspace::Cli
     command :vars do |c, args|
       c.syntax = 'subspace vars [environment]'
       c.summary = 'View or edit the encrypted variables for an environment'
-      c.description = ''
+      c.description = """By default, this will simply show the variables for a specific environemnt.
+                         You can also edit variables, and we expect the functionality here to grow in the future.
+                         Running `subspace vars development --create` is usually a great way to bootstrap a new development environment."""
       c.option '--edit', "Edit the variables instead of view"
+      c.option '--create', "Create config/application.yml with the variables from the specified environment"
       c.when_called Subspace::Commands::Vars
     end
 

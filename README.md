@@ -21,17 +21,9 @@ Add this line to your application's Gemfile:
 gem 'subspace'
 ```
 
-And then execute:
-
-    $ bundle
-
 Or install it yourself as:
 
     $ gem install subspace
-
-Then run
-
-    subspace init
 
 ## Usage
 
@@ -97,11 +89,15 @@ This role should almost always be there.  It ties a bunch of stuff together, run
 
 Note: we grant the deploy user limited sudo access to run `service xyz restart` and also add it to the `adm` group so it can view logs in `/var/log`.
 
+# Roles
+
+This is a description of all the roles that are included by installing subspace, along with their configuration.
+
 ## apache
 
 ## collectd
 
-
+## common
 
 ## delayed_job
 

@@ -11,6 +11,7 @@ class Subspace::Commands::Init < Subspace::Commands::Base
     FileUtils.mkdir_p File.join dest_dir, "host_vars"
     FileUtils.mkdir_p File.join dest_dir, "vars"
     FileUtils.mkdir_p File.join dest_dir, "roles"
+    FileUtils.mkdir_p File.join dest_dir, "templates"
 
     copy ".gitignore"
     #template "../provision.rb"
@@ -26,7 +27,9 @@ class Subspace::Commands::Init < Subspace::Commands::Base
       template "host_vars/template", "host_vars/#{env}"
       create_vars_file_for_env env
       template "playbook.yml", "#{env}.yml"
+      copy "templates/application.yml.template"
     end
+    create_vars_file_for_env "development"
 
     puts """
     1. Create a server.

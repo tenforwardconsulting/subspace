@@ -1,0 +1,13 @@
+---
+  - hosts: localhost
+
+    tasks:
+      - name: Load environment vars
+        include_vars:
+          file: "{{vars_file}}"
+      - name: create some file
+        template:
+          src: "{{project_path}}{{src}}"
+          dest: "{{project_path}}/config/application.yml"
+        delegate_to: localhost
+
