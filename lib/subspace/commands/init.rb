@@ -3,15 +3,23 @@ require 'erb'
 require 'securerandom'
 class Subspace::Commands::Init < Subspace::Commands::Base
   def initialize(args, options)
-    run
+    if args.first == "vars"
+      init_vars
+    else
+      run
+    end
   end
 
   def run
+    if File.exists? dest_dir
+      answer = ask "Subspace appears to be initialized.  Reply 'yes' to continue anyway: [no] "
+      abort unless answer.chomp == "yes"
+    end
+
     FileUtils.mkdir_p File.join dest_dir, "group_vars"
     FileUtils.mkdir_p File.join dest_dir, "host_vars"
     FileUtils.mkdir_p File.join dest_dir, "vars"
     FileUtils.mkdir_p File.join dest_dir, "roles"
-    FileUtils.mkdir_p File.join dest_dir, "templates"
 
     copy ".gitignore"
     #template "../provision.rb"
@@ -27,7 +35,6 @@ class Subspace::Commands::Init < Subspace::Commands::Base
       template "host_vars/template", "host_vars/#{env}"
       create_vars_file_for_env env
       template "playbook.yml", "#{env}.yml"
-      copy "templates/application.yml.template"
     end
     create_vars_file_for_env "development"
 
@@ -49,6 +56,11 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
   """
 
+  end
+
+  def init_vars
+    FileUtils.mkdir_p File.join dest_dir, "templates"
+    copy "templates/application.yml.template"
   end
 
   private

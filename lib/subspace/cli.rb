@@ -23,10 +23,11 @@ class Subspace::Cli
     program :description, 'Ansible-backed server provisioning tool for rails'
 
     command :init do |c|
-      c.syntax = 'subspace init [options]'
-      c.summary = ''
-      c.description = ''
-      c.example 'description', 'command example'
+      c.syntax = 'subspace init [vars]'
+      c.summary = 'Run without options to initialize subspace.'
+      c.description = 'Some initialization routines can be run indiviaully, useful for upgrading'
+      c.example 'init a new project', 'subspace init'
+      c.example 'create the new style application.yml vars template', 'subspace init vars'
       c.when_called Subspace::Commands::Init
     end
 

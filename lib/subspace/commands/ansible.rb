@@ -13,7 +13,7 @@ module Subspace
       private
 
       def update_ansible_cfg
-        template "ansible.cfg"
+        template! "ansible.cfg"
       end
     end
   end

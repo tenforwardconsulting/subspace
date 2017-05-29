@@ -5,8 +5,10 @@ This server brought to you by:
  ___) | |_| | |_) |__) | |_) | (_| | (_|  __/
 |____/ \__,_|_.__/____/| .__/ \__,_|\___\___|
                        |_|
-
 ~~~ https://github.com/tenforwardconsulting/subspace ~~~
 
 If you need to make configuration changes to the server, please modify the
 config/provision directory in the app or risk the changes dissapearing.
+
+Last subspace run: {{ansible_date_time.iso8601}}
+
