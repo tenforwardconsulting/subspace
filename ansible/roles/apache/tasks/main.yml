@@ -17,17 +17,19 @@
       state: present
     become: true
 
-  - name: Create Apache config
-    template:
-      src: "{{template_src_path}}"
-      dest: /etc/apache2/sites-available/{{project_name}}.conf
-    notify: apache restart
+  - name: a2enmod rewrite
+    when: ssl_enabled
+    apache2_module:
+      name: rewrite
+      state: present
     become: true
 
-  - name: Symlink {{project_name}}.conf to sites-enabled
-    file:
-      src: /etc/apache2/sites-available/{{project_name}}.conf
-      dest: /etc/apache2/sites-enabled/{{project_name}}.conf
-      state: link
+  - name: "Configure rails_projects"
+    include_role:
+      name: apache-rails
+
+
+  - debug: msg="trigger apache restart"
     notify: apache restart
-    become: true
+    changed_when: true
+

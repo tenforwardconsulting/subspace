@@ -1,2 +1,7 @@
 ---
   certbot_dir: "/opt/certbot"
+  apache_ssl_config: |
+    SSLCertificateFile /etc/letsencrypt/live/{{server_name}}/cert.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/{{server_name}}/privkey.pem
+    Include /etc/letsencrypt/options-ssl-apache.conf
+    SSLCertificateChainFile /etc/letsencrypt/live/{{server_name}}/chain.pem

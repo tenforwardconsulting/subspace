@@ -1,0 +1,26 @@
+---
+  - name: Create Apache config
+    template:
+      src: "{{apache_project_conf}}"
+      dest: /etc/apache2/sites-available/{{project_name}}.conf
+    become: true
+
+  - name: Symlink {{project_name}}.conf to sites-enabled
+    file:
+      src: /etc/apache2/sites-available/{{project_name}}.conf
+      dest: /etc/apache2/sites-enabled/{{project_name}}.conf
+      state: "{{ ssl_enabled | ternary('absent', 'link')}}"
+    become: true
+
+  - name: Create Apache SSL config
+    template:
+      src: project-ssl.conf
+      dest: /etc/apache2/sites-available/{{project_name}}-ssl.conf
+    become: true
+
+  - name: Symlink {{project_name}}-ssl.conf to sites-enabled
+    file:
+      src: /etc/apache2/sites-available/{{project_name}}-ssl.conf
+      dest: /etc/apache2/sites-enabled/{{project_name}}-ssl.conf
+      state: "{{ ssl_enabled | ternary('link', 'absent')}}"
+    become: true

@@ -1,3 +1,9 @@
 ---
-  - name: monit
+  - name: reload_monit
     shell: monit stop all && monit reload && monit start all
+    become: true
+
+  - name: validate_monit
+    shell: monit validate
+    become: true
+
