@@ -95,6 +95,12 @@ This is a description of all the roles that are included by installing subspace,
 
 ## apache
 
+The most important file for an apache install is the "project.conf" file that gets created in `sites-available` and symlinked to `sites-enabled`.  This is generated in a sensible way, but if you want to customize it you can do so by setting this variable to anything other than "project.conf":
+
+    apache_project_conf: my_custom_configuration.conf
+
+Then place my_custom_configuration.conf in config/provision/templates/my_custom_configuration.conf.  This will still get copied to the server as `sites-available/{project_name}.conf`
+
 ## collectd
 
 ## common
@@ -102,6 +108,20 @@ This is a description of all the roles that are included by installing subspace,
 ## delayed_job
 
 ## letsencrypt
+
+By default, this creates a single certificate for every server alias/server name in the configuration file.
+If you'd like more control over the certs created, you can define the variables `le_ssl_certs` as follows:
+
+    le_ssl_certs:
+      - cert_name: mycert
+        domains:
+          - mydomain.example.com
+          - otherdomain.example.com
+      - cert_name: othersite
+        domains:
+          - othersite.example.com
+
+Note that this role needs to be defined /before/ the apache role
 
 ## logrotate
 
@@ -135,6 +155,13 @@ Installs logrotate and lets you configure logs for automatic rotation.  Example 
 ## passenger
 
 ## postgresql
+
+  Sets up a postgres *server* - only use this on the database machine.
+
+    backups_enabled: true
+    s3_db_backup_bucket: disabled
+    s3_db_backup_prefix: "{{project_name}}/{{rails_env}}"
+    database_user: "{{project_name}}"
 
 ## puma
 

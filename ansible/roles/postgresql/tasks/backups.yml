@@ -31,3 +31,11 @@
       name: "Hourly backups"
       minute: "0"
       job: "/u/apps/{{project_name}}/shared/db/backup.sh"
+      state: "present"
+
+  - name: disable backup cron job
+    when: not backups_enabled
+    cron:
+      user: "{{deploy_user}}"
+      name: "Hourly backups"
+      state: "absent"

@@ -3,17 +3,19 @@
     apt:
       name: monit
       state: present
-    sudo: true
+    become: true
 
   - name: Copy sudoers file so that deploy can use monit without entering password.
     copy:
       src: sudoers-monit
       dest: /etc/sudoers.d/monit
-    sudo: true
+    become: true
 
   - name: Copy monit config to enable http from localhost
     copy:
       src: monit-http.conf
       dest: /etc/monit/conf.d/monit-http.conf
-    sudo: true
-    notify: monit
+    become: true
+    notify:
+      - reload_monit
+      - validate_monit
