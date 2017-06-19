@@ -1,3 +1,6 @@
+- set_fact:
+    nginx_installed: true
+
 - name: Install nginx
   apt: pkg=nginx state=latest
   become: true
@@ -6,21 +9,9 @@
   command: rm -rf /etc/nginx/sites-enabled/default
   become: true
 
-- name: Remove the app's config, if exists
-  command: rm -rf /etc/nginx/sites-enabled/default
-  become: true
-
-- name: Remove the app's symlink, if exists
-  command: rm -rf /etc/nginx/sites-enabled/{{project_name}}
-  become: true
-
-- name: Configure nginx for the app
-  template: src=nginx-project dest=/etc/nginx/sites-available/{{project_name}} group=www-data owner=www-data force=yes
-  become: true
-
-- name: Enable the app
-  command: ln -s /etc/nginx/sites-available/{{project_name}} /etc/nginx/sites-enabled/{{project_name}}
-  become: true
+- name: "Configure rails projects"
+  include_role:
+    name: nginx-rails
 
 - name: Restart nginx
   action: service name=nginx state=restarted

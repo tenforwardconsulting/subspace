@@ -1,29 +1,19 @@
-- name: Add puma-manager
-  template: src=etc-init-puma-manager.conf dest=/etc/init/puma-manager.conf force=yes mode=755
+- name: Create shared/config/puma
+  file: path=/u/apps/{{project_name}}/shared/config/puma group=deploy owner=deploy state=directory
   tags: puma
 
-- name: Add puma config
-  template: src=etc-puma.conf dest=/etc/puma.conf force=yes mode=755
+- name: Add puma shared/config
+  template: src=puma.rb dest=/u/apps/{{project_name}}/shared/config/puma/{{rails_env}}.rb force=yes mode=755
   tags: puma
-
-- name: Add puma init script
-  template: src=etc-init-puma.conf dest=/etc/init/puma.conf force=yes mode=755
-  tags: puma
-
-# - name: Add puma shared/config
-#   template: src=puma_production.j2 dest=/u/apps/{{project_name}}/shared/config/puma/production.rb force=yes mode=755
-#   tags: puma
 
 - name: Make shared/tmp/sockets
   file: path=/u/apps/{{project_name}}/shared/tmp/sockets group=deploy owner=deploy state=directory
   tags: tmp
 
-- name: Restart puma-manager
-  action: service name=puma-manager state=restarted
+- name: Install puma monit script
+  template:
+    src: puma-monit-rc
+    dest: /etc/monit/conf.d/puma_{{project_name}}_{{rails_env}}
+  sudo: true
+  notify: validate_monit
 
-- name: Add Deploy user to sudoers
-  lineinfile:
-    dest: /etc/sudoers
-    state: present
-    regexp: "^{{deploy_user}}"
-    line: "{{deploy_user}} ALL=NOPASSWD: /usr/sbin/service puma-manager *"

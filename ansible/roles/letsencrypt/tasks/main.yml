@@ -34,32 +34,44 @@
       dest: "{{certbot_dir}}/certbot-auto"
       mode: a+x
 
+  - name: shutdown webserver for standalone mode
+    debug: msg="Shutdown webserver"
+    notify: stop webserver
+    changed_when: true
+
+  - meta: flush_handlers
+
+  - name: "wait for webserver to stop"
+    wait_for:
+      port: 80
+      delay: 1
+      state: stopped
+
   - name: Run default
     when: le_ssl_certs is not defined
     become: true
-    command: "{{certbot_dir}}/certbot-auto certonly --email {{letsencrypt_email}} --domains {{([server_name] + server_aliases) | join(',')}} --apache --agree-tos --expand --non-interactive"
+    command: "{{certbot_dir}}/certbot-auto certonly --email {{letsencrypt_email}} --domains {{([server_name] + server_aliases) | join(',')}} --standalone --agree-tos --expand --non-interactive"
 
   - name: Generate SSL Certificates
     when: le_ssl_certs is defined
     become: true
     with_items: "{{le_ssl_certs}}"
-    command: "{{certbot_dir}}/certbot-auto certonly --email {{letsencrypt_email}} --domains {{item.domains | join(',')}} --cert-name {{item.cert_name}} --apache --agree-tos --expand --non-interactive"
-
-  - name: Enable mod_rewrite
-    become: true
-    apache2_module:
-      name: rewrite
-      state: present
-
-  - name: Enable mod_ssl
-    become: true
-    apache2_module:
-      name: ssl
-      state: present
+    command: "{{certbot_dir}}/certbot-auto certonly --email {{letsencrypt_email}} --domains {{item.domains | join(',')}} --cert-name {{item.cert_name}} --standalone --agree-tos --expand --non-interactive"
 
   - name: "Re-run apache rails_project to get SSL configuration"
+    when: apache2_installed is defined
     include_role:
       name: apache-rails
+
+  - name: "Re-run nginx rails_project to get SSL configuration"
+    when: nginx_installed is defined
+    include_role:
+      name: nginx-rails
+
+  - name: start webserver after standalone mode
+    debug: msg="Startup webserver"
+    notify: start webserver
+    changed_when: true
 
   - name: Setup cron job to auto renew
     become: true

@@ -18,12 +18,6 @@
       dest: "/u/apps/{{project_name}}/shared/db/backup.sh"
       mode: 0755
 
-  - name: Remove old backup cron job because it had the wrong name
-    cron:
-      user: "{{deploy_user}}"
-      name: "check dirs"
-      state: "absent"
-
   - name: Install backup cron job
     when: backups_enabled
     cron:
