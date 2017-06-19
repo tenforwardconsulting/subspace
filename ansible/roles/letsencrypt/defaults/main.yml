@@ -5,3 +5,8 @@
     SSLCertificateKeyFile /etc/letsencrypt/live/{{server_name}}/privkey.pem
     Include /etc/letsencrypt/options-ssl-apache.conf
     SSLCertificateChainFile /etc/letsencrypt/live/{{server_name}}/chain.pem
+
+  nginx_ssl_config: |
+    ssl_certificate /etc/letsencrypt/live/{{server_name}}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{server_name}}/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;

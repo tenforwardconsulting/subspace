@@ -84,7 +84,7 @@ This is a description of all the roles that are included by installing subspace,
 This role should almost always be there.  It ties a bunch of stuff together, runs apt-get update or yum upgrade, sets hostnames, and generally makes the server sane.
 
     project_name: my_project
-    swap_space: 536870912
+    swap_space: 512M
     deploy_user: deploy
 
 Note: we grant the deploy user limited sudo access to run `service xyz restart` and also add it to the `adm` group so it can view logs in `/var/log`.

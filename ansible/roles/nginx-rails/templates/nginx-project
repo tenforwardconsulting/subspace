@@ -1,0 +1,9 @@
+{% include "_upstream.conf" %}
+
+server {
+    listen 80;
+    server_name {{server_name}} {{server_aliases | join(" ")}};
+
+    {% include "_rails.conf" %}
+}
+

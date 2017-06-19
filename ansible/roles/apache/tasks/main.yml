@@ -1,5 +1,6 @@
 ---
-  - set_fact: apache2_installed="true"
+  - set_fact:
+      apache2_installed: true
 
   - name: Install apache2
     apt:
@@ -26,10 +27,16 @@
       state: present
     become: true
 
+  - name: Enable mod_ssl
+    when: ssl_enabled
+    apache2_module:
+      name: ssl
+      state: present
+    become: true
+
   - name: "Configure rails_projects"
     include_role:
       name: apache-rails
-
 
   - debug: msg="trigger apache restart"
     notify: apache restart

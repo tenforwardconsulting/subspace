@@ -1,0 +1,8 @@
+---
+- name: stop webserver
+  service: name=nginx state=stopped
+  become: true
+
+- name: start webserver
+  service: name=nginx state=started
+  become: true

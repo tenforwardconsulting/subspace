@@ -1,0 +1,30 @@
+---
+- name: Remove the app's symlink, if exists
+  command: rm -rf /etc/nginx/sites-enabled/{{project_name}}
+  become: true
+
+- name: create nginx config for rails app
+  template:
+    src: nginx-project
+    dest: /etc/nginx/sites-available/{{project_name}}
+  become: true
+
+- name: Enable the app
+  file:
+    src: /etc/nginx/sites-available/{{project_name}}
+    dest: /etc/nginx/sites-enabled/{{project_name}}
+    state: "{{ ssl_enabled | ternary('absent', 'link')}}"
+  become: true
+
+- name: create nginx config for rails app
+  template:
+    src: nginx-project-ssl
+    dest: /etc/nginx/sites-available/{{project_name}}-ssl
+  become: true
+
+- name: Enable SSL configured app
+  file:
+    src: /etc/nginx/sites-available/{{project_name}}-ssl
+    dest: /etc/nginx/sites-enabled/{{project_name}}-ssl
+    state: "{{ ssl_enabled | ternary('link', 'absent')}}"
+  become: true
