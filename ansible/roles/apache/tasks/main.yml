@@ -1,4 +1,6 @@
 ---
+  - set_fact: apache2_installed="true"
+
   - name: Install apache2
     apt:
       pkg: apache2
@@ -33,3 +35,16 @@
     notify: apache restart
     changed_when: true
 
+  - name: create server-status conf
+    template:
+      src: server_status.conf
+      dest: /etc/apache2/conf-available/server_status.conf
+    sudo: true
+
+  - name: enable server-status conf
+    file:
+      src: /etc/apache2/conf-available/server_status.conf
+      dest: /etc/apache2/conf-enabled/server_status.conf
+      state: link
+    sudo: true
+    notify: apache restart
