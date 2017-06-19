@@ -39,6 +39,14 @@
     notify: stop webserver
     changed_when: true
 
+  - meta: flush_handlers
+
+  - name: "wait for webserver to stop"
+    wait_for:
+      port: 80
+      delay: 1
+      state: stopped
+
   - name: Run default
     when: le_ssl_certs is not defined
     become: true
