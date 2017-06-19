@@ -4,4 +4,4 @@
       src: sidekiq-monit-rc
       dest: /etc/monit/conf.d/sidekiq_{{project_name}}_{{rails_env}}
     sudo: true
-    notify: monit
+    notify: validate_monit
