@@ -2,6 +2,7 @@
 database_pool: 5
 database_name: "{{project_name}}_{{rails_env}}"
 database_user: "{{project_name}}"
+database_adapter: postgresql
 job_queues:
   - default
   - mailers
