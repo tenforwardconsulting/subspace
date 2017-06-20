@@ -1,5 +1,5 @@
 {{rails_env}}:
-  adapter: postgresql
+  adapter: {{database_adapter}}
   encoding: unicode
   pool: {{database_pool}}
   database: {{database_name}}

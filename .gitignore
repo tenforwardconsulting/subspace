@@ -8,3 +8,4 @@
 /spec/reports/
 /tmp/
 *.retry
+.DS_Store
