@@ -37,6 +37,7 @@ class Subspace::Commands::Init < Subspace::Commands::Base
       template "playbook.yml", "#{env}.yml"
     end
     create_vars_file_for_env "development"
+    init_vars
 
     puts """
     1. Create a server.

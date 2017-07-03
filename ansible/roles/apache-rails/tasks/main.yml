@@ -9,7 +9,7 @@
     file:
       src: /etc/apache2/sites-available/{{project_name}}.conf
       dest: /etc/apache2/sites-enabled/{{project_name}}.conf
-      state: "{{ ssl_enabled | ternary('absent', 'link')}}"
+      state: "{{ ssl_enabled and apache_ssl_config is defined | ternary('absent', 'link')}}"
     become: true
 
   - name: Create Apache SSL config
@@ -22,5 +22,5 @@
     file:
       src: /etc/apache2/sites-available/{{project_name}}-ssl.conf
       dest: /etc/apache2/sites-enabled/{{project_name}}-ssl.conf
-      state: "{{ ssl_enabled | ternary('link', 'absent')}}"
+      state: "{{ ssl_enabled and apache_ssl_config is defined | ternary('link', 'absent')}}"
     become: true
