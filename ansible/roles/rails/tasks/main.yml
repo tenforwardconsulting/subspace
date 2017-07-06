@@ -25,16 +25,16 @@
     template:
       src: database.yml
       dest: /u/apps/{{project_name}}/shared/config/database.yml
+      owner: "{{deploy_user}}"
     become: true
-    become_user: "{{deploy_user}}"
 
   - name: Create application.yml (legacy)
     when: appyml is defined
     template:
       src: application.yml
       dest: /u/apps/{{project_name}}/shared/config/application.yml
+      owner: "{{deploy_user}}"
     become: true
-    become_user: "{{deploy_user}}"
 
   - debug:
       msg: "Warning: Using legacy appyml for variable configuration.  Consider switching to application.yml.template"

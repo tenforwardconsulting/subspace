@@ -1,4 +1,5 @@
 database_password: <%= SecureRandom.base64 %>
 
-appyml:
-  SECRET_KEY_BASE: <%= `rake secret` %>
+
+SECRET_KEY_BASE: <%= `rake secret` %>
+ENABLE_SOME_FEATURE: true

@@ -17,5 +17,4 @@
       dest: /etc/monit/conf.d/monit-http.conf
     become: true
     notify:
-      - reload_monit
-      - validate_monit
+      - restart_monit

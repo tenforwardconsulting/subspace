@@ -1,6 +1,12 @@
 ---
+  - name: restart_monit
+    service:
+      name: monit
+      state: restarted
+    become: true
+
   - name: reload_monit
-    shell: monit stop all && monit reload && monit start all
+    shell: monit reload
     become: true
 
   - name: validate_monit

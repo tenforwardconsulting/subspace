@@ -58,6 +58,18 @@
     with_items: "{{le_ssl_certs}}"
     command: "{{certbot_dir}}/certbot-auto certonly --email {{letsencrypt_email}} --domains {{item.domains | join(',')}} --cert-name {{item.cert_name}} --standalone --agree-tos --expand --non-interactive"
 
+  - name: Update nginx default options
+    when: nginx_installed is defined
+    get_url:
+      url: https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/options-ssl-nginx.conf
+      dest: /etc/letsencrypt/options-ssl-nginx.conf
+
+  - name: Update apache default options
+    when: apache2_installed is defined
+    get_url:
+      url: https://raw.githubusercontent.com/certbot/certbot/master/certbot-apache/certbot_apache/options-ssl-apache.conf
+      dest: /etc/letsencrypt/options-ssl-apache.conf
+
   - name: "Re-run apache rails_project to get SSL configuration"
     when: apache2_installed is defined
     include_role:

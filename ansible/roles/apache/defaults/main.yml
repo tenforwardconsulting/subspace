@@ -2,6 +2,6 @@
   server_aliases: []
   apache_project_conf: project.conf
   ssl_enabled: false
-  apache_ssl_config: ""
+  #apache_ssl_config: ""
   #ssl_cert_path: /etc/letsencrypt/site/server.crt
   #ssl_key_path: /etc/letsencrypt/site/server.key

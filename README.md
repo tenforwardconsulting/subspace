@@ -1,5 +1,7 @@
 # Subspace
 
+[![Gem](https://img.shields.io/gem/v/subspace.svg)](https://rubygems.org/gems/subspace)
+
 Subspace is a rubygem meant to make provisioning as easy as Capistrano makes deploying.
 
 http://tvtropes.org/pmwiki/pmwiki.php/Main/SubspaceAnsible
@@ -106,6 +108,24 @@ Then place my_custom_configuration.conf in config/provision/templates/my_custom_
 ## common
 
 ## delayed_job
+
+Install monitoring and automatic startup for delayed job workers via monit. You MUST set the job queues as follows:
+
+    job_queues:
+      - default
+      - mailers
+      - exports
+
+Please note that by default, delayed job does not set a queue (eg it uses the "null" queue). You MUST also add an initializer to your rails app where you set the default queue name to "default" (or some other queue).  Otherwise, the named queue workers managed by this role will not process the "null" queue.
+
+    # config/initializers/delayed_job.rb
+    Delayed::Worker.default_queue_name = 'default'
+
+Defaults:
+
+    delayed_job_command: bin/delayed_job
+
+
 
 ## letsencrypt
 
