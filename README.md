@@ -103,6 +103,10 @@ The most important file for an apache install is the "project.conf" file that ge
 
 Then place my_custom_configuration.conf in config/provision/templates/my_custom_configuration.conf.  This will still get copied to the server as `sites-available/{project_name}.conf`
 
+Apache also support canonicalizing the domain now, so if you alwyas want to redirect to WWW for example, simply add a variable:
+
+    canonical_domain: "www.example.com"
+
 ## collectd
 
 ## common
