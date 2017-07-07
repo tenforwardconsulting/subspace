@@ -1,9 +1,7 @@
 # Change to match your CPU core count
-workers Integer(ENV['WEB_CONCURRENCY'] || 4)
-
-threads_count = Integer(ENV['MAX_THREADS'] || 5)
+workers {{puma_workers}}
 # Min and Max threads per worker
-threads 0, threads_count
+threads {{puma_min_threads}}, {{puma_max_threads}}
 
 app_dir = "/u/apps/{{project_name}}/current"
 directory app_dir

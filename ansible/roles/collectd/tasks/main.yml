@@ -39,7 +39,7 @@
       dest: /etc/collectd/collectd.conf.d/delayed_job_postgres.conf
     become: true
     notify: restart collectd
-    when: postgresql_installed is defined and delayed_job_installed is defined
+    when: (collectd_pgdj is defined) or (postgresql_installed is defined and delayed_job_installed is defined)
 
   - name: create apache2 config
     template:
@@ -48,4 +48,20 @@
     sudo: true
     notify: restart collectd
     when: apache2_installed is defined
+
+  - name: create puma config
+    template:
+      src: puma-process.conf
+      dest: /etc/collectd/collectd.conf.d/puma-process.conf
+    sudo: true
+    notify: restart collectd
+    when: puma_installed is defined
+
+  - name: create nginx config
+    template:
+      src: nginx.conf
+      dest: /etc/collectd/collectd.conf.d/nginx.conf
+    sudo: true
+    notify: restart collectd
+    when: nginx_installed is defined
 

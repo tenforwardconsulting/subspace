@@ -109,6 +109,21 @@ Apache also support canonicalizing the domain now, so if you alwyas want to redi
 
 ## collectd
 
+Collectd is a super useful daemon that grabs and reports statistics about a server's health.  Adding this role will make your server start reporting to a [graphite](https://graphiteapp.org/) server that you specify, and you can make cool graphs and data feeds after that using something like [Grafana](https://grafana.com/)
+
+    graphite_host: graphite.example.com
+    graphite_port: "2003"
+
+Aside from basic statistics like free memory, disk, load averages, etc, we have some custom things:
+
+1. If Postgres and delayed job are installed, it will collect stats on number of outstanding delayed jobs.
+2. If apache is installed, it will collect stats from the /server-status page
+3. (TODO) add something for nginx
+4. (TODO) add something for pumas
+5. (TODO) add something for sidekiq
+6. (TODO) add something for memcache
+
+
 ## common
 
 ## delayed_job

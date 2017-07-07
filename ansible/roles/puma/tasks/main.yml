@@ -1,3 +1,6 @@
+- set_fact:
+    puma_installed: true
+
 - name: Create shared/config/puma
   file: path=/u/apps/{{project_name}}/shared/config/puma group=deploy owner=deploy state=directory
   tags: puma
