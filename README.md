@@ -187,7 +187,15 @@ Installs logrotate and lets you configure logs for automatic rotation.  Example 
 
 ## newrelic
 
-## nginx
+## nginx-rails
+
+Configurs nginx to look at localhost:9292 for the socket/backend connection.  If you need to do fancy stuff you should simply override this role
+
+    subspace override nginx-rails
+
+defaults are here, we'll probably add more:
+
+    client_max_body_size: 1m
 
 ## papertrail
 
