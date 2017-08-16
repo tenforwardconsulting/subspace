@@ -6,7 +6,7 @@
       src: delayed-job-monit-rc
       dest: /etc/monit/conf.d/delayed_job_{{project_name}}_{{rails_env}}
     sudo: true
-    notify: monit
+    notify: restart_monit
 
   - name: Remove old upstart files
     file:
