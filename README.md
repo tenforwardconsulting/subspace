@@ -195,7 +195,7 @@ Configurs nginx to look at localhost:9292 for the socket/backend connection.  If
 
 defaults are here, we'll probably add more:
 
-    client_max_body_size: 1m
+    client_max_body_size: 4G
 
 ## papertrail
 
@@ -211,6 +211,10 @@ defaults are here, we'll probably add more:
     database_user: "{{project_name}}"
 
 ## puma
+
+add puma gem to gemfile
+add config/puma to symlinks in deploy.rb
+
 
 ## rails
 
