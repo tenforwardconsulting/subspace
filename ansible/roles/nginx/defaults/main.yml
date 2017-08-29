@@ -1,5 +1,4 @@
 ---
   server_aliases: []
   ssl_enabled: false
-  nginx_ssl_config: ""
   status_port: 8081

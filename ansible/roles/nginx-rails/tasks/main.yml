@@ -13,18 +13,19 @@
   file:
     src: /etc/nginx/sites-available/{{project_name}}
     dest: /etc/nginx/sites-enabled/{{project_name}}
-    state: "{{ ssl_enabled | ternary('absent', 'link')}}"
+    state: "{{ (ssl_enabled and nginx_ssl_config is defined) | ternary('absent', 'link') }}"
   become: true
 
-- name: create nginx config for rails app
+- name: create ssl nginx config for rails app
   template:
     src: nginx-project-ssl
     dest: /etc/nginx/sites-available/{{project_name}}-ssl
+  when: (ssl_enabled and nginx_ssl_config is defined)
   become: true
 
 - name: Enable SSL configured app
   file:
     src: /etc/nginx/sites-available/{{project_name}}-ssl
     dest: /etc/nginx/sites-enabled/{{project_name}}-ssl
-    state: "{{ ssl_enabled | ternary('link', 'absent')}}"
+    state: "{{ (ssl_enabled and nginx_ssl_config is defined) | ternary('link', 'absent') }}"
   become: true
