@@ -65,3 +65,11 @@
     notify: restart collectd
     when: nginx_installed is defined
 
+  - name: create rails_lograge config
+    template:
+      src: rails_lograge.conf
+      dest: /etc/collectd/collectd.conf.d/rails_lograge.conf
+    sudo: true
+    notify: restart collectd
+    when: rails_lograge is defined
+

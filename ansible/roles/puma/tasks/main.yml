@@ -6,7 +6,7 @@
   tags: puma
 
 - name: Add puma shared/config
-  template: src=puma.rb dest=/u/apps/{{project_name}}/shared/config/puma/{{rails_env}}.rb force=yes mode=755
+  template: src=puma.rb dest=/u/apps/{{project_name}}/shared/config/puma/{{rails_env}}.rb group=deploy owner=deploy force=yes mode=755
   tags: puma
 
 - name: Make shared/tmp/sockets
@@ -18,5 +18,5 @@
     src: puma-monit-rc
     dest: /etc/monit/conf.d/puma_{{project_name}}_{{rails_env}}
   sudo: true
-  notify: validate_monit
+  notify: restart_monit
 

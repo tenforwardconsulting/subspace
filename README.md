@@ -117,11 +117,18 @@ Collectd is a super useful daemon that grabs and reports statistics about a serv
 Aside from basic statistics like free memory, disk, load averages, etc, we have some custom things:
 
 1. If Postgres and delayed job are installed, it will collect stats on number of outstanding delayed jobs.
+  a. If you have pg on a different server or in RDS, you can set this manually:
+
+    collectd_pgdj: true
+
 2. If apache is installed, it will collect stats from the /server-status page
-3. (TODO) add something for nginx
+3. If nginx is installed, it will collect stats from the "status port"
 4. (TODO) add something for pumas
 5. (TODO) add something for sidekiq
 6. (TODO) add something for memcache
+7. If you're using our standard lograge format, you can enable lograge collection which will provide stats on request count and timers (db/view/total)
+
+    rails_lograge: true
 
 
 ## common

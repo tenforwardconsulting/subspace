@@ -54,6 +54,7 @@ class Subspace::Cli
       c.syntax = 'subspace ssh [options]'
       c.summary = 'ssh to the remote server as the administrative user'
       c.description = ''
+      c.option '--user USER', "Use a different user (eg deploy).  Default is the ansible_ssh_user"
       c.when_called Subspace::Commands::Ssh
     end
 
