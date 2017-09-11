@@ -167,7 +167,8 @@ If you'd like more control over the certs created, you can define the variables 
         domains:
           - othersite.example.com
 
-Note that this role needs to be defined /before/ the apache role
+Note that this role needs to be included _before_ the webserver (apache or
+nginx) role
 
 ## logrotate
 
