@@ -59,7 +59,8 @@
     command: "{{certbot_dir}}/certbot-auto certonly --email {{letsencrypt_email}} --domains {{item.domains | join(',')}} --cert-name {{item.cert_name}} --standalone --agree-tos --expand --non-interactive"
 
   - name: Update nginx default options
-    when: nginx_installed is defined
+    #when: nginx_installed is defined
+    when: "'nginx' in role_names"
     get_url:
       url: https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/options-ssl-nginx.conf
       dest: /etc/letsencrypt/options-ssl-nginx.conf

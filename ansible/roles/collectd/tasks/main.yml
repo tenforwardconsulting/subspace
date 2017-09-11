@@ -63,7 +63,7 @@
       dest: /etc/collectd/collectd.conf.d/nginx.conf
     sudo: true
     notify: restart collectd
-    when: nginx_installed is defined
+    when: "'nginx' in role_names"
 
   - name: create rails_lograge config
     template:

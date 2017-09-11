@@ -1,6 +1,3 @@
-- set_fact:
-    nginx_installed: true
-
 - name: Install nginx
   apt: pkg=nginx state=latest
   become: true
