@@ -1,8 +1,4 @@
 ---
-- name: Remove the app's symlink, if exists
-  command: rm -rf /etc/nginx/sites-enabled/{{project_name}}
-  become: true
-
 - name: create nginx config for rails app
   template:
     src: nginx-project

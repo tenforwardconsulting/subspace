@@ -3,7 +3,9 @@
   become: true
 
 - name: Remove the default app
-  command: rm -rf /etc/nginx/sites-enabled/default
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
   become: true
 
 - name: "Configure rails projects"
