@@ -1,7 +1,4 @@
 ---
-  - set_fact:
-      apache2_installed: true
-
   - name: Install apache2
     apt:
       pkg: apache2
