@@ -70,16 +70,6 @@
       url: https://raw.githubusercontent.com/certbot/certbot/master/certbot-apache/certbot_apache/options-ssl-apache.conf
       dest: /etc/letsencrypt/options-ssl-apache.conf
 
-  - name: "Re-run apache rails_project to get SSL configuration"
-    when: apache2_installed is defined
-    include_role:
-      name: apache-rails
-
-  - name: "Re-run nginx rails_project to get SSL configuration"
-    when: nginx_installed is defined
-    include_role:
-      name: nginx-rails
-
   - name: start webserver after standalone mode
     debug: msg="Startup webserver"
     notify: start webserver
