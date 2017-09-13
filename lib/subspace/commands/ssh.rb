@@ -14,8 +14,9 @@ class Subspace::Commands::Ssh < Subspace::Commands::Base
       return
     end
     host_vars = YAML.load_file("config/provision/host_vars/#{@host}")
-    user = @user || host_vars["ansible_ssh_user"]
-    cmd = "ssh #{user}@#{host_vars["ansible_ssh_host"]}"
+    user = @user || host_vars["ansible_ssh_user"] || host_vars["ansible_user"]
+    host = host_vars["ansible_ssh_host"] || host_vars["ansible_host"]
+    cmd = "ssh #{user}@#{host}"
     say cmd
     exec cmd
   end
