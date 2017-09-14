@@ -135,11 +135,21 @@ Aside from basic statistics like free memory, disk, load averages, etc, we have 
 
 ## delayed_job
 
-Install monitoring and automatic startup for delayed job workers via monit. You MUST set the job queues as follows:
+Install monitoring and automatic startup for delayed job workers via monit. You MUST set the `job_queues` variable as follows:
 
     job_queues:
       - default
       - mailers
+      - exports
+
+If you want to have multiple workers for a single queue, just add the queue name
+multiple times:
+
+    job_queues:
+      - default
+      - mailers
+      - exports
+      - exports
       - exports
 
 Please note that by default, delayed job does not set a queue (eg it uses the "null" queue). You MUST also add an initializer to your rails app where you set the default queue name to "default" (or some other queue).  Otherwise, the named queue workers managed by this role will not process the "null" queue.
