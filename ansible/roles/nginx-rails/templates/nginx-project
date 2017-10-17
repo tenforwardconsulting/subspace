@@ -4,11 +4,12 @@ server {
     listen 80;
     server_name {{server_name}} {{server_aliases | join(" ")}};
 
-    {% include "_rails.conf" %}
+  {% include "_rails.conf" %}
 
-    {% if asset_cors_domain is defined %}
-    {% include "_asset_cors.conf" %}
-    {% endif %}
-
+  {% if asset_cors_allow_origin is defined %}
+  location /assets {
+    add_header 'Access-Control-Allow-Origin' "{{asset_cors_allow_origin}}";
+  }
+  {% endif %}
 }
 
