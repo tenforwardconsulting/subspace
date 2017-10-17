@@ -1,14 +1,9 @@
+#jinja2: lstrip_blocks: True
 {% include "_upstream.conf" %}
 
 server {
-    listen 80;
-    server_name {{server_name}} {{server_aliases | join(" ")}};
+  listen 80;
+  server_name {{server_name}} {{server_aliases | join(" ")}};
 
-    {% include "_rails.conf" %}
-
-    {% if asset_cors_domain is defined %}
-    {% include "_asset_cors.conf" %}
-    {% endif %}
-
+  {% include "_rails.conf" %}
 }
-

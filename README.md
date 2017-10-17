@@ -207,13 +207,18 @@ Installs logrotate and lets you configure logs for automatic rotation.  Example 
 
 ## nginx-rails
 
-Configurs nginx to look at localhost:9292 for the socket/backend connection.  If you need to do fancy stuff you should simply override this role
+Configures nginx to look at localhost:9292 for the socket/backend connection.  If you need to do fancy stuff you should simply override this role
 
     subspace override nginx-rails
 
 defaults are here, we'll probably add more:
 
     client_max_body_size: 4G
+
+Optional variables:
+
+    asset_cors_allow_origin: Set this to set the Access-Control-Allow-Origin for
+    everything in /assets.
 
 ## papertrail
 

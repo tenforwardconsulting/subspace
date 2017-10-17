@@ -1,3 +1,4 @@
+#jinja2: lstrip_blocks: True
 {% include "_upstream.conf" %}
 
 server {
@@ -12,7 +13,6 @@ server {
   server_name {{server_name}} {{server_aliases | join(" ")}};
 
   {% include "_rails.conf" %}
+
   {{nginx_ssl_config}}
 }
-
-
