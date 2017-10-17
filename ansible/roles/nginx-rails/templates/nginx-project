@@ -1,15 +1,9 @@
+#jinja2: lstrip_blocks: True
 {% include "_upstream.conf" %}
 
 server {
-    listen 80;
-    server_name {{server_name}} {{server_aliases | join(" ")}};
+  listen 80;
+  server_name {{server_name}} {{server_aliases | join(" ")}};
 
   {% include "_rails.conf" %}
-
-  {% if asset_cors_allow_origin is defined %}
-  location /assets {
-    add_header 'Access-Control-Allow-Origin' "{{asset_cors_allow_origin}}";
-  }
-  {% endif %}
 }
-
