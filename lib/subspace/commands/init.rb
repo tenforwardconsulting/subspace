@@ -53,7 +53,8 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
     4. Then provision your server:
 
-      cd config/provision && ansible-playbook dev.yml
+      subspace provision dev
+      subspace provision production
 
   """
 
