@@ -76,9 +76,20 @@
 
   - name: Setup cron job to auto renew
     become: true
+    when: "'apache' in role_names"
     cron:
       name: Auto-renew SSL
-      job: "{{certbot_dir}}/certbot-auto renew --quiet --no-self-upgrade"
+      job: "{{certbot_dir}}/certbot-auto renew --quiet --no-self-upgrade --apache"
+      hour: 0
+      minute: 33
+      state: present
+
+  - name: Setup cron job to auto renew
+    become: true
+    when: "'nginx' in role_names"
+    cron:
+      name: Auto-renew SSL
+      job: "{{certbot_dir}}/certbot-auto renew --quiet --no-self-upgrade --nginx"
       hour: 0
       minute: 33
       state: present
