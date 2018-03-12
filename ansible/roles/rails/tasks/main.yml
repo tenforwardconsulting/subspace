@@ -1,4 +1,14 @@
 ---
+  - name: Add yarn apt key
+    apt_key:
+      url: https://dl.yarnpkg.com/debian/pubkey.gpg
+      state: present
+
+  - name: Add yarn apt repo
+    apt_repository:
+      repo: deb https://dl.yarnpkg.com/debian/ stable main
+      state: present
+
   - name: Install rails apt dependencies
     apt:
       name: "{{item}}"
@@ -12,6 +22,7 @@
       - libxslt-dev
       - nodejs
       - zlib1g-dev
+      - yarn
     become: true
 
   - name: Create /u/apps/{{project_name}}/shared/config
