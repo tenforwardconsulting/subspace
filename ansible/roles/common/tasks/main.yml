@@ -91,4 +91,4 @@
       state: directory
     become: true
 
-  - include: swap.yml
+  - import_tasks: swap.yml
