@@ -5,17 +5,17 @@
     template:
       src: delayed-job-monit-rc
       dest: /etc/monit/conf.d/delayed_job_{{project_name}}_{{rails_env}}
-    sudo: true
+    become: true
     notify: reload_monit
 
   - name: Remove old upstart files
     file:
       path: /etc/init/delayed-job.conf
       state: absent
-    sudo: true
+    become: true
 
   - name: Remove old monit files
     file:
       path: /etc/monit/conf.d/delayed_job
       state: absent
-    sudo: true
+    become: true

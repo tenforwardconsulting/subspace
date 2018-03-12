@@ -45,7 +45,7 @@
     template:
       src: apache2.conf
       dest: /etc/collectd/collectd.conf.d/apache2.conf
-    sudo: true
+    become: true
     notify: restart collectd
     when: "'apache' in role_names"
 
@@ -53,7 +53,7 @@
     template:
       src: puma-process.conf
       dest: /etc/collectd/collectd.conf.d/puma-process.conf
-    sudo: true
+    become: true
     notify: restart collectd
     when: puma_installed is defined
 
@@ -61,14 +61,14 @@
     template:
       src: nodejs-process.conf
       dest: /etc/collectd/collectd.conf.d/nodejs-process.conf
-    sudo: true
+    become: true
     notify: restart collectd
 
   - name: create nginx config
     template:
       src: nginx.conf
       dest: /etc/collectd/collectd.conf.d/nginx.conf
-    sudo: true
+    become: true
     notify: restart collectd
     when: "'nginx' in role_names"
 
@@ -76,7 +76,7 @@
     template:
       src: rails_lograge.conf
       dest: /etc/collectd/collectd.conf.d/rails_lograge.conf
-    sudo: true
+    become: true
     notify: restart collectd
     when: rails_lograge is defined
 

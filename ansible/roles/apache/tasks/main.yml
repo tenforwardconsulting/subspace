@@ -43,12 +43,12 @@
     template:
       src: server_status.conf
       dest: /etc/apache2/conf-available/server_status.conf
-    sudo: true
+    become: true
 
   - name: enable server-status conf
     file:
       src: /etc/apache2/conf-available/server_status.conf
       dest: /etc/apache2/conf-enabled/server_status.conf
       state: link
-    sudo: true
+    become: true
     notify: apache restart
