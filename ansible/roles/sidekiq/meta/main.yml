@@ -1,8 +1,5 @@
 ---
   dependencies:
     - {
-      role: redis
-    }
-    - {
       role: monit
     }
