@@ -258,6 +258,13 @@ Customize:
 
 ## redis
 
+Installs redis on the server.
+
+    # Change to * if you want tthis available everywhere.
+    redis_bind: 127.0.0.1
+
+
+
 ## ruby-common
 
 Installs ruby on the machine.  YOu can set a version by picking off the download url and sha hash from ruby-lang.org
@@ -268,6 +275,16 @@ Installs ruby on the machine.  YOu can set a version by picking off the download
 
 
 ## sidekiq
+
+This will install a monit script that keeps sidekiq running.  We spawn one sidekiq instance that manages as many queues as you need.  Varaibles of note:
+
+    job_queues:
+      - default
+      - mailers
+
+* Note that as of v0.4.13, we now also add a unique job queue for each host with its hostname.  This is handy if you need to assign a job to a specific host.  In general you should use named queues, but occasionally this is useful and there's no harm in having it there unused.
+
+Sidekiq uses redis by default, and rails connects to a redis running on localhost by default.  However, this role does not depend on redis since in production it's likely redis will be running elsewhere.  If you're provisioning a standalone server, make sure to include the redis role.
 
 
 ## Other Internal Roles

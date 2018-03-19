@@ -2,6 +2,17 @@
   - name: Install sidekiq monit script
     template:
       src: sidekiq-monit-rc
-      dest: /etc/monit/conf.d/sidekiq_{{project_name}}_{{rails_env}}
-    sudo: true
-    notify: validate_monit
+      dest: /etc/monit/conf-available/sidekiq_{{project_name}}_{{rails_env}}
+    become: true
+
+  - name: Clean up old sidekiq monit scripts
+    shell: rm -f /etc/monit/conf.d/sidekiq_*
+
+  - name: Enable sidekiq monit script
+    file:
+      src: /etc/monit/conf-available/sidekiq_{{project_name}}_{{rails_env}}
+      dest: /etc/monit/conf-enabled/sidekiq_{{project_name}}_{{rails_env}}
+      state: link
+    notify:
+      - restart_monit
+
