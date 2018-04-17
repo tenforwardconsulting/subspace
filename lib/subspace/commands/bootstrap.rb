@@ -10,7 +10,6 @@ class Subspace::Commands::Bootstrap < Subspace::Commands::Base
     # ansible atlanta -m copy -a "src=/etc/hosts dest=/tmp/hosts"
     install_python
     ensure_ssh_dir
-    copy_authorized_keys
   end
 
   private
@@ -22,19 +21,6 @@ class Subspace::Commands::Bootstrap < Subspace::Commands::Base
       "file",
       "-a",
       "path=/home/{{ansible_ssh_user}}/.ssh state=directory mode=0700",
-      "-vvvv"
-    ]
-    bootstrap_command cmd
-  end
-
-  def copy_authorized_keys
-    # -m file -a "dest=/srv/foo/a.txt mode=600"
-    cmd = ["ansible",
-      @host_spec,
-      "-m",
-      "copy",
-      "-a",
-      "src=authorized_keys dest=/home/{{ansible_ssh_user}}/.ssh/authorized_keys mode=600",
       "-vvvv"
     ]
     bootstrap_command cmd
