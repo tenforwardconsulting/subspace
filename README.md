@@ -220,6 +220,10 @@ Optional variables:
     asset_cors_allow_origin: Set this to set the Access-Control-Allow-Origin for
     everything in /assets.
 
+## nodejs
+
+Used to install recent version of NodeJS. Must set `nodejs_version`. e.g. `nodejs_version: "8.x"`
+
 ## papertrail
 
 ## passenger
