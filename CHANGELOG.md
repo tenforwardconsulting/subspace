@@ -8,6 +8,11 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 * _nada_
 
+## 0.5.15 - 2018-06-15
+
+* bug fixes
+  * Update rails and logrotate modules to work with Python 3
+
 ## 0.5.14 - 2018-06-15
 
 * bug fixes
