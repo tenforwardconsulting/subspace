@@ -9,9 +9,9 @@
 
 {% if databaseyml_addendum is defined %}
 {% for dict in databaseyml_addendum %}
-{% for name, config in dict.iteritems() %}
+{% for name, config in dict.items() %}
 {{name}}:
- {% for key, value in config.iteritems() %}
+ {% for key, value in config.items() %}
  {{key}}: {{value}}
  {% endfor %}
 {% endfor %}
