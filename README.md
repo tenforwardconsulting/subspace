@@ -6,14 +6,19 @@ Subspace is a rubygem meant to make provisioning as easy as Capistrano makes dep
 
 http://tvtropes.org/pmwiki/pmwiki.php/Main/SubspaceAnsible
 
+It is powered by [Ansible](https://www.ansible.com/). Most of the roles require
+you to [configure variables](https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html) that the role uses.
+
 ## Installation
 
 First, install ansible (>2.0)
 
 OSX:
+
   brew install ansible
 
-linux:
+Linux:
+
   apt-get install ansible
 
 
@@ -219,6 +224,10 @@ Optional variables:
 
     asset_cors_allow_origin: Set this to set the Access-Control-Allow-Origin for
     everything in /assets.
+
+## nodejs
+
+Used to install recent version of NodeJS. Must set `nodejs_version`. e.g. `nodejs_version: "8.x"`
 
 ## papertrail
 
