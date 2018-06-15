@@ -48,7 +48,7 @@ if [ "$bucket" != "disabled" ] ; then
 
   $(PGPASSWORD={{database_password}} pg_dump --verbose -Fc --host=localhost --username={{database_user}} --file $storage/latest.dump {{database_name}})
 
-  curl -XPUT -T "$storage/latest.dump" -H "Host: $bucket.s3.amazonaws.com" https://$bucket.s3.amazonaws.com/$prefix/$destination
+  curl -XPUT -T "$storage/latest.dump" -H "Host: $bucket.s3.amazonaws.com" -H "x-amz-acl: bucket-owner-full-control" https://$bucket.s3.amazonaws.com/$prefix/$destination
 else
   #destination is set so actually do the backup
   $(PGPASSWORD={{database_password}} pg_dump --verbose -Fc --host=localhost --username={{database_user}} --file $storage/$destination {{database_name}})
