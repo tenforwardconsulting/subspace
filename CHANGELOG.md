@@ -6,7 +6,10 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## Unreleased
 
-* _nada_
+* bug fixes
+  * Don't have rails role install yarn -- it's not needed by default, and if the
+    project does need it, it should explicitly use the yarn role.
+
 
 ## 0.5.15 - 2018-06-15
 
