@@ -6,10 +6,13 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## Unreleased
 
+* features
+  * The nginx collectd configuration now reports number of errors (500-503),
+    timeouts (504) and successes (200, 302, 304)
+
 * bug fixes
   * Don't have rails role install yarn -- it's not needed by default, and if the
     project does need it, it should explicitly use the yarn role.
-
 
 ## 0.5.15 - 2018-06-15
 
