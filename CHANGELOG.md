@@ -9,6 +9,7 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 * features
   * The nginx collectd configuration now reports number of errors (500-503),
     timeouts (504) and successes (200, 302, 304)
+  * Add alienvault role that can configure ubuntu to send syslog to a sensor.
 
 * bug fixes
   * Don't have rails role install yarn -- it's not needed by default, and if the

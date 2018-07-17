@@ -1,0 +1,13 @@
+---
+  - name: Enable syslog communication to sensor
+    lineinfile:
+      dest: "/etc/rsyslog.d/50-default.conf"
+      line: "*.* @{{alienvault_usm_anywhere_sensor_ip}}:514"
+      state: present
+    become: true
+
+  - name: Restart rsyslog
+    service:
+      name: rsyslog
+      enabled: yes
+      state: restarted
