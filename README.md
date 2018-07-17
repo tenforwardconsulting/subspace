@@ -225,6 +225,8 @@ Optional variables:
     asset_cors_allow_origin: Set this to set the Access-Control-Allow-Origin for
     everything in /assets.
 
+    nginx_proxy_read_timeout: Set [proxy_read_timeout](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_read_timeout). This is in seconds. You probably only want to change this if using rack-timeout (although I may be wrong). If using rack-timeout, it should be slightly higher than the rack-timeout timeout. I'm doing 5 seconds higher, but that was arbitrarily chosen.
+
 ## nodejs
 
 Used to install recent version of NodeJS. Must set `nodejs_version`. e.g. `nodejs_version: "8.x"`
