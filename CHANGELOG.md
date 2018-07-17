@@ -6,6 +6,10 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## Unreleased
 
+* nada
+
+## 0.6.15 - 2018-07-17
+
 * features
   * The nginx collectd configuration now reports number of errors (500-503),
     timeouts (504) and successes (200, 302, 304)
