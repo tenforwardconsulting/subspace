@@ -8,6 +8,11 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 * nada
 
+## 0.6.16 - 2017-07-27
+
+* bug fix
+  * Remove /cable location entry for nginx-rails config file
+
 ## 0.6.15 - 2018-07-17
 
 * features
