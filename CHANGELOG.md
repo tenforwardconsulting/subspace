@@ -6,10 +6,14 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## Unreleased
 
+* _nada_
+
+## 0.6.17 - 2018-08-14
+
 * bug fixes
   * Pin monit version to 1:5.16-2 due to a [bug](https://bugs.launchpad.net/ubuntu/+source/monit/+bug/1786910)
 
-## 0.6.16 - 2017-07-27
+## 0.6.16 - 2018-07-27
 
 * bug fix
   * Remove /cable location entry for nginx-rails config file
