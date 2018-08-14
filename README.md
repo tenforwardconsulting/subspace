@@ -45,7 +45,7 @@ Runs the playbook at `config/provision/<environment.yml>`.
 
 * `subspace vars <environment> [--edit] [--create]`
 
-Manage environment variables on different platforms.  The default action is simply to show the vars defined for an environemnt.  Pass --edit to edit them in the system editor.
+Manage environment variables on different platforms.  The default action is simply to show the vars defined for an environment.  Pass --edit to edit them in the system editor.
 
 The new system uses a file in `config/provision/templates/application.yml.template` that contains environment variables for all environments.  The configuration that is not secret is visible and version controlled, while the secrets are stored in the vault files for their environments. The default file created by `subspace init`  looks like this:
 
@@ -77,6 +77,18 @@ Further, you can use the extremely command to create a local copy of `config/app
 This can get you up and running in development securely, the only thing you need to distribute to new team members is the vault password.
 
 NOTE: application.yml should be in the `.gitignore`, since subspace creates a new version on the server and symlinks it on top of whatever is checked in.
+
+## Procedure for updating on projects
+
+When subspace is updated, you should also update it for projects that use it. If subspace is locked to a specific version in the a project's gemfile, you'll need to update that to the new release number, first. Make sure this won't introduce any breaking changes by [looking at the changelog](https://github.com/tenforwardconsulting/subspace/blob/master/CHANGELOG.md).
+
+* `bundle update subspace`
+
+Then,
+
+* `subspace provision production`
+
+If you get an error saying you need a vault password file, you should be able to find it in 1Password. You might also need to update `ansible`.
 
 # Host configuration
 
