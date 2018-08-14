@@ -1,8 +1,9 @@
 ---
   - name: Install monit
     apt:
-      name: monit
+      name: monit=1:5.16-2
       state: present
+      force: true
     become: true
 
   - name: Copy sudoers file so that deploy can use monit without entering password.
