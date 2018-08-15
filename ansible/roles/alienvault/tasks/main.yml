@@ -5,6 +5,17 @@
       line: "*.* @{{alienvault_usm_anywhere_sensor_ip}}:514"
       state: present
     become: true
+    when: ansible_distribution == 'Ubuntu'
+    tags:
+      - alienvault
+
+  - name: Enable syslog communication to sensor
+    lineinfile:
+      dest: "/etc/rsyslog.conf"
+      line: "*.* @{{alienvault_usm_anywhere_sensor_ip}}:514"
+      state: present
+    become: true
+    when: ansible_distribution == 'Amazon'
     tags:
       - alienvault
 
