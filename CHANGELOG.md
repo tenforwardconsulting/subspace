@@ -8,6 +8,11 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 * _nada_
 
+## 1.0.1 - 2018-08-15
+
+* bug fixes
+  * Update alienvault role to handle Ubuntu and Amazon ansible\_distributions.
+
 ## 1.0.0 - 2018-08-15
 
 No breaking changes from 0.6.17 to 1.0.0, but decided it's time for version
@@ -32,7 +37,7 @@ No breaking changes from 0.6.17 to 1.0.0, but decided it's time for version
 
 ## 0.6.16 - 2018-07-27
 
-* bug fix
+* bug fixes
   * Remove /cable location entry for nginx-rails config file
 
 ## 0.6.15 - 2018-07-17
