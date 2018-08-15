@@ -6,7 +6,13 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## Unreleased
 
-* _nada_
+* enhancements
+  * Tag tasks in the alienvault and monit roles such that all tasks are tagged
+    with the role name.
+
+* features
+  * Add ability to pass certain options through `subspace provision` to
+    `ansible-playbook`. These are: tags, start-at-task
 
 ## 0.6.17 - 2018-08-14
 
