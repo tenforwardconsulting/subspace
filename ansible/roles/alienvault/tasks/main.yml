@@ -5,9 +5,14 @@
       line: "*.* @{{alienvault_usm_anywhere_sensor_ip}}:514"
       state: present
     become: true
+    tags:
+      - alienvault
 
   - name: Restart rsyslog
     service:
       name: rsyslog
       enabled: yes
       state: restarted
+    become: true
+    tags:
+      - alienvault
