@@ -6,6 +6,13 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## Unreleased
 
+* _nada_
+
+## 1.0.0 - 2018-08-15
+
+No breaking changes from 0.6.17 to 1.0.0, but decided it's time for version
+1.0.0 to be out.
+
 * enhancements
   * Tag tasks in the alienvault and monit roles such that all tasks are tagged
     with the role name.
