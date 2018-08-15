@@ -9,6 +9,10 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 * enhancements
   * Tag tasks in the alienvault and monit roles such that all tasks are tagged
     with the role name.
+  * Make tags 'upgrade' for doing apt-get update and upgrade and
+    'authorized\_keys' for setting deploy user's authorized\_keys in the common
+    role.
+  * Make tag 'appyml' for the task to upload application.yml in the rails role.
 
 * features
   * Add ability to pass certain options through `subspace provision` to

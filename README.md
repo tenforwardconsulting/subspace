@@ -54,10 +54,12 @@ e.g. To run only the alienvault tasks (all of which have been tagged with the
 
 #### Tagged roles
 
-Role       | Tags        | Comment
----------- | ----------- | -------
-alienvault | alienvault  | All tasks in the alienvault role have been tagged 'alienvault'
-monit      | monit       | All tasks in the monit role have been tagged 'monit'
+Role       | Tags                      | Comment
+---------- | ----                      | -------
+alienvault | alienvault                | All tasks in the alienvault role have been tagged 'alienvault'
+common     | upgrade, authorized\_keys | upgrade runs apt-get update and apt-get upgrade; authorized\_keys updates the authorized\_keys file for the deploy user
+rails      | appyml                    |
+monit      | monit                     | All tasks in the monit role have been tagged 'monit'
 
 ### `subspace vars <environment> [--edit] [--create]`
 
