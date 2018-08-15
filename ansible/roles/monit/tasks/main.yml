@@ -5,12 +5,16 @@
       state: present
       force: true
     become: true
+    tags:
+      - monit
 
   - name: Copy sudoers file so that deploy can use monit without entering password.
     copy:
       src: sudoers-monit
       dest: /etc/sudoers.d/monit
     become: true
+    tags:
+      - monit
 
   - name: Copy monit config to enable http from localhost
     copy:
@@ -19,3 +23,5 @@
     become: true
     notify:
       - restart_monit
+    tags:
+      - monit
