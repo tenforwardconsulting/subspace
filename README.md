@@ -34,16 +34,34 @@ Or install it yourself as:
 
 ## Usage
 
-* `subspace init`
+### `subspace init`
 
 Initialize the project for subspace. Creates `config/provision` with all
 necessary files.
 
-* `subspace provision <environment>`
+### `subspace provision <environment>`
 
 Runs the playbook at `config/provision/<environment.yml>`.
 
-* `subspace vars <environment> [--edit] [--create]`
+You can pass certain options through to the `ansible-playbook` command. See [the
+provision command](lib/subspace/commands/provision.rb) for the current list.
+
+At the time of this writing, we pass through the `ansible-playbook` "tags" and
+"start-at-task" options. The tags option is probably the most useful.
+
+e.g. To run only the alienvault tasks (all of which have been tagged with the
+'alienvault' tag): `subspace provision dev --tags=alienvault`
+
+#### Tagged roles
+
+Role       | Tags                      | Comment
+---------- | ----                      | -------
+alienvault | alienvault                | All tasks in the alienvault role have been tagged 'alienvault'
+common     | upgrade, authorized\_keys | upgrade runs apt-get update and apt-get upgrade; authorized\_keys updates the authorized\_keys file for the deploy user
+rails      | appyml                    |
+monit      | monit                     | All tasks in the monit role have been tagged 'monit'
+
+### `subspace vars <environment> [--edit] [--create]`
 
 Manage environment variables on different platforms.  The default action is simply to show the vars defined for an environment.  Pass --edit to edit them in the system editor.
 

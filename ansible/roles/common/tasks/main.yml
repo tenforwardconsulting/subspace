@@ -40,10 +40,14 @@
   - name: apt-get update
     apt: update_cache=yes cache_valid_time=86400
     become: true
+    tags:
+      - upgrade
 
   - name: apt-get upgrade
     apt: upgrade=full
     become: true
+    tags:
+      - upgrade
 
   - name: Set timezone variables
     copy: content='America/Chicago'
@@ -83,6 +87,8 @@
       dest: "/home/{{deploy_user}}/.ssh/authorized_keys"
       owner: "{{deploy_user}}"
     become: true
+    tags:
+      - authorized_keys
 
   - name: Create directory to which to deploy
     file:

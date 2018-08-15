@@ -46,7 +46,9 @@ class Subspace::Cli
       c.syntax = 'subspace provision [options]'
       c.summary = ''
       c.description = ''
-      c.example 'description', 'command example'
+      Subspace::Commands::Provision::PASS_THROUGH_PARAMS.each do |param_name|
+        c.option "--#{param_name} #{param_name.upcase}", "Passed directly through to ansible-playbook command"
+      end
       c.when_called Subspace::Commands::Provision
     end
 

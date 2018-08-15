@@ -35,11 +35,15 @@
       dest: /u/apps/{{project_name}}/shared/config/application.yml
       owner: "{{deploy_user}}"
     become: true
+    tags:
+      - appyml
 
   - debug:
       msg: "Warning: Using legacy appyml for variable configuration.  Consider switching to application.yml.template"
       verbosity: 0
     when: appyml is defined
+    tags:
+      - appyml
 
   - name: Create application.yml
     when: appyml is not defined
@@ -47,4 +51,5 @@
       src: application.yml.template
       dest: /u/apps/{{project_name}}/shared/config/application.yml
       owner: "{{deploy_user}}"
-
+    tags:
+      - appyml
