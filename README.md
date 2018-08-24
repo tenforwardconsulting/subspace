@@ -108,6 +108,8 @@ Then,
 
 If you get an error saying you need a vault password file, you should be able to find it in 1Password. You might also need to update `ansible`.
 
+You'll want to do this for each environment (ie: `subspace provision qa`, etc.). Best to start with dev and work your way up.
+
 # Host configuration
 
 We need to know some info about hosts, but not much.  See the files for details, it's mostly the hostname and the user that can administer the system, eg `ubuntu` on AWS/ubuntu, `ec2-user`, or even `root` (not recommended)
