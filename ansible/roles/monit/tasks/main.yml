@@ -1,9 +1,18 @@
 ---
-  - name: Install monit
+  # https://bugs.launchpad.net/ubuntu/+source/monit/+bug/1786910
+  - name: Downgrade monit
     apt:
       name: monit=1:5.16-2
-      state: present
       force: true
+      state: present
+    become: true
+    tags:
+      - monit
+
+  - name: Pin monit so it doesn't update again
+    dpkg_selections:
+      name: monit
+      selection: hold
     become: true
     tags:
       - monit

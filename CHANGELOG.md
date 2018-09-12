@@ -8,6 +8,12 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 * _nada_
 
+## 1.0.2 - 2018-09-12
+
+* bug fixes
+  * Pin monit to the version that isn't broken. Since it was a security update,
+    monit would re-update if not pinned.
+
 ## 1.0.1 - 2018-08-15
 
 * bug fixes
