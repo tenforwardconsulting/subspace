@@ -6,7 +6,12 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## Unreleased
 
-* _nada_
+* bug fixes
+  * Update ImageMagick policy file to enable reading from PDFs which was
+    [disabled due to now-fixed ghostscript bugs](https://launchpad.net/ubuntu/+source/imagemagick/8:6.8.9.9-7ubuntu5.13).
+
+* enhancements
+  * Make it possible to specify private key file when running provision command.
 
 ## 1.0.2 - 2018-09-12
 

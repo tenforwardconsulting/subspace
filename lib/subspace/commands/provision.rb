@@ -1,5 +1,5 @@
 class Subspace::Commands::Provision < Subspace::Commands::Base
-  PASS_THROUGH_PARAMS = ["tags", "start-at-task"]
+  PASS_THROUGH_PARAMS = ["tags", "start-at-task", "private-key"]
 
   def initialize(args, options)
     @environment = args.first
