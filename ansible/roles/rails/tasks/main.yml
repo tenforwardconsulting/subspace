@@ -4,15 +4,30 @@
       name: "{{item}}"
     with_items:
       - git
-      - imagemagick
       - libffi-dev
       - libgmp3-dev
-      - libmagickwand-dev
       - libpq-dev
       - libxslt-dev
       - nodejs
       - zlib1g-dev
     become: true
+
+  - name: Install imagemagick
+    apt:
+      name: ['imagemagick', 'libmagickwand-dev']
+    become: true
+    tags:
+      - imagemagick
+
+  - name: Update ImageMagick policy to enable reading PDF files
+    lineinfile:
+      path: /etc/ImageMagick-6/policy.xml
+      regexp: '<policy domain="coder" rights="none" pattern="PDF" />'
+      line: '  <policy domain="coder" rights="read" pattern="PDF" />'
+    become: true
+    tags:
+      - imagemagick
+
 
   - name: Create /u/apps/{{project_name}}/shared/config
     file:
