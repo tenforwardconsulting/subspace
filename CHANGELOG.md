@@ -6,6 +6,10 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## Unreleased
 
+* _nada_
+
+## 1.0.3 - 2018-10-08
+
 * bug fixes
   * Update ImageMagick policy file to enable reading from PDFs which was
     [disabled due to now-fixed ghostscript bugs](https://launchpad.net/ubuntu/+source/imagemagick/8:6.8.9.9-7ubuntu5.13).
