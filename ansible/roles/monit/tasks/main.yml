@@ -1,5 +1,12 @@
 ---
-  # https://bugs.launchpad.net/ubuntu/+source/monit/+bug/1786910
+  - name: Pin monit so it doesn't update again
+    dpkg_selections:
+      name: monit
+      selection: install
+    become: true
+    tags:
+      - monit
+
   - name: install monit
     apt:
       name: monit
