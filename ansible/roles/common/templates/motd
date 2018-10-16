@@ -11,4 +11,3 @@ If you need to make configuration changes to the server, please modify the
 config/provision directory in the app or risk the changes dissapearing.
 
 Last subspace run: {{ansible_date_time.iso8601}}
-

@@ -8,6 +8,10 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 * _nada_
 
+## 1.0.5 - 2018-10-16
+
+* Unpin monit since they fixed it, and also the version we have pinned isn't available in ubuntu 18.04
+
 ## 1.0.4 - 2018-10-18
 
 * enhancement
