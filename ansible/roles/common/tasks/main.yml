@@ -49,6 +49,13 @@
     tags:
       - upgrade
 
+  - name: apt-get autoremove
+    apt:
+      autoremove: true
+    become: true
+    tags:
+      - upgrade
+
   - name: Set timezone variables
     copy: content='America/Chicago'
           dest=/etc/timezone
