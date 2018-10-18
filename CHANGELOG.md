@@ -6,7 +6,8 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## Unreleased
 
-* _nada_
+* enhancement
+  * Add way to specify private key when running the bootstrap command.
 
 ## 1.0.3 - 2018-10-08
 
