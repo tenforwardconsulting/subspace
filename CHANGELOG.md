@@ -6,6 +6,10 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## Unreleased
 
+* _nada_
+
+## 1.0.4 - 2018-10-18
+
 * enhancement
   * Add way to specify private key when running the bootstrap command.
   * Add way to specify only certain hosts to run the playbook on when running the
