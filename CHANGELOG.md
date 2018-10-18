@@ -8,6 +8,14 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 * _nada_
 
+## 1.0.4 - 2018-10-18
+
+* enhancement
+  * Add way to specify private key when running the bootstrap command.
+  * Add way to specify only certain hosts to run the playbook on when running the
+    provision command.
+  * The common role now runs `apt-get autoremove` after doing the update and upgrade.
+
 ## 1.0.3 - 2018-10-08
 
 * bug fixes
