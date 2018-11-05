@@ -10,6 +10,10 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## 1.0.5 - 2018-10-16
 
+* bug fixes
+  * Fix bug with task that modifies imagemagick policy to enable reading PDFs
+    which was causing it to insert the same line multiple times.
+
 * enhancements
   * Unpin monit since they fixed it, and the version we have pinned isn't available in Ubuntu 18.04.
 
