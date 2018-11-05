@@ -10,11 +10,12 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## 1.0.5 - 2018-10-16
 
-* Unpin monit since they fixed it, and also the version we have pinned isn't available in ubuntu 18.04
+* enhancements
+  * Unpin monit since they fixed it, and the version we have pinned isn't available in Ubuntu 18.04.
 
 ## 1.0.4 - 2018-10-18
 
-* enhancement
+* enhancements
   * Add way to specify private key when running the bootstrap command.
   * Add way to specify only certain hosts to run the playbook on when running the
     provision command.
