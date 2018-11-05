@@ -1,5 +1,5 @@
 ---
-  - name: Pin monit so it doesn't update again
+  - name: Configure monit to install instead of pin
     dpkg_selections:
       name: monit
       selection: install
