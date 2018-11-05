@@ -1,18 +1,16 @@
 ---
-  # https://bugs.launchpad.net/ubuntu/+source/monit/+bug/1786910
-  - name: Downgrade monit
-    apt:
-      name: monit=1:5.16-2
-      force: true
-      state: present
+  - name: Configure monit to install instead of pin
+    dpkg_selections:
+      name: monit
+      selection: install
     become: true
     tags:
       - monit
 
-  - name: Pin monit so it doesn't update again
-    dpkg_selections:
+  - name: install monit
+    apt:
       name: monit
-      selection: hold
+      state: present
     become: true
     tags:
       - monit

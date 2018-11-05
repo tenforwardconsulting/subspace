@@ -24,6 +24,7 @@
       path: /etc/ImageMagick-6/policy.xml
       regexp: '<policy domain="coder" rights="none" pattern="PDF" />'
       line: '  <policy domain="coder" rights="read" pattern="PDF" />'
+      backrefs: yes
     become: true
     tags:
       - imagemagick
