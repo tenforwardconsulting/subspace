@@ -8,6 +8,11 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 * _nada_
 
+## 1.0.6 - 2018-11-12
+
+* bug fixes
+  * Fix setting the timezone
+
 ## 1.0.5 - 2018-10-16
 
 * enhancements
