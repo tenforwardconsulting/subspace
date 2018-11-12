@@ -56,16 +56,9 @@
     tags:
       - upgrade
 
-  - name: Set timezone variables
-    copy: content='America/Chicago'
-          dest=/etc/timezone
-          owner=root
-          group=root
-          mode=0644
-          backup=yes
-    become: true
-    notify:
-      - update timezone
+  - name: set timezone to America/Chicago
+    timezone:
+      name: America/Chicago
 
   - name: Add deploy user
     user:
