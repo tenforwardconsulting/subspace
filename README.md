@@ -39,6 +39,12 @@ Or install it yourself as:
 Initialize the project for subspace. Creates `config/provision` with all
 necessary files.
 
+### `subspace bootstrap <environment>`
+
+Ensures the $HOME/.ssh directory is present and ensures python is installed.
+Python is required to be installed on the remote server for the `provision`
+command to work.
+
 ### `subspace provision <environment>`
 
 Runs the playbook at `config/provision/<environment.yml>`.
