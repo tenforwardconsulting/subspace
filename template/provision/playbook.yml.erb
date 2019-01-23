@@ -14,7 +14,7 @@
       - puma
       - nginx
       - letsencrypt
-      - nginx
+      - nginx # This is included twice intentionally. I think there is a bug that is fixed by running it both before and after the letsencrypt role.
       - postgresql
       - monit
       - logrotate
