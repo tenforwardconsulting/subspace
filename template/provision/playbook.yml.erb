@@ -1,16 +1,22 @@
 ---
   - hosts: <%= @env %>
-    sudo: yes
+    become: yes
 
     vars_files:
       - ./vars/<%= @env %>.yml
 
     roles:
       - common
+      - yarn
+      - nodejs
       - ruby-common
       - rails
-      - apache
-      - passenger
+      - puma
+      - nginx
       - letsencrypt
+      - nginx
       - postgresql
+      - monit
+      - logrotate
+      - collectd
       - delayed_job
