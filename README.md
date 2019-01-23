@@ -39,6 +39,12 @@ Or install it yourself as:
 Initialize the project for subspace. Creates `config/provision` with all
 necessary files.
 
+### `subspace bootstrap <environment>`
+
+Ensures the $HOME/.ssh directory is present and ensures python is installed.
+Python is required to be installed on the remote server for the `provision`
+command to work.
+
 ### `subspace provision <environment>`
 
 Runs the playbook at `config/provision/<environment.yml>`.
@@ -131,6 +137,16 @@ Note: we grant the deploy user limited sudo access to run `service xyz restart` 
 # Roles
 
 This is a description of all the roles that are included by installing subspace, along with their configuration.
+
+## alienvault
+
+Fixes CVEs on remote servers by installing updated versions of packages
+depending on the operating system version.
+
+Each CVE fix is tagged by the CVE name so updates can be targeted to a specific
+vulnerability.
+
+Variables: None
 
 ## apache
 
