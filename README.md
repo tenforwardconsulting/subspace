@@ -138,6 +138,16 @@ Note: we grant the deploy user limited sudo access to run `service xyz restart` 
 
 This is a description of all the roles that are included by installing subspace, along with their configuration.
 
+## alienvault
+
+Fixes CVEs on remote servers by installing updated versions of packages
+depending on the operating system version.
+
+Each CVE fix is tagged by the CVE name so updates can be targeted to a specific
+vulnerability.
+
+Variables: None
+
 ## apache
 
 The most important file for an apache install is the "project.conf" file that gets created in `sites-available` and symlinked to `sites-enabled`.  This is generated in a sensible way, but if you want to customize it you can do so by setting this variable to anything other than "project.conf":
