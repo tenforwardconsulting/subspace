@@ -1,12 +1,18 @@
 ---
   - set_fact: delayed_job_installed="true"
 
+  - name: Monit Stop All
+    shell: monit stop all
+    become: true
+
   - name: Install delayed_job monit script
     template:
       src: delayed-job-monit-rc
       dest: /etc/monit/conf.d/delayed_job_{{project_name}}_{{rails_env}}
     become: true
-    notify: reload_monit
+    notify:
+      - reload_monit
+      - restart_monit
 
   - name: Remove old upstart files
     file:
@@ -18,4 +24,8 @@
     file:
       path: /etc/monit/conf.d/delayed_job
       state: absent
+    become: true
+
+  - name: Monit Start All
+    shell: monit start all
     become: true

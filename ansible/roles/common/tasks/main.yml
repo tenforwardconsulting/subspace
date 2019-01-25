@@ -59,7 +59,7 @@
       - upgrade
 
   - name: apt-get upgrade
-    apt: upgrade=full
+    apt: upgrade=safe
     become: true
     tags:
       - upgrade
