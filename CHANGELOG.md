@@ -6,7 +6,8 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## Unreleased
 
-* _nada_
+* enhancements
+  * Add a terminal environment prompt background color to the `common` role, so you know what environment you're `ssh`'d into.
 
 ## 1.0.6 - 2018-11-12
 
