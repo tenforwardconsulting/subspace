@@ -2,6 +2,21 @@
   - name: Test connection
     ping:
 
+  - name: Create terminal color file and make it executable
+    file:
+      path: "/etc/profile.d/termcolor.sh"
+      state: touch
+      mode: a+x
+    become: true
+  
+  - name: Set terminal color
+    vars:
+      terminal_env_playbook: "{{terminal_env | default('not provided', true) }}" 
+    template: 
+      src: terminalcolor
+      dest: "/etc/profile.d/termcolor.sh"
+    become: true
+
   - name: Set MOTD
     template:
       src: motd
