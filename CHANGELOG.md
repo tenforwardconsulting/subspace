@@ -4,10 +4,13 @@ This is a [changelog](https://keepachangelog.com/en/0.3.0/).
 
 This project attempts to follow [semantic versioning](https://semver.org/)
 
-## Unreleased
+## 1.0.7
 
 * enhancements
   * Add a terminal environment prompt background color to the `common` role, so you know what environment you're `ssh`'d into.
+
+* bug fixes
+  * Stop all monit jobs before changing the monit config.
 
 ## 1.0.6 - 2018-11-12
 

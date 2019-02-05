@@ -58,6 +58,14 @@
     tags:
       - upgrade
 
+  - name: /usr/lib/update-notifier/apt-check --human-readable
+    command: /usr/lib/update-notifier/apt-check --human-readable
+    tags:
+      - upgrade
+    register: out
+
+  - debug: var=out
+
   - name: apt-get upgrade
     apt: upgrade=full
     become: true

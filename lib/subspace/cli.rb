@@ -39,6 +39,7 @@ class Subspace::Cli
       copy the authorized_keys file.  You will possibly need to type a password here.'
       c.option '--password', "Ask for a password instead of using ssh keys"
       c.option '--yum', "Use yum instead of apt to install python"
+      c.option "-i", "--private-key PRIVATE-KEY", "Alias for private-key"
       Subspace::Commands::Bootstrap::PASS_THROUGH_PARAMS.each do |param_name|
         c.option "--#{param_name} #{param_name.upcase}", "Passed directly through to ansible-playbook command"
       end
@@ -49,6 +50,7 @@ class Subspace::Cli
       c.syntax = 'subspace provision [options]'
       c.summary = ''
       c.description = ''
+      c.option "-i", "--private-key PRIVATE-KEY", "Alias for private-key"
       Subspace::Commands::Provision::PASS_THROUGH_PARAMS.each do |param_name|
         c.option "--#{param_name} #{param_name.upcase}", "Passed directly through to ansible-playbook command"
       end

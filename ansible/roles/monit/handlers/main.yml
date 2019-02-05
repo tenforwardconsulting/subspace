@@ -1,15 +1,14 @@
 ---
+  - name: reload_monit
+    shell: monit reload
+    become: true
+
   - name: restart_monit
     service:
       name: monit
       state: restarted
     become: true
 
-  - name: reload_monit
-    shell: monit reload
-    become: true
-
   - name: validate_monit
     shell: monit validate
     become: true
-

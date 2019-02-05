@@ -14,5 +14,6 @@
       dest: /etc/monit/conf-enabled/sidekiq_{{project_name}}_{{rails_env}}
       state: link
     notify:
+      - reload_monit
       - restart_monit
 
