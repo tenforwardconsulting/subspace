@@ -4,6 +4,14 @@ This is a [changelog](https://keepachangelog.com/en/0.3.0/).
 
 This project attempts to follow [semantic versioning](https://semver.org/)
 
+## 1.0.8
+
+* enhancements
+  * Add support for `-i` in `subpsace ssh` command.
+
+* bug fixes
+  * Check for all monit jobs stopping before changing config.
+
 ## 1.0.7
 
 * enhancements

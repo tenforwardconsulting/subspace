@@ -4,15 +4,21 @@
   - name: Monit Stop All
     shell: monit stop all
     become: true
+    ignore_errors: yes
+
+  - name: Wait for monit to stop
+    shell: monit status | grep Monitored | wc -l | awk '{print $1 $2}'
+    register: monit_stopped
+    retries: 10
+    until: monit_stopped.stdout == "0"
+    delay: 10
+    become: true
 
   - name: Install delayed_job monit script
     template:
       src: delayed-job-monit-rc
       dest: /etc/monit/conf.d/delayed_job_{{project_name}}_{{rails_env}}
     become: true
-    notify:
-      - reload_monit
-      - restart_monit
 
   - name: Remove old upstart files
     file:
@@ -26,6 +32,14 @@
       state: absent
     become: true
 
-  - name: Monit Start All
-    shell: monit start all
+  - name: reload_monit
+    shell: monit reload
+    become: true
+
+  - name: wait
+    pause:
+      seconds: 3
+
+  - name: restart_monit
+    shell: monit restart all
     become: true

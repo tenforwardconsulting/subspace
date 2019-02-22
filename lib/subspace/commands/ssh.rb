@@ -1,8 +1,11 @@
 require 'yaml'
 class Subspace::Commands::Ssh < Subspace::Commands::Base
+  PASS_THROUGH_PARAMS = ["i"]
+
   def initialize(args, options)
     @host = args.first
     @user = options.user
+    @options = options
     run
   end
 
@@ -17,7 +20,16 @@ class Subspace::Commands::Ssh < Subspace::Commands::Base
     user = @user || host_vars["ansible_ssh_user"] || host_vars["ansible_user"]
     host = host_vars["ansible_ssh_host"] || host_vars["ansible_host"]
     port = host_vars["ansible_ssh_port"] || host_vars["ansible_port"] || 22
-    cmd = "ssh #{user}@#{host} -p #{port}"
+    ssh_options = []
+    PASS_THROUGH_PARAMS.each do |param_name|
+      x = param_name.split('-')[1..-1].map(&:upcase).join('_')
+      hash_key = (param_name.gsub('-', '_') + (x == '' ? '' : "_#{x}")).to_sym
+      value = @options.__hash__[hash_key]
+      if value
+        ssh_options += ["-#{param_name}", value]
+      end
+    end
+    cmd = "ssh #{user}@#{host} -p #{port} #{ssh_options.join(" ")}"
     say cmd
     exec cmd
   end
