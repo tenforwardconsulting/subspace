@@ -62,6 +62,9 @@ class Subspace::Cli
       c.summary = 'ssh to the remote server as the administrative user'
       c.description = ''
       c.option '--user USER', "Use a different user (eg deploy).  Default is the ansible_ssh_user"
+      Subspace::Commands::Ssh::PASS_THROUGH_PARAMS.each do |param_name|
+        c.option "-#{param_name} #{param_name.upcase}", "Passed directly through to ssh command"
+      end
       c.when_called Subspace::Commands::Ssh
     end
 
