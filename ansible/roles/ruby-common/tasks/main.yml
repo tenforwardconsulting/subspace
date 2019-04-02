@@ -67,10 +67,24 @@
     - rake-env
     - ruby-gc-wrapper
 
-- name: Install Bundler
-  command: "{{ ruby_location }}/bin/gem install bundler {{ ruby_bundler_flags }}
-            creates={{ ruby_location }}/bin/bundle"
+- name: Uninstall Bundler
+  gem:
+    name: bundler
+    state: absent
+    user_install: no
   sudo: true
+  register: out
+
+- name: Install Bundler
+  gem:
+    name: bundler
+    version: "{{ bundler_version }}"
+    state: present
+    user_install: no
+  sudo: true
+  register: out
+
+- debug: var=out
 
 - name: Make Ruby symlinks
   file: path=/usr/local/bin/{{ item }}
