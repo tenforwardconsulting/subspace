@@ -15,6 +15,10 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 * breaking changes
   * Add bundler_version to install specific bundler version. Is required.
 
+* enhancements
+  * Updates rubygems in ruby-common task
+  * Logs apt updates to /opt/subspace/updates.log
+
 ## 1.0.8
 
 * enhancements
