@@ -9,7 +9,7 @@
   become: true
 
 - name: "Configure rails projects"
-  include_role:
+  import_role:
     name: nginx-rails
 
 - name: create nginx status config
