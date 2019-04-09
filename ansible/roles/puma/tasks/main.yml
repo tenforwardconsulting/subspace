@@ -21,6 +21,11 @@
 - name: Clean up old puma monit scripts
   shell: rm -f /etc/monit/conf.d/puma_*
 
+- name: mkdir /etc/monit/conf-enabled
+  file:
+    path: /etc/monit/conf-enabled
+    state: directory
+
 - name: Enable puma monit script
   file:
     src: /etc/monit/conf-available/puma_{{project_name}}_{{rails_env}}

@@ -1,7 +1,7 @@
 ---
 - name: Update APT cache
   apt: update_cache=yes
-  sudo: true
+  become: true
   when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
 - name: Retrieve the number of cores that are available for compilation
@@ -10,7 +10,7 @@
 
 - name: Install APT prerequisite packages that are necessary to compile applications and gems with native extensions
   apt: pkg={{ item }}
-  sudo: true
+  become: true
   with_items:
     - autoconf
     - build-essential
@@ -18,21 +18,21 @@
 
 - name: Install yum prerequisite packages that are necessary to compile applications and gems with native extensions
   yum: name="{{ item }}"
-  sudo: true
+  become: true
   with_items:
     - autoconf
     - "@Developer tools"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'Amazon'
 
 - name: Install APT Ruby dependencies
-  sudo: true
+  become: true
   apt: pkg={{ item }}
        state=present
   with_items: "{{ ruby_apt_dependencies }}"
   when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
 - name: Install yum Ruby dependencies
-  sudo: true
+  become: true
   yum: name={{ item }}
   with_items: "{{ ruby_yum_dependencies }}"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'Amazon'
@@ -41,7 +41,7 @@
   get_url: url={{ ruby_download_location }}
            dest=/usr/local/src/
            sha256sum={{ ruby_checksum }}
-  sudo: true
+  become: true
 
 - name: Generate the Ruby installation script
   template: src=install-ruby.j2
@@ -49,12 +49,12 @@
             owner=root
             group=root
             mode=700
-  sudo: true
+  become: true
 
 - name: Run the Ruby installation script
   command: /usr/local/src/install-ruby.sh
            creates={{ ruby_location }}/bin/ruby
-  sudo: true
+  become: true
 
 - name: Generate the script that allows you to easily run Rake tasks with the correct RAILS_ENV environment variable, and the wrapper script that contains GC settings
   template: src={{ item }}.j2
@@ -62,19 +62,39 @@
             owner=root
             group=root
             mode=755
-  sudo: true
+  become: true
   with_items:
     - rake-env
     - ruby-gc-wrapper
 
+- name: Update rubygems
+  command: gem update --system
+  become: true
+
+- name: Remove old bundler bin
+  file:
+    path: "{{ ruby_location }}/bin/bundle"
+    state: absent
+  become: true
+
+- name: Uninstall Bundler
+  gem:
+    name: bundler
+    state: absent
+    user_install: no
+  become: true
+
 - name: Install Bundler
-  command: "{{ ruby_location }}/bin/gem install bundler {{ ruby_bundler_flags }}
-            creates={{ ruby_location }}/bin/bundle"
-  sudo: true
+  gem:
+    name: bundler
+    version: "{{ bundler_version }}"
+    state: present
+    user_install: no
+  become: true
 
 - name: Make Ruby symlinks
   file: path=/usr/local/bin/{{ item }}
         src={{ ruby_location }}/bin/{{ item }}
         state=link
-  sudo: true
+  become: true
   with_items: "{{ ruby_symlinks }}"
