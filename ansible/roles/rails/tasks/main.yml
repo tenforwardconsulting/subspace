@@ -11,6 +11,7 @@
       - nodejs
       - zlib1g-dev
     become: true
+    when: ('Ubuntu' in ansible_distribution)
 
   - name: Install imagemagick
     apt:
@@ -18,6 +19,7 @@
     become: true
     tags:
       - imagemagick
+    when: ('Ubuntu' in ansible_distribution)
 
   - name: Update ImageMagick policy to enable reading PDF files
     lineinfile:
@@ -28,7 +30,7 @@
     become: true
     tags:
       - imagemagick
-
+    when: ('Ubuntu' in ansible_distribution)
 
   - name: Create /u/apps/{{project_name}}/shared/config
     file:
