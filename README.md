@@ -63,7 +63,8 @@ e.g. To run only the alienvault tasks (all of which have been tagged with the
 Role       | Tags                      | Comment
 ---------- | ----                      | -------
 alienvault | alienvault                | All tasks in the alienvault role have been tagged 'alienvault'
-common     | upgrade, authorized\_keys | upgrade runs apt-get update and apt-get upgrade; authorized\_keys updates the authorized\_keys file for the deploy user
+common     | upgrade                   | runs apt-get update and apt-get upgrade
+common     | authorized\_keys          | updates the authorized\_keys file for the deploy user
 rails      | appyml                    |
 monit      | monit                     | All tasks in the monit role have been tagged 'monit'
 
@@ -98,7 +99,7 @@ Further, you can use the extremely command to create a local copy of `config/app
     # Create a local copy of config/application.yml with the secrets encrypted in vars/development.yml
     $ subspace vars development --create
 
-This can get you up and running in development securely, the only thing you need to distribute to new team members is the vault password.
+This can get you up and running in development securely, the only thing you need to distribute to new team members is the vault password.  Grab it from a teammate and put it into `config/provision/.vault_pass`
 
 NOTE: application.yml should be in the `.gitignore`, since subspace creates a new version on the server and symlinks it on top of whatever is checked in.
 
@@ -275,6 +276,8 @@ Optional variables:
 
     nginx_proxy_read_timeout: Set [proxy_read_timeout](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_read_timeout). This is in seconds. You probably only want to change this if using rack-timeout (although I may be wrong). If using rack-timeout, it should be slightly higher than the rack-timeout timeout. I'm doing 5 seconds higher, but that was arbitrarily chosen.
 
+    ssl_force_redirect: redirect all HTTP traffic to HTTPS on the same host.  Defaults to true and only applies if ssl_enabled is also true.
+
 ## nodejs
 
 Used to install recent version of NodeJS. Must set `nodejs_version`. e.g. `nodejs_version: "8.x"`
@@ -393,4 +396,3 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/tenfor
 The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
 
 # Roles and Variables
-
