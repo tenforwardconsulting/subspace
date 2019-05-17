@@ -10,6 +10,7 @@
       - libxslt-dev
       - nodejs
       - zlib1g-dev
+      - ffmpeg
     become: true
     when: ('Ubuntu' in ansible_distribution)
 
