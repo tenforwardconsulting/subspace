@@ -10,6 +10,11 @@ This project attempts to follow [semantic versioning](https://semver.org/)
   * Not working on OSX - macs don't read from /etc/profile.d/
   * Stops showing color if you `sudo su`
 
+## Unreleased
+
+  * enhancements
+    * Add role to fix strange wkhtmltopdf issue
+
 ## 2.0.2
   * Adds FFMPEG to Rails role so ActiveStorage can generate video previews
 
