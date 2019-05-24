@@ -68,7 +68,7 @@
     - ruby-gc-wrapper
 
 - name: Update rubygems
-  command: gem update --system
+  command: "{{ ruby_location }}/bin/gem update --system"
   become: true
 
 - name: Remove old bundler bin
@@ -82,6 +82,7 @@
     name: bundler
     state: absent
     user_install: no
+    executable: "{{ ruby_location }}/bin/gem"
   become: true
 
 - name: Install Bundler
@@ -90,6 +91,7 @@
     version: "{{ bundler_version }}"
     state: present
     user_install: no
+    executable: "{{ ruby_location }}/bin/gem"
   become: true
 
 - name: Make Ruby symlinks
