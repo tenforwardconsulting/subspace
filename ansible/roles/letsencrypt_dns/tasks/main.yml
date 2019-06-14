@@ -1,4 +1,4 @@
-- name: Update repositories cache and install "foo" package
+- name: Update repositories cache and install pip and setuptools package
   apt:
     name: [python-pip, python-setuptools]
     update_cache: yes
