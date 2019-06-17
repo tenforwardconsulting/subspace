@@ -10,6 +10,9 @@ This project attempts to follow [semantic versioning](https://semver.org/)
   * Not working on OSX - macs don't read from /etc/profile.d/
   * Stops showing color if you `sudo su`
 
+## 2.0.4
+  * Add letsencrypt_dns role for doing DNS validation vs HTTP validation
+
 ## 2.0.3
   * Fix bundler / gem version installation on new/vanilla servers
 

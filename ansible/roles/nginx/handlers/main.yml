@@ -6,3 +6,7 @@
 - name: start webserver
   service: name=nginx state=started
   become: true
+
+- name: restart webserver
+  service: name=nginx state=restarted
+  become: true

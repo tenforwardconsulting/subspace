@@ -1,0 +1,4 @@
+---
+  nginx_ssl_config: |
+    ssl_certificate /etc/letsencrypt/live/{{server_name}}/fullchain.crt;
+    ssl_certificate_key /etc/letsencrypt/live/{{server_name}}/privkey.pem;

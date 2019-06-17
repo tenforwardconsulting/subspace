@@ -1,0 +1,133 @@
+- name: Update repositories cache and install pip and setuptools package
+  apt:
+    name: [python-pip, python-setuptools]
+    update_cache: yes
+
+- pip:
+    name: [pyopenssl, boto]
+  tags:
+    - cert
+
+- name: Creates private key directory
+  file:
+    path: "/etc/letsencrypt/live/{{ server_name }}"
+    state: directory
+  tags:
+    - cert
+
+- name: Generate an OpenSSL private key with the default values (4096 bits, RSA)
+  openssl_privatekey:
+    path: "/etc/letsencrypt/live/{{ server_name }}/privkey.pem"
+  register: privkey
+  tags:
+    - cert
+
+- name: Generate an OpenSSL account key with the default values (4096 bits, RSA)
+  openssl_privatekey:
+    path: "/etc/letsencrypt/live/{{ server_name }}/account.pem"
+  tags:
+    - cert
+
+- name: Generate an OpenSSL Certificate Signing Request
+  openssl_csr:
+    path: "/etc/letsencrypt/live/{{ server_name }}/server.csr"
+    privatekey_path: "/etc/letsencrypt/live/{{ server_name }}/privkey.pem"
+    country_name: US
+    email_address: "{{ letsencrypt_email }}"
+    subject_alt_name: "{{ item.value | map('regex_replace', '^', 'DNS:') | list }}"
+  when: privkey is changed
+  register: csr
+  with_dict:
+    dns_server:
+    - "{{ server_name }}"
+    - "*.{{ server_name }}"
+  tags:
+    - cert
+
+- name: Create a challenge using an account key from a variable.
+  acme_certificate:
+    acme_version: 2
+    account_key_src: "/etc/letsencrypt/live/{{ server_name }}/account.pem"
+    csr: "/etc/letsencrypt/live/{{ server_name }}/server.csr"
+    cert: "/etc/letsencrypt/live/{{ server_name }}/server.crt"
+    fullchain: "/etc/letsencrypt/live/{{ server_name }}/fullchain.crt"
+    chain: "/etc/letsencrypt/live/{{ server_name }}/intermediate.crt"
+    challenge: dns-01
+    acme_directory: https://acme-v02.api.letsencrypt.org/directory
+    terms_agreed: yes
+    remaining_days: 60
+  when: csr is changed
+  register: le_challenge
+  tags:
+    - cert
+
+- name: Install txt record on route53
+  route53:
+    zone: "{{ route53_zone }}"
+    type: TXT
+    ttl: 60
+    state: present
+    wait: yes
+    record: "{{ item.key }}"
+    value: "{{ item.value | map('regex_replace', '^(.*)$', '\"\\1\"' ) | list }}"
+    aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
+    aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
+    overwrite: yes
+  loop: "{{ le_challenge.challenge_data_dns | default({}) | dict2items }}"
+  tags:
+    - cert
+
+- name: Flush dns cache
+  become: true
+  command: "systemd-resolve --flush-caches"
+  when: le_challenge is changed
+  tags:
+    - cert
+
+- name: "Wait for DNS"
+  when: le_challenge is changed
+  pause:
+    minutes: 2
+  tags:
+    - cert
+
+- name: Let the challenge be validated and retrieve the cert and intermediate certificate
+  acme_certificate:
+    acme_version: 2
+    account_key_src: "/etc/letsencrypt/live/{{ server_name }}/account.pem"
+    csr: "/etc/letsencrypt/live/{{ server_name }}/server.csr"
+    cert: "/etc/letsencrypt/live/{{ server_name }}/server.crt"
+    fullchain: "/etc/letsencrypt/live/{{ server_name }}/fullchain.crt"
+    chain: "/etc/letsencrypt/live/{{ server_name }}/intermediate.crt"
+    challenge: dns-01
+    acme_directory: https://acme-v02.api.letsencrypt.org/directory
+    remaining_days: 60
+    terms_agreed: yes
+    data: "{{ le_challenge }}"
+  when: le_challenge is changed
+  tags:
+    - cert
+
+- name: Delete txt record on route53
+  route53:
+    zone: "{{ route53_zone }}"
+    type: TXT
+    ttl: 60
+    state: absent
+    wait: yes
+    record: "{{ item.key }}"
+    value: "{{ item.value | map('regex_replace', '^(.*)$', '\"\\1\"' ) | list }}"
+    aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
+    aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
+    overwrite: yes
+  loop: "{{ le_challenge.challenge_data_dns | default({}) | dict2items }}"
+  tags:
+    - cert
+
+- name: restart webserver
+  debug: msg="restart webserver"
+  notify: restart webserver
+  changed_when: true
+  when: le_challenge is changed
+  tags:
+    - cert
