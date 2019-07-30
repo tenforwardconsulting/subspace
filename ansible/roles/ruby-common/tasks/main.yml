@@ -100,3 +100,27 @@
         state=link
   become: true
   with_items: "{{ ruby_symlinks }}"
+
+- name: Grab Ruby version
+  shell: ruby --version
+  register: stats_ruby_version
+  when: send_stats == true and stats_url is defined and stats_api_key is defined
+  tags:
+    - stats
+
+- name: Send Ruby stats to URL
+  uri:
+    url: "{{stats_url}}"
+    method: POST
+    headers:
+      X-API-Version: 1
+      X-Client-Api-key: "{{stats_api_key}}"
+    body_format: json
+    body:
+      client_stat:
+        key: ruby_version
+        value: "{{stats_ruby_version.stdout}}"
+        hostname: "{{ansible_ssh_host}}"
+  when: send_stats == true and stats_url is defined and stats_api_key is defined
+  tags:
+    - stats
