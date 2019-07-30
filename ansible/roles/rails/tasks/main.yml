@@ -72,3 +72,29 @@
       owner: "{{deploy_user}}"
     tags:
       - appyml
+
+  - name: Grab Rails version
+    shell: bundle exec rails --version
+    args:
+      chdir: /u/apps/{{project_name}}/current
+    register: stats_rails_version
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - stats
+
+  - name: Send Rails stats to URL
+    uri:
+      url: "{{stats_url}}"
+      method: POST
+      headers:
+        X-API-Version: 1
+        X-Client-Api-key: "{{stats_api_key}}"
+      body_format: json
+      body:
+        client_stat:
+          key: rails_version
+          value: "{{stats_rails_version.stdout}}"
+          hostname: "{{ansible_ssh_host}}"
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - stats
