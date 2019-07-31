@@ -6,7 +6,7 @@ server {
   listen [::]:80 default_server;
   server_name {{server_name}} {{server_aliases | join(" ")}};
 
-  {% if ssl_force_redirect == "true" %}
+  {% if (ssl_force_redirect == True) or (ssl_force_redirect == "true") %}
   return 301 https://$host$request_uri;
   {% else %}
   {% include "_rails.conf" %}
