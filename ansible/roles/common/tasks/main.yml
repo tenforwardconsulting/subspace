@@ -70,6 +70,8 @@
       path: /opt/subspace
       state: directory
     become: true
+    tags:
+      - upgrade
 
   - name: Save updates to /opt/subspace/updates.log
     lineinfile:
@@ -78,6 +80,8 @@
       insertafter: EOF
       create: yes
     become: true
+    tags:
+      - upgrade
 
   - name: apt-get upgrade
     apt: upgrade=full
@@ -91,6 +95,68 @@
     become: true
     tags:
       - upgrade
+
+  - name: Get os_upgrades stats
+    shell:
+      cmd: |
+        sed -n "/$(date '+%Y-%m')/,+2p" updates.log | # Groups of lines from the current month
+        grep 'packages' | # Only lines matching 'packages'
+        grep -P -o '(^\d+)' | #Extract the numbers at the beginning of the lines
+        awk '{s+=$1} END {print s}' # Sum all the lines
+    args:
+      chdir: /opt/subspace
+    register: stats_os_upgrades
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - stats
+  
+  - name: Send os_upgrades stats to URL
+    uri:
+      url: "{{stats_url}}"
+      method: POST
+      headers:
+        X-API-Version: 1
+        X-Client-Api-key: "{{stats_api_key}}"
+      body_format: json
+      body:
+        client_stat:
+          key: os_upgrades
+          value: "{{stats_os_upgrades.stdout}}"
+          hostname: "{{ansible_ssh_host}}"
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - stats
+
+  - name: Get os_security_upgrades stats
+    shell:
+      cmd: |
+        sed -n "/$(date '+%Y-%m')/,+2p" updates.log | # Groups of lines from the current month
+        grep 'security' | # Only lines matching 'security'
+        grep -P -o '(^\d+)' | #Extract the numbers at the beginning of the lines
+        awk '{s+=$1} END {print s}' # Sum all the lines
+    args:
+      chdir: /opt/subspace
+    register: stats_os_security_upgrades
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - stats
+  
+  - name: Send os_security_upgrades stats to URL
+    uri:
+      url: "{{stats_url}}"
+      method: POST
+      headers:
+        X-API-Version: 1
+        X-Client-Api-key: "{{stats_api_key}}"
+      body_format: json
+      body:
+        client_stat:
+          key: os_security_upgrades
+          value: "{{stats_os_security_upgrades.stdout}}"
+          hostname: "{{ansible_ssh_host}}"
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - stats
 
   - name: set timezone to America/Chicago
     timezone:
