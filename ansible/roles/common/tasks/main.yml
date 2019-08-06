@@ -1,6 +1,8 @@
 ---
   - name: Test connection
     ping:
+    tags:
+      - maintenance
 
   - name: Ensure /etc/profile.d/ exists
     file:
@@ -8,6 +10,8 @@
       owner: root
       state: directory
     become: yes
+    tags:
+      - maintenance
 
   - name: Set terminal color
     vars:
@@ -17,16 +21,22 @@
       dest: "/etc/profile.d/termcolor.sh"
       mode: a+x
     become: true
+    tags:
+      - maintenance
 
   - name: Set MOTD
     template:
       src: motd
       dest: /etc/motd
     become: true
+    tags:
+      - maintenance
 
   - name: Set hostname
     command: hostname {{hostname}}
     become: true
+    tags:
+      - maintenance
 
   - name: Set hostname in /etc/hosts
     lineinfile:
@@ -35,34 +45,44 @@
       state: present
       insertafter: "127.0.0.1 localhost"
     become: true
+    tags:
+      - maintenance
 
   - name: update /etc/hostname
     copy:
       content: "{{hostname}}"
       dest: /etc/hostname
     become: true
+    tags:
+      - maintenance
 
   - name: Set hostname for systemd
     hostname:
       name: "{{hostname}}"
     become: true
+    tags:
+      - maintenance
 
   - name: install aptitude
     apt:
       pkg: aptitude
       state: present
     become: true
+    tags:
+      - maintenance
 
   - name: apt-get update
     apt: update_cache=yes cache_valid_time=86400
     become: true
     tags:
       - upgrade
+      - maintenance
 
   - name: /usr/lib/update-notifier/apt-check --human-readable
     command: /usr/lib/update-notifier/apt-check --human-readable
     tags:
       - upgrade
+      - maintenance
     register: out
 
   - name: Creates /opt/subspace
@@ -71,6 +91,7 @@
       state: directory
     become: true
     tags:
+      - maintenance
       - upgrade
 
   - name: Save updates to /opt/subspace/updates.log
@@ -81,12 +102,14 @@
       create: yes
     become: true
     tags:
+      - maintenance
       - upgrade
 
   - name: apt-get upgrade
     apt: upgrade=full
     become: true
     tags:
+      - maintenance
       - upgrade
 
   - name: apt-get autoremove
@@ -94,6 +117,7 @@
       autoremove: true
     become: true
     tags:
+      - maintenance
       - upgrade
 
   - name: Get os_upgrades stats
@@ -108,6 +132,7 @@
     register: stats_os_upgrades
     when: send_stats == true and stats_url is defined and stats_api_key is defined
     tags:
+      - maintenance
       - stats
   
   - name: Send os_upgrades stats to URL
@@ -125,6 +150,7 @@
           hostname: "{{ansible_ssh_host}}"
     when: send_stats == true and stats_url is defined and stats_api_key is defined
     tags:
+      - maintenance
       - stats
 
   - name: Get os_security_upgrades stats
@@ -139,6 +165,7 @@
     register: stats_os_security_upgrades
     when: send_stats == true and stats_url is defined and stats_api_key is defined
     tags:
+      - maintenance
       - stats
   
   - name: Send os_security_upgrades stats to URL
@@ -156,11 +183,14 @@
           hostname: "{{ansible_ssh_host}}"
     when: send_stats == true and stats_url is defined and stats_api_key is defined
     tags:
+      - maintenance
       - stats
 
   - name: set timezone to America/Chicago
     timezone:
       name: America/Chicago
+    tags:
+      - maintenance
 
   - name: Add deploy user
     user:
@@ -169,6 +199,8 @@
       generate_ssh_key: yes
       shell: /bin/bash
     become: true
+    tags:
+      - maintenance
 
   - name: Add deploy user to adm group so it can view logs in /var/log
     user:
@@ -176,12 +208,16 @@
       append: yes
       groups: "adm"
     become: true
+    tags:
+      - maintenance
 
   - name: Add sudoers.d file so that deploy can restart services without entering password.
     copy:
       src: sudoers-service
       dest: /etc/sudoers.d/service
     become: true
+    tags:
+      - maintenance
 
   - name: Update authorized_keys for deploy user
     copy:
@@ -191,6 +227,7 @@
     become: true
     tags:
       - authorized_keys
+      - maintenance
 
   - name: Create directory to which to deploy
     file:
@@ -198,5 +235,7 @@
       owner: "{{deploy_user}}"
       state: directory
     become: true
+    tags:
+      - maintenance
 
   - import_tasks: swap.yml
