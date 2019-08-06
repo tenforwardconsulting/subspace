@@ -12,6 +12,7 @@ require 'subspace/commands/override'
 require 'subspace/commands/provision'
 require 'subspace/commands/ssh'
 require 'subspace/commands/vars'
+require 'subspace/commands/maintain'
 
 class Subspace::Cli
   include Commander::Methods
@@ -91,6 +92,17 @@ class Subspace::Cli
       c.option '--edit', "Edit the variables instead of view"
       c.option '--create', "Create config/application.yml with the variables from the specified environment"
       c.when_called Subspace::Commands::Vars
+    end
+
+    command :maintain do |c, args|
+      c.syntax = 'subspace maintain [options]'
+      c.summary = 'Runs provision with --tags=maintenance'
+      c.description = ''
+      c.option "-i", "--private-key PRIVATE-KEY", "Alias for private-key"
+      Subspace::Commands::Maintain::PASS_THROUGH_PARAMS.each do |param_name|
+        c.option "--#{param_name} #{param_name.upcase}", "Passed directly through to ansible-playbook command"
+      end
+      c.when_called Subspace::Commands::Maintain
     end
 
     run!

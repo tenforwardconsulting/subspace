@@ -58,6 +58,17 @@ At the time of this writing, we pass through the `ansible-playbook` "tags" and
 e.g. To run only the alienvault tasks (all of which have been tagged with the
 'alienvault' tag): `subspace provision dev --tags=alienvault`
 
+### `subspace maintain <environment>`
+
+Runs the playbook at `config/provision/<environment.yml>` but only the tasks tagged with "maintenance".
+
+You can pass certain options through to the `ansible-playbook` command. See [the
+maintain command](lib/subspace/commands/maintain.rb) for the current list.
+
+At the time of this writing, we pass through the `ansible-playbook` "limit" option.
+
+e.g. To run only on the host "prod-web1": `subspace maintain production --limit=prod-web1`
+
 #### Tagged roles
 
 Role       | Tags                      | Comment
