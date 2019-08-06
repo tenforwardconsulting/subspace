@@ -13,6 +13,7 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 ## 2.1.0
   * Add config option for default_server directive in nginx.
   * Fixed bug in SSL redirect from 2.0.1
+  * Adds ability to gather Ruby, Rails, and apt details from servers and send to a stats collector
   
 ## 2.0.4
   * Add letsencrypt_dns role for doing DNS validation vs HTTP validation
