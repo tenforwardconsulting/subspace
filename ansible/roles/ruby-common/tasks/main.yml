@@ -121,7 +121,7 @@
       client_stat:
         key: ruby_version
         value: "{{stats_ruby_version.stdout}}"
-        hostname: "{{ansible_ssh_host}}"
+        hostname: "{{hostname}}"
   when: send_stats == true and stats_url is defined and stats_api_key is defined
   tags:
     - maintenance

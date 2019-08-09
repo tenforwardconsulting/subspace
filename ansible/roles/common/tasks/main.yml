@@ -134,7 +134,7 @@
     tags:
       - maintenance
       - stats
-  
+
   - name: Send os_upgrades stats to URL
     uri:
       url: "{{stats_url}}"
@@ -147,7 +147,7 @@
         client_stat:
           key: os_upgrades
           value: "{{stats_os_upgrades.stdout}}"
-          hostname: "{{ansible_ssh_host}}"
+          hostname: "{{hostname}}"
     when: send_stats == true and stats_url is defined and stats_api_key is defined
     tags:
       - maintenance
@@ -167,7 +167,7 @@
     tags:
       - maintenance
       - stats
-  
+
   - name: Send os_security_upgrades stats to URL
     uri:
       url: "{{stats_url}}"
@@ -180,7 +180,16 @@
         client_stat:
           key: os_security_upgrades
           value: "{{stats_os_security_upgrades.stdout}}"
-          hostname: "{{ansible_ssh_host}}"
+          hostname: "{{hostname}}"
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - maintenance
+      - stats
+
+  - name: Clear updates.log
+    file:
+      path: /opt/subspace/updates.log
+      state: absent
     when: send_stats == true and stats_url is defined and stats_api_key is defined
     tags:
       - maintenance
