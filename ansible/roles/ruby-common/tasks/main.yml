@@ -84,6 +84,7 @@
     user_install: no
     executable: "{{ ruby_location }}/bin/gem"
   become: true
+  ignore_errors: yes
 
 - name: Install Bundler
   gem:
