@@ -6,3 +6,4 @@ database_adapter: postgresql
 job_queues:
   - default
   - mailers
+send_stats: false
