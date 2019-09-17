@@ -10,6 +10,10 @@ This project attempts to follow [semantic versioning](https://semver.org/)
   * Not working on OSX - macs don't read from /etc/profile.d/
   * Stops showing color if you `sudo su`
 
+## 2.1.2
+  * bug fixes
+    * PostgreSQL database server works for version > 10
+
 ## 2.1.1
   * bug fixes
     * Fix error when not setting send_stats
