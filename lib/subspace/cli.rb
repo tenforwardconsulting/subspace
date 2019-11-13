@@ -13,6 +13,7 @@ require 'subspace/commands/provision'
 require 'subspace/commands/ssh'
 require 'subspace/commands/vars'
 require 'subspace/commands/maintain'
+require 'subspace/commands/maintenance_mode.rb'
 
 class Subspace::Cli
   include Commander::Methods
@@ -103,6 +104,19 @@ class Subspace::Cli
         c.option "--#{param_name} #{param_name.upcase}", "Passed directly through to ansible-playbook command"
       end
       c.when_called Subspace::Commands::Maintain
+    end
+
+    command :maintenance_mode do |c, args|
+      c.syntax = 'subspace maintenance_mode [options]'
+      c.summary = 'Turns on or off maintenance mode'
+      c.description = ''
+      c.option "-i", "--private-key PRIVATE-KEY", "Alias for private-key"
+      c.option "--on", "Turns on maintenance mode"
+      c.option "--off", "Turns off maintenance mode"
+      Subspace::Commands::MaintenanceMode::PASS_THROUGH_PARAMS.each do |param_name|
+        c.option "--#{param_name} #{param_name.upcase}", "Passed directly through to ansible-playbook command"
+      end
+      c.when_called Subspace::Commands::MaintenanceMode
     end
 
     run!

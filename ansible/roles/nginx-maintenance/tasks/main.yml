@@ -1,0 +1,13 @@
+---
+  - name: Test connection
+    ping:
+
+  - name: Move maintenance_off.html to maintenance_on.html
+    command: mv /u/apps/{{project_name}}/current/public/maintenance_off.html /u/apps/{{project_name}}/current/public/maintenance_on.html
+    tags:
+      - maintenance_on
+
+  - name: Move maintenance_on.html to maintenance_off.html
+    command: mv /u/apps/{{project_name}}/current/public/maintenance_on.html /u/apps/{{project_name}}/current/public/maintenance_off.html
+    tags:
+      - maintenance_off
