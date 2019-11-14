@@ -1,13 +1,33 @@
 ---
-  - name: Test connection
-    ping:
+  - name: Check that /opt/subspace/ exists
+    stat:
+      path: /opt/subspace/
+    register: subspace_dir
+    tags:
+      - maintenance_on
+      - maintenance_off
 
-  - name: Move maintenance_off.html to maintenance_on.html
-    command: mv /u/apps/{{project_name}}/current/public/maintenance_off.html /u/apps/{{project_name}}/current/public/maintenance_on.html
+  - name: Check that /u/apps/{{project_name}}/current/public/maintenance.html exists
+    stat:
+      path: /u/apps/{{project_name}}/current/public/maintenance.html
+    register: app_maintenance_html
     tags:
       - maintenance_on
 
-  - name: Move maintenance_on.html to maintenance_off.html
-    command: mv /u/apps/{{project_name}}/current/public/maintenance_on.html /u/apps/{{project_name}}/current/public/maintenance_off.html
+  - name: Move maintenance.html to /opt/subspace
+    command: cp /u/apps/{{project_name}}/current/public/maintenance.html /opt/subspace/maintenance.html
+    args:
+      creates: /opt/subspace/maintenance.html
+    when:
+      - app_maintenance_html.stat.exists == True
+      - subspace_dir.stat.exists == True
+    tags:
+      - maintenance_on
+
+  - name: Remove /opt/subspace/maintenance.html
+    file:
+      path: /opt/subspace/maintenance.html
+      state: absent
+    when: subspace_dir.stat.exists == True
     tags:
       - maintenance_off

@@ -69,6 +69,18 @@ At the time of this writing, we pass through the `ansible-playbook` "limit" opti
 
 e.g. To run only on the host "prod-web1": `subspace maintain production --limit=prod-web1`
 
+### `subspace maintenance_mode <environment> --on`
+
+This sets up nginx to return all requests as 503 and serve only the
+static page at `/u/apps/{{project_name}}/current/public/maintenance.html`
+which must be checked into your project and deployed to the server.
+
+`--on` and `--off`, defaults to off.
+
+Only works for hosts using the `nginx` role, but you can pass in your entire environment. Running it on worker servers won't hurt anything.
+
+MUST be turned off manually by running `subspace maintenance_mode <environment> --off`, even a deploy will not disable maintenance mode.
+
 #### Tagged roles
 
 Role       | Tags                      | Comment

@@ -18,6 +18,6 @@ class Subspace::Commands::MaintenanceMode < Subspace::Commands::Base
         ansible_options += ["--#{param_name}", value]
       end
     end
-    ansible_command "ansible-playbook", "maintenance_mode.yml", *ansible_options
+    ansible_command "ansible-playbook",  File.join(File.dirname(__FILE__), "../../../ansible/playbooks/maintenance_mode.yml"), *ansible_options
   end
 end
