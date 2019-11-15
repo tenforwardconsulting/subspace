@@ -41,7 +41,7 @@ class Subspace::Commands::Bootstrap < Subspace::Commands::Base
       "--become",
       "-vvvv"
     ]
-    cmd = add_pass_through_params cmd
+    cmd = cmd | pass_through_params
     bootstrap_command cmd
   end
 
@@ -50,17 +50,5 @@ class Subspace::Commands::Bootstrap < Subspace::Commands::Base
       cmd.push("--ask-pass")
     end
     ansible_command *cmd
-  end
-
-  def add_pass_through_params(cmd)
-    PASS_THROUGH_PARAMS.each do |param_name|
-      x = param_name.split('-')[1..-1].map(&:upcase).join('_')
-      hash_key = (param_name.gsub('-', '_') + (x == '' ? '' : "_#{x}")).to_sym
-      value = @options.__hash__[hash_key]
-      if value
-        cmd += ["--#{param_name}", value]
-      end
-    end
-    cmd
   end
 end
