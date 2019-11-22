@@ -1,0 +1,5 @@
+---
+  - hosts: "{{ maintenance_hosts }}"
+    become: true
+    roles:
+      - nginx-maintenance

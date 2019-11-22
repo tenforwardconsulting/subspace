@@ -27,7 +27,7 @@ Subspace.configure do |config|
   config.host :dev, {
     ssh_host: "1.2.3.4",          # Ansible connects to this to provision
     ssh_user: "deploy",           # ssh user
-    sudo: true,                   # probably should be true if user isn't root
+    become: true,                   # probably should be true if user isn't root
     hostname: "dev.example.com"   # This will get set in /etc/hostname
   }
 

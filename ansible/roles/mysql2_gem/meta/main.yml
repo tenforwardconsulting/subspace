@@ -3,6 +3,6 @@
 #   dependencies:
 #     - {
 #       role: ANXS.mysql,
-#       sudo: true
+#       become: true
 #     }
 

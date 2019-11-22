@@ -2,4 +2,4 @@
   - name: Install mysql2 gem dependencies
     apt:
       name: libmysqlclient-dev
-    sudo: true
+    become: true

@@ -1,4 +1,4 @@
-sudo: false
+become: false
 language: ruby
 rvm:
   - 2.3.1

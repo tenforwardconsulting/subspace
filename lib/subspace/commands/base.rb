@@ -53,6 +53,23 @@ module Subspace
         return answer.downcase.start_with? "y"
       end
 
+      def pass_through_params
+        ansible_options = []
+        self.class::PASS_THROUGH_PARAMS.each do |param_name|
+          x = param_name.split('-')[1..-1].map(&:upcase).join('_')
+          hash_key = (param_name.gsub('-', '_') + (x == '' ? '' : "_#{x}")).to_sym
+          value = @options.__hash__[hash_key]
+          if value
+            if param_name.length > 1
+              ansible_options += ["--#{param_name}", value]
+            else
+              ansible_options += ["-#{param_name}", value]
+            end
+          end
+        end
+
+        ansible_options
+      end
     end
   end
 end

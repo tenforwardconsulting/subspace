@@ -1,8 +1,8 @@
 ---
 - name: apache restart
   service: name=apache2 state=restarted
-  sudo: yes
+  become: yes
 
 - name: nginx restart
   service: name=nginx state=restarted
-  sudo: yes
+  become: yes
