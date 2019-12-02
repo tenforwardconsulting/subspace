@@ -60,7 +60,7 @@
   - name: Update nginx default options
     when: "'nginx' in role_names"
     get_url:
-      url: https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/tls_configs/options-ssl-nginx.conf
+      url: https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf
       dest: /etc/letsencrypt/options-ssl-nginx.conf
 
   - name: Update apache default options

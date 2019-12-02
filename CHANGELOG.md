@@ -10,6 +10,9 @@ This project attempts to follow [semantic versioning](https://semver.org/)
   * Not working on OSX - macs don't read from /etc/profile.d/
   * Stops showing color if you `sudo su`
 
+## 2.2.1
+  * Update URL for letsencrypt tls raw file
+
 ## 2.2.0
   * Add maintenance_mode command
   * Add ppa:ondrej/nginx repo in common role for TLS 1.3 and nginx support
