@@ -26,7 +26,7 @@ class Subspace::Commands::Bootstrap < Subspace::Commands::Base
       "path=/home/{{ansible_ssh_user}}/.ssh state=directory mode=0700",
       "-vvvv"
     ]
-    cmd = add_pass_through_params cmd
+    cmd = cmd | pass_through_params
     bootstrap_command cmd
   end
 
