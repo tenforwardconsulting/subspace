@@ -10,7 +10,7 @@ rails_env = "{{rails_env}}"
 environment rails_env
 
 # Set up socket location
-bind "tcp://127.0.0.1:9292"
+bind "tcp://127.0.0.1:{{puma_local_port}}"
 
 # Logging
 stdout_redirect "#{app_dir}/log/puma.stdout.log", "#{app_dir}/log/puma.stderr.log", true

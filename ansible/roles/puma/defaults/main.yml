@@ -2,4 +2,5 @@
   puma_workers: 1
   puma_min_threads: 4
   puma_max_threads: 16
+  puma_local_port: 9292
 
