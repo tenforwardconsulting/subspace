@@ -1,0 +1,6 @@
+---
+# handlers file for rbenv
+- name: rehash rbenv
+  command: rbenv rehash
+  environment:
+    RBENV_ROOT: '{{ rbenv_root }}'

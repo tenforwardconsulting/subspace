@@ -1,0 +1,34 @@
+---
+- name: Uninstall Bundler
+  command: bash -lc "gem uninstall bundler"
+  become: true
+
+- name: Install Bundler
+  command: bash -lc "gem install bundler:{{ bundler_version }}"
+  become: true
+
+- name: Grab Ruby version
+  shell: ruby --version
+  register: stats_ruby_version
+  when: send_stats == true and stats_url is defined and stats_api_key is defined
+  tags:
+    - maintenance
+    - stats
+
+- name: Send Ruby stats to URL
+  uri:
+    url: "{{stats_url}}"
+    method: POST
+    headers:
+      X-API-Version: 1
+      X-Client-Api-key: "{{stats_api_key}}"
+    body_format: json
+    body:
+      client_stat:
+        key: ruby_version
+        value: "{{stats_ruby_version.stdout}}"
+        hostname: "{{hostname}}"
+  when: send_stats == true and stats_url is defined and stats_api_key is defined
+  tags:
+    - maintenance
+    - stats
