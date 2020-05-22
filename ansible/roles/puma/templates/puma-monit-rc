@@ -1,4 +1,4 @@
-check process puma
+check process {{project_name}}_puma
   with pidfile /u/apps/{{project_name}}/current/tmp/pids/puma.pid
   start program = "/bin/su - {{deploy_user}} -c 'cd /u/apps/{{project_name}}/current && bundle exec pumactl -F /u/apps/{{project_name}}/shared/config/puma/{{rails_env}}.rb start'"
   stop program = "/bin/su - {{deploy_user}} -c 'cd /u/apps/{{project_name}}/current && bundle exec pumactl -F /u/apps/{{project_name}}/shared/config/puma/{{rails_env}}.rb stop'"
