@@ -74,14 +74,20 @@
     notify: start webserver
     changed_when: true
 
+  - name: Set path at top of crontab
+    cron:
+      name: PATH
+      env: yes
+      job: /usr/bin:/bin:/usr/sbin
+
   - name: Setup cron job to auto renew
     become: true
     when: "'apache' in role_names"
     cron:
       name: Auto-renew SSL
-      job: "{{certbot_dir}}/certbot-auto renew --quiet --no-self-upgrade --apache"
-      hour: 0
-      minute: 33
+      job: "{{certbot_dir}}/certbot-auto renew --no-self-upgrade --apache >> /var/log/cron.log 2>&1"
+      hour: "0"
+      minute: "33"
       state: present
 
   - name: Setup cron job to auto renew
@@ -89,7 +95,7 @@
     when: "'nginx' in role_names"
     cron:
       name: Auto-renew SSL
-      job: "{{certbot_dir}}/certbot-auto renew --quiet --no-self-upgrade --nginx"
-      hour: 0
-      minute: 33
+      job: "{{certbot_dir}}/certbot-auto renew --no-self-upgrade --nginx >> /var/log/cron.log 2>&1"
+      hour: "0"
+      minute: "33"
       state: present
