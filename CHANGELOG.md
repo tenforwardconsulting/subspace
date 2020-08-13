@@ -13,6 +13,7 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 ## 2.2.3
   * Add PATH to crontab for letsencrypt auto renewal
   * log letsencrypt crontab to /var/log/cron.log
+  * fix setting hostname with systemd
 
 ## 2.2.2
   * Use state: "present" instead of "installed"
