@@ -1,16 +1,7 @@
 ---
   - name: Install rails apt dependencies
     apt:
-      name: "{{item}}"
-    with_items:
-      - git
-      - libffi-dev
-      - libgmp3-dev
-      - libpq-dev
-      - libxslt-dev
-      - nodejs
-      - zlib1g-dev
-      - ffmpeg
+      name: ['git', 'libffi-dev', 'libgmp3-dev', 'libpq-dev',  'libxslt-dev', 'nodejs', 'zlib1g-dev' ,'ffmpeg']
     become: true
     when: ('Ubuntu' in ansible_distribution)
     tags:

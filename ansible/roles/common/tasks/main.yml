@@ -59,6 +59,7 @@
   - name: Set hostname for systemd
     hostname:
       name: "{{hostname}}"
+      use: systemd
     become: true
     tags:
       - maintenance
