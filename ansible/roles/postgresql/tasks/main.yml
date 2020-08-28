@@ -38,3 +38,30 @@
 
   - include: backups.yml
     become: true
+
+
+- name: Grab Psql version
+  shell: psql --version
+  register: stats_psql_version
+  when: send_stats == true and stats_url is defined and stats_api_key is defined
+  tags:
+    - maintenance
+    - stats
+
+- name: Send Psql stats to URL
+  uri:
+    url: "{{stats_url}}"
+    method: POST
+    headers:
+      X-API-Version: 1
+      X-Client-Api-key: "{{stats_api_key}}"
+    body_format: json
+    body:
+      client_stat:
+        key: psql_version
+        value: "{{stats_psql_version.stdout}}"
+        hostname: "{{hostname}}"
+  when: send_stats == true and stats_url is defined and stats_api_key is defined
+  tags:
+    - maintenance
+    - stats

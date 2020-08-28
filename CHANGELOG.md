@@ -12,6 +12,7 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## 2.3.0
   * Grab linux kernel to send as stats
+  * Grab psql version to send as stats
 
 ## 2.2.3
   * Add PATH to crontab for letsencrypt auto renewal
