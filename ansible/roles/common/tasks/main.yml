@@ -252,4 +252,30 @@
     tags:
       - maintenance
 
+  - name: Grab OS version
+    shell: uname --kernel-release
+    register: stats_os_version
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - maintenance
+      - stats
+
+  - name: Send OS stats to URL
+    uri:
+      url: "{{stats_url}}"
+      method: POST
+      headers:
+        X-API-Version: 1
+        X-Client-Api-key: "{{stats_api_key}}"
+      body_format: json
+      body:
+        client_stat:
+          key: os_version
+          value: "{{stats_os_version.stdout}}"
+          hostname: "{{hostname}}"
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - maintenance
+      - stats
+
   - import_tasks: swap.yml
