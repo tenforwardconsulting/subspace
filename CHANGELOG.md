@@ -10,6 +10,9 @@ This project attempts to follow [semantic versioning](https://semver.org/)
   * Not working on OSX - macs don't read from /etc/profile.d/
   * Stops showing color if you `sudo su`
 
+## 2.3.0
+  * Grab linux kernel to send as stats
+
 ## 2.2.3
   * Add PATH to crontab for letsencrypt auto renewal
   * log letsencrypt crontab to /var/log/cron.log
