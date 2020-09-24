@@ -25,3 +25,14 @@
     dest: /etc/nginx/sites-enabled/{{project_name}}-ssl
     state: "{{ (ssl_enabled and nginx_ssl_config is defined) | ternary('link', 'absent') }}"
   become: true
+
+- name: Enable a default server if one is not defined in the app
+  template:
+    src: 'default_server'
+    dest: /etc/nginx/sites-enabled/default_server
+    mode: 0644
+    group: root
+    owner: root
+  become: true
+  when: not default_server
+
