@@ -10,6 +10,9 @@ This project attempts to follow [semantic versioning](https://semver.org/)
   * Not working on OSX - macs don't read from /etc/profile.d/
   * Stops showing color if you `sudo su`
 
+## 2.3.1
+  * Sidekiq concurrency actually works
+
 ## 2.3.0
   * Grab linux kernel to send as stats
   * Grab psql version to send as stats
