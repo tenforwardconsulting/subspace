@@ -1,4 +1,4 @@
 check process sidekiq
   with pidfile /u/apps/{{project_name}}/shared/tmp/pids/sidekiq.pid
-  start program = "/bin/su - deploy -c 'cd /u/apps/{{project_name}}/current && bundle exec sidekiq --queue {{hostname}} {{ job_queues | map('regex_replace',  '^(.*)$', '--queue \\1') | join(' ') }} --pidfile /u/apps/{{project_name}}/shared/tmp/pids/sidekiq.pid --environment {{rails_env}} --logfile /u/apps/{{project_name}}/shared/log/sidekiq.log --daemon'" with timeout 30 seconds
+  start program = "/bin/su - deploy -c 'cd /u/apps/{{project_name}}/current && bundle exec sidekiq --queue {{hostname}} {{ job_queues | map('regex_replace',  '^(.*)$', '--queue \\1') | join(' ') }} -c {{sidekiq_concurrency}} --pidfile /u/apps/{{project_name}}/shared/tmp/pids/sidekiq.pid --environment {{rails_env}} --logfile /u/apps/{{project_name}}/shared/log/sidekiq.log --daemon'" with timeout 30 seconds
   stop program = "/bin/su - deploy -c 'kill -s TERM `cat /u/apps/{{project_name}}/shared/tmp/pids/sidekiq.pid`'" with timeout 30 seconds
