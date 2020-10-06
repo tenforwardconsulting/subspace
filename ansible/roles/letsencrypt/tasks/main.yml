@@ -4,5 +4,5 @@
     when: ansible_distribution == "Ubuntu" and ansible_distribution_version == "20.04"
 
   - name: "Legacy Letsencrypt Installation (py2, from source)"
-    include_tasks: modern.yml
+    include_tasks: legacy.yml
     when: not (ansible_distribution == "Ubuntu" and ansible_distribution_version == "20.04")
