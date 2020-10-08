@@ -1,6 +1,7 @@
 ---
+  - set_fact: postgresql_installed="true"
+
   - name: Adding APT repository key
-    when: ansible_os_family == 'Debian'
     become: yes
     apt_key:
       id: ACCC4CF8
@@ -11,7 +12,6 @@
       - repo
 
   - name: Add PostgreSQL official APT repository
-    when: ansible_os_family == 'Debian'
     become: yes
     apt_repository:
       repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ansible_distribution_release}}-pgdg main"
@@ -21,7 +21,6 @@
       - repo
 
   - name: Install PostgreSQL
-    when: ansible_os_family == 'Debian'
     become: yes
     apt:
       name: "{{item}}"
@@ -29,7 +28,6 @@
       update_cache: yes
       cache_valid_time: 3600
     with_items:
-      - python3-pip
       - "postgresql-{{postgresql_version}}"
       - "postgresql-client-{{postgresql_version}}"
       - "libpq-dev"
@@ -38,14 +36,28 @@
       - db
       - deps
 
-  - name: Install dependencies for the Ansible module
-    when: ansible_os_family == 'Debian'
+  - name: "Detect python3"
+    shell: "which python3"
+    register: is_python3
+
+  - name: Ensure pip is installed (python3)
+    when: is_python3 is succeeded
+    apt:
+      name: python3-pip
+      state: present
+      update_cache: yes
+
+  - name: Install psycopg2 (python3)
+    when: is_python3 is succeeded
     become: yes
     command: "pip3 install psycopg2"
-    tags:
-      - postgresql
-      - db
-      - deps
+
+  - name: Install psycopg2 (python2)
+    when: is_python3 is failed
+    become: yes
+    apt:
+      name: python-psycopg2
+      state: latest
 
   - name: Create postgresql user
     postgresql_user:

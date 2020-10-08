@@ -1,83 +1,13 @@
 ---
-  - name: Install certbot
+  - name: Install ca-certificates
     become: true
     apt:
       pkg: "{{item}}"
       state: present
     with_items:
       - ca-certificates
-      - certbot
 
-  - name: Ensure nginx is installed (first time)
-    become: true
-    apt:
-      pkg: nginx
-      state: present
-    when: "'nginx' in role_names"
-
-  - name: shutdown webserver for standalone mode
-    debug: msg="Shutdown webserver"
-    notify: stop webserver
-    changed_when: true
-
-  - meta: flush_handlers
-
-  - name: "wait for webserver to stop"
-    wait_for:
-      port: 80
-      delay: 1
-      state: stopped
-
-  - name: Run default
-    when: le_ssl_certs is not defined
-    become: true
-    command: "certbot certonly --email {{letsencrypt_email}} --domains {{([server_name] + server_aliases) | join(',')}} --standalone --agree-tos --expand --non-interactive"
-
-  - name: Generate SSL Certificates
-    become: true
-    with_items: "{{le_ssl_certs|default([])}}"
-    command: "certbotuto certonly --email {{letsencrypt_email}} --domains {{item.domains | join(',')}} --cert-name {{item.cert_name}} --standalone --agree-tos --expand --non-interactive"
-
-  - name: Update nginx default options
-    when: "'nginx' in role_names"
-    get_url:
-      url: https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf
-      dest: /etc/letsencrypt/options-ssl-nginx.conf
-
-  - name: Update apache default options
-    when: "'apache' in role_names"
-    get_url:
-      url: https://raw.githubusercontent.com/certbot/certbot/master/certbot-apache/certbot_apache/options-ssl-apache.conf
-      dest: /etc/letsencrypt/options-ssl-apache.conf
-
-  - name: start webserver after standalone mode
-    debug: msg="Startup webserver"
-    notify: start webserver
-    changed_when: true
-
-  - name: Set path at top of crontab
-    cron:
-      name: PATH
-      env: yes
-      job: /usr/bin:/bin:/usr/sbin
-
-  - name: Setup cron job to auto renew
-    become: true
-    when: "'apache' in role_names"
-    cron:
-      name: Auto-renew SSL
-      job: "certbot renew --no-self-upgrade --apache >> /var/log/cron.log 2>&1"
-      hour: "0"
-      minute: "33"
-      state: present
-
-  - name: Setup cron job to auto renew
-    become: true
-    when: "'nginx' in role_names"
-    cron:
-      name: Auto-renew SSL
-      job: "certbot renew --no-self-upgrade --nginx >> /var/log/cron.log 2>&1"
-      hour: "0"
-      minute: "33"
-      state: present
+  - name: "Set certbot binary"
+    set_fact:
+      certbot_bin: "certbot"
 
