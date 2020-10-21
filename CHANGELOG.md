@@ -10,6 +10,9 @@ This project attempts to follow [semantic versioning](https://semver.org/)
   * Not working on OSX - macs don't read from /etc/profile.d/
   * Stops showing color if you `sudo su`
 
+## 2.3.2
+  * Update papertrail to latest version of remote_syslog2 and add support for nginx logs
+
 ## 2.3.1
   * Sidekiq concurrency actually works
 
