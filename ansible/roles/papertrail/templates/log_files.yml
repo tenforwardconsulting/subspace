@@ -1,7 +1,14 @@
 # Variables: papertrail_host, papertrail_port
 files:
-  - /var/log/apache2/error.log
   - /u/apps/{{project_name}}/shared/log/{{rails_env}}.log
+{% if 'nginx' in role_names %}
+  - /var/log/nginx/error.log
+{% endif %}
+{% if 'apache' in role_names %}
+  - /var/log/apache2/error.log
+{% endif %}
+
 destination:
   host: {{papertrail_host}}
   port: {{papertrail_port}}
+  protocol: tls

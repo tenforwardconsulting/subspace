@@ -1,6 +1,6 @@
 ---
   - name: Install remote_syslog from papertrail
-    command: wget -O /tmp/remote_syslog.tar.gz https://github.com/papertrail/remote_syslog2/releases/download/v0.13/remote_syslog_linux_amd64.tar.gz  creates=/usr/bin/remote_syslog
+    command: wget -O /tmp/remote_syslog.tar.gz https://github.com/papertrail/remote_syslog2/releases/download/v0.20/remote_syslog_linux_amd64.tar.gz  creates=/usr/bin/remote_syslog
 
   - command: tar xzf /tmp/remote_syslog.tar.gz chdir=/tmp/ creates=/usr/bin/remote_syslog
 
@@ -10,7 +10,7 @@
   - file: path=/usr/bin/remote_syslog owner=root group=root mode=0755
     become: true
 
-  - command: wget -O /etc/init.d/remote_syslog https://raw.githubusercontent.com/papertrail/remote_syslog2/v0.13/examples/remote_syslog.init.d creates=/etc/init.d/remote_syslog
+  - command: wget -O /etc/init.d/remote_syslog https://raw.githubusercontent.com/papertrail/remote_syslog2/v0.20/examples/remote_syslog.init.d creates=/etc/init.d/remote_syslog
     become: true
 
   - file: path=/etc/init.d/remote_syslog owner=root group=root mode=0755
@@ -20,8 +20,10 @@
 
   - file: path=/tmp/remote_syslog.tar.gz state=absent
 
+  - template: src=log_files.yml dest=/etc/log_files.yml owner=root group=root mode=0644
+    become: true
+
   - service: name=remote_syslog state=restarted enabled=yes
     become: true
 
-  - template: src=log_files.yml dest=/etc/log_files.yml owner=root group=root mode=0644
-    become: true
+
