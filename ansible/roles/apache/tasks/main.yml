@@ -52,3 +52,7 @@
       state: link
     become: true
     notify: apache restart
+
+  - name: Apache is installed
+    set_fact:
+      apache_installed: true

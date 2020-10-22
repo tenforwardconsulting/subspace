@@ -20,10 +20,12 @@
 
   - file: path=/tmp/remote_syslog.tar.gz state=absent
 
-  - template: src=log_files.yml dest=/etc/log_files.yml owner=root group=root mode=0644
+  - name: Create /etc/log_files
+    template: src=log_files.yml dest=/etc/log_files.yml owner=root group=root mode=0644
     become: true
 
-  - service: name=remote_syslog state=restarted enabled=yes
+  - name: Restart rsyslog
+    service: name=remote_syslog state=restarted enabled=yes
     become: true
 
 

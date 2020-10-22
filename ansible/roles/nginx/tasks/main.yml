@@ -28,3 +28,7 @@
 - name: Restart nginx
   action: service name=nginx state=restarted
   become: true
+
+- name: Nginx is installed
+  set_fact:
+    nginx_installed: true

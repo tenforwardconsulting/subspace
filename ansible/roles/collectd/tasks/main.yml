@@ -47,7 +47,7 @@
       dest: /etc/collectd/collectd.conf.d/apache2.conf
     become: true
     notify: restart collectd
-    when: "'apache' in role_names"
+    when: apache_installed is defined
 
   - name: create puma config
     template:
@@ -70,7 +70,7 @@
       dest: /etc/collectd/collectd.conf.d/nginx.conf
     become: true
     notify: restart collectd
-    when: "'nginx' in role_names"
+    when: nginx_installed is defined
 
   - name: create rails_lograge config
     template:

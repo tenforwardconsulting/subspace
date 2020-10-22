@@ -1,10 +1,10 @@
 # Variables: papertrail_host, papertrail_port
 files:
   - /u/apps/{{project_name}}/shared/log/{{rails_env}}.log
-{% if 'nginx' in role_names %}
+{% if nginx_installed is defined %}
   - /var/log/nginx/error.log
 {% endif %}
-{% if 'apache' in role_names %}
+{% if apache_installed is defined %}
   - /var/log/apache2/error.log
 {% endif %}
 
