@@ -110,6 +110,10 @@
       - maintenance
       - upgrade
 
+  - name: update apt keys
+    become: true
+    command: apt-key adv --refresh-keys --keyserver keyserver.ubuntu.com
+
   - name: apt-get upgrade
     apt: upgrade=full
     become: true
