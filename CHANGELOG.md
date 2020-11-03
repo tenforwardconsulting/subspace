@@ -10,6 +10,14 @@ This project attempts to follow [semantic versioning](https://semver.org/)
   * Not working on OSX - macs don't read from /etc/profile.d/
   * Stops showing color if you `sudo su`
 
+## 2.4
+  Lots of modifications for ubuntu 20.04, which has python3 as a default
+
+  * Change letsencrypt to pull from apt instead of build from source (backwards compatible)
+  * Change postgres to a cleaner install and deprecate the old zenoamaro role
+  * postgresql_version is now a required variable and no longer defaults to 9.4
+  * Better detection of web servers
+
 ## 2.3.3
   * Tweak the way that different roles are detected to be more reliable
 

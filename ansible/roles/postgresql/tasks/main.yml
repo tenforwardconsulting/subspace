@@ -1,6 +1,64 @@
 ---
   - set_fact: postgresql_installed="true"
 
+  - name: Adding APT repository key
+    become: yes
+    apt_key:
+      id: ACCC4CF8
+      url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    tags:
+      - postgresql
+      - db
+      - repo
+
+  - name: Add PostgreSQL official APT repository
+    become: yes
+    apt_repository:
+      repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ansible_distribution_release}}-pgdg main"
+    tags:
+      - postgresql
+      - db
+      - repo
+
+  - name: Install PostgreSQL
+    become: yes
+    apt:
+      name: "{{item}}"
+      state: present
+      update_cache: yes
+      cache_valid_time: 3600
+    with_items:
+      - "postgresql-{{postgresql_version}}"
+      - "postgresql-client-{{postgresql_version}}"
+      - "libpq-dev"
+    tags:
+      - postgresql
+      - db
+      - deps
+
+  - name: "Detect python3"
+    shell: "which python3"
+    register: is_python3
+
+  - name: Ensure pip is installed (python3)
+    when: is_python3 is succeeded
+    apt:
+      name: python3-pip
+      state: present
+      update_cache: yes
+
+  - name: Install psycopg2 (python3)
+    when: is_python3 is succeeded
+    become: yes
+    command: "pip3 install psycopg2"
+
+  - name: Install psycopg2 (python2)
+    when: is_python3 is failed
+    become: yes
+    apt:
+      name: python-psycopg2
+      state: latest
+
   - name: Create postgresql user
     postgresql_user:
       name: "{{database_user}}"

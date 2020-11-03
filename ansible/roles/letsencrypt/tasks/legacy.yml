@@ -1,0 +1,44 @@
+---
+  - name: Install certbot dependencies
+    become: true
+    apt:
+      pkg: "{{item}}"
+      state: present
+    with_items:
+      - augeas-lenses
+      - ca-certificates
+      - dialog
+      - gcc
+      - libaugeas0
+      - libffi-dev
+      - libpython-dev
+      - libpython2.7-dev
+      - libssl-dev
+      - python
+      - python-dev
+      - python-setuptools
+      - python-virtualenv
+      - python2.7
+      - python2.7-dev
+
+  - name: "Create certbot dir"
+    become: true
+    file:
+      path: "{{certbot_dir}}"
+      state: directory
+      mode: 0755
+
+  - name: "Set certbot binary"
+    set_fact:
+      certbot_bin: "{{certbot_dir}}/certbot_auto"
+
+  - name: Get certbot
+    become: true
+    get_url:
+      url: "https://dl.eff.org/certbot-auto"
+      dest: "{{certbot_bin}}"
+      mode: a+x
+
+
+
+

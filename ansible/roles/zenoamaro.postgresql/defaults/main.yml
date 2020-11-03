@@ -1,6 +1,7 @@
 ---
 
-postgresql_version: 9.4
+# BS -- Commenting this out to force people to
+# postgresql_version: 9.4
 
 # This will be the main admin user, which is only allowed to connect
 # from localhost, mainly for provisioning, maintenance and scripts.

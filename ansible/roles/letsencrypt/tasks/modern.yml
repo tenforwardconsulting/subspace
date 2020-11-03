@@ -1,0 +1,13 @@
+---
+  - name: Install ca-certificates
+    become: true
+    apt:
+      pkg: "{{item}}"
+      state: present
+    with_items:
+      - ca-certificates
+
+  - name: "Set certbot binary"
+    set_fact:
+      certbot_bin: "certbot"
+

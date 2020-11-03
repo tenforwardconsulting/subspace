@@ -1,7 +1,2 @@
 ---
   dependencies:
-    - {
-      role: zenoamaro.postgresql,
-      become: true,
-      notify: postgresql restart
-    }
