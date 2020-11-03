@@ -2,3 +2,5 @@
   client_max_body_size: 4G
   ssl_force_redirect: true
   default_server: true
+  keepalive_timeout: 10
+  extra_nginx_config: {}
