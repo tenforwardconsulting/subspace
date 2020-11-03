@@ -18,8 +18,8 @@
       - python-dev
       - python-setuptools
       - python-virtualenv
+      - python2.7
       - python2.7-dev
-    when: not (ansible_distribution == "Ubuntu" and ansible_distribution_version == "20.04")
 
   - name: "Create certbot dir"
     become: true
