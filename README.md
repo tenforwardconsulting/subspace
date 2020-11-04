@@ -291,6 +291,10 @@ Configures nginx to look at localhost:9292 for the socket/backend connection.  I
 defaults are here, we'll probably add more:
 
     client_max_body_size: 4G
+    ssl_force_redirect: true
+    default_server: true
+    keepalive_timeout: 10
+    extra_nginx_config: ""
 
 Optional variables:
 
@@ -300,6 +304,12 @@ Optional variables:
     nginx_proxy_read_timeout: Set [proxy_read_timeout](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_read_timeout). This is in seconds. You probably only want to change this if using rack-timeout (although I may be wrong). If using rack-timeout, it should be slightly higher than the rack-timeout timeout. I'm doing 5 seconds higher, but that was arbitrarily chosen.
 
     ssl_force_redirect: redirect all HTTP traffic to HTTPS on the same host.  Defaults to true and only applies if ssl_enabled is also true.
+    extra_nginx_config: anything else you want to configure in the main nginx config block, formatted like:
+    extra_nginx_config: |
+      proxy_http_version 1.1;
+      chunked_transfer_encoding off;
+      proxy_buffering off;
+      proxy_cache off;
 
 ## nodejs
 

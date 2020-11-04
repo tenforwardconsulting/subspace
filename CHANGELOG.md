@@ -11,7 +11,14 @@ This project attempts to follow [semantic versioning](https://semver.org/)
   * Stops showing color if you `sudo su`
 
 ## 2.4.1
-  * Allow extra nginx options via extra_nginx_config
+  * Allow extra nginx options via extra_nginx_config eg:
+    ```
+    extra_nginx_config: |
+      proxy_http_version 1.1;
+      chunked_transfer_encoding off;
+      proxy_buffering off;
+      proxy_cache off;
+    ```
   * Add keepalive_timeout for nginx
 
 ## 2.4
