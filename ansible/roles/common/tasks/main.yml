@@ -64,19 +64,19 @@
     tags:
       - maintenance
 
-  - name: apt-get update
-    apt: update_cache=yes cache_valid_time=86400
-    become: true
-    tags:
-      - upgrade
-      - maintenance
-
   - name: install aptitude
     apt:
       pkg: aptitude
       state: present
     become: true
     tags:
+      - maintenance
+
+  - name: apt-get update
+    apt: update_cache=yes cache_valid_time=86400
+    become: true
+    tags:
+      - upgrade
       - maintenance
 
   - name: Add ppa:ondrej/nginx apt repository for TLS 1.3

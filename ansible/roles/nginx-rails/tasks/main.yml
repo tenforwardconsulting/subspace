@@ -5,7 +5,7 @@
     dest: /etc/nginx/sites-available/{{project_name}}
   become: true
 
-- name: Enable the app
+- name: Enable the non-ssl app
   file:
     src: /etc/nginx/sites-available/{{project_name}}
     dest: /etc/nginx/sites-enabled/{{project_name}}
@@ -13,7 +13,7 @@
   when: ssl_enabled != true or nginx_ssl_config is not defined
   become: true
 
-- name: Disable the app
+- name: Disable the non-ssl app
   file:
     dest: /etc/nginx/sites-enabled/{{project_name}}
     state: absent
