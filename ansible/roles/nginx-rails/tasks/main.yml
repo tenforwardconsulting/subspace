@@ -5,11 +5,19 @@
     dest: /etc/nginx/sites-available/{{project_name}}
   become: true
 
-- name: Enable the app
+- name: Enable the non-ssl app
   file:
     src: /etc/nginx/sites-available/{{project_name}}
     dest: /etc/nginx/sites-enabled/{{project_name}}
-    state: "{{ (ssl_enabled and nginx_ssl_config is defined) | ternary('absent', 'link') }}"
+    state: link
+  when: ssl_enabled != true or nginx_ssl_config is not defined
+  become: true
+
+- name: Disable the non-ssl app
+  file:
+    dest: /etc/nginx/sites-enabled/{{project_name}}
+    state: absent
+  when: (ssl_enabled and nginx_ssl_config is defined)
   become: true
 
 - name: create ssl nginx config for rails app
@@ -23,7 +31,15 @@
   file:
     src: /etc/nginx/sites-available/{{project_name}}-ssl
     dest: /etc/nginx/sites-enabled/{{project_name}}-ssl
-    state: "{{ (ssl_enabled and nginx_ssl_config is defined) | ternary('link', 'absent') }}"
+    state: link
+  when: (ssl_enabled and nginx_ssl_config is defined)
+  become: true
+
+- name: Disable SSL configured app
+  file:
+    dest: /etc/nginx/sites-enabled/{{project_name}}-ssl
+    state: absent
+  when: ssl_enabled != true or nginx_ssl_config is not defined
   become: true
 
 - name: Enable a default server if one is not defined in the app

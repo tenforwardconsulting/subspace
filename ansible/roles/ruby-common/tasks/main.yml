@@ -87,12 +87,7 @@
   ignore_errors: yes
 
 - name: Install Bundler
-  gem:
-    name: bundler
-    version: "{{ bundler_version }}"
-    state: present
-    user_install: no
-    executable: "{{ ruby_location }}/bin/gem"
+  shell: "{{ ruby_location }}/bin/gem install bundler -v {{ bundler_version }}"
   become: true
 
 - name: Make Ruby symlinks
