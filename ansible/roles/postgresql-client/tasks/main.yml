@@ -35,14 +35,49 @@
     - db
     - deps
 
-- name: Install dependencies for the Ansible module
+- name: Install libpq-dev
   when: ansible_os_family == 'Debian'
   become: yes
   apt:
-    name: "{{item}}"
+    name: "libpq-dev"
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+  tags:
+    - postgresql
+    - db
+    - deps
+
+- name: "Detect python3"
+  shell: "which python3"
+  register: is_python3
+
+- name: Ensure pip is installed (python3)
+  when: is_python3 is succeeded
+  apt:
+    name: python3-pip
+    state: present
+    update_cache: yes
+  tags:
+    - postgresql
+    - db
+    - deps
+
+- name: Install psycopg2 (python3)
+  when: is_python3 is succeeded
+  become: yes
+  command: "pip3 install psycopg2"
+  tags:
+    - postgresql
+    - db
+    - deps
+
+- name: Install psycopg2 (python2)
+  when: is_python3 is failed
+  become: yes
+  apt:
+    name: python-psycopg2
     state: latest
-  with_items:
-    - python-psycopg2
   tags:
     - postgresql
     - db
