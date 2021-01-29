@@ -253,7 +253,7 @@
       - maintenance
 
   - name: Grab OS version
-    shell: uname --kernel-release
+    shell: uname -rv
     register: stats_os_version
     when: send_stats == true and stats_url is defined and stats_api_key is defined
     tags:

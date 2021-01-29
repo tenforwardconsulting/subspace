@@ -4,6 +4,7 @@ class Subspace::Commands::Maintain < Subspace::Commands::Base
   def initialize(args, options)
     @environment = args.first
     @options = options
+    set_subspace_version
     run
   end
 

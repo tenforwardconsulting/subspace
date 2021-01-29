@@ -10,6 +10,10 @@ This project attempts to follow [semantic versioning](https://semver.org/)
   * Not working on OSX - macs don't read from /etc/profile.d/
   * Stops showing color if you `sudo su`
 
+## 2.4.3
+  * Get actual os version number along with kernal name
+  * Update MOTD version automatically!
+
 ## 2.4.2
   * Update deprecated syntax for ansible
   * Fix postgresql-client for python 3

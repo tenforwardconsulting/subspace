@@ -70,6 +70,10 @@ module Subspace
 
         ansible_options
       end
+
+      def set_subspace_version
+        ENV['SUBSPACE_VERSION'] = Subspace::VERSION
+      end
     end
   end
 end
