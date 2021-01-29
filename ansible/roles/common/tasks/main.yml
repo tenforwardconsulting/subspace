@@ -158,6 +158,42 @@
       - maintenance
       - stats
 
+  - name: Get unattended security updates
+    shell:
+      cmd: cat /var/log/unattended-upgrades/unattended-upgrades.log | grep "Packages that will be upgraded:" | grep $(date '+%Y-%m') | cut -d " " -f 9- | wc -w
+    register: out
+    tags:
+      - maintenance
+      - stats
+
+  - name: get current date as month
+    shell:
+      cmd: date '+%Y-%m'
+    register: current_month
+    tags:
+      - maintenance
+      - stats
+
+  - name: Save unattended updates to /opt/subspace/updates.log
+    lineinfile:
+      path: /opt/subspace/updates.log
+      line: "[{{current_month.stdout}}]\n{{ out.stdout }} unattended security updates"
+      insertafter: EOF
+      create: yes
+    become: true
+    tags:
+      - maintenance
+      - stats
+    when: out.stdout != "0"
+
+  - name: Update unattended-upgrades.log
+    shell:
+      cmd: perl -i -pe 's/Packages that will be upgraded:/Packages already upgraded and logged in Subspace:/smg' /var/log/unattended-upgrades/unattended-upgrades.log
+    become: true
+    tags:
+      - maintenance
+      - stats
+
   - name: Get os_security_upgrades stats
     shell:
       cmd: |
