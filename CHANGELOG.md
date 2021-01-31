@@ -10,6 +10,9 @@ This project attempts to follow [semantic versioning](https://semver.org/)
   * Not working on OSX - macs don't read from /etc/profile.d/
   * Stops showing color if you `sudo su`
 
+## 2.5.1
+  * Fix os upgrades stat collection for ubuntu 20
+
 ## 2.5
   * Get actual os version number along with kernal name
   * Update MOTD version automatically!
