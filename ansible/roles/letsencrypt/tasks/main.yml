@@ -44,7 +44,7 @@
   - name: Run default
     when: le_ssl_certs is not defined
     become: true
-    command: "{{certbot_bin}} certonly --email {{letsencrypt_email}} --domains {{([server_name] + server_aliases) | join(',')}} --standalone --agree-tos --expand --non-interactive"
+    command: "{{certbot_bin}} certonly --email {{letsencrypt_email}} --domains {{([server_name] + server_aliases) | join(',')}} --cert-name {{server_name}} --standalone --agree-tos --expand --non-interactive"
 
   - name: Generate SSL Certificates
     become: true

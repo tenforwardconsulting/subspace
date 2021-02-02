@@ -358,8 +358,6 @@ Installs redis on the server.
     # Change to * if you want tthis available everywhere.
     redis_bind: 127.0.0.1
 
-
-
 ## ruby-common
 
 Installs ruby on the machine.  YOu can set a version by picking off the download url and sha hash from ruby-lang.org

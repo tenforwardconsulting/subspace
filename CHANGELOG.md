@@ -10,6 +10,9 @@ This project attempts to follow [semantic versioning](https://semver.org/)
   * Not working on OSX - macs don't read from /etc/profile.d/
   * Stops showing color if you `sudo su`
 
+## 2.5.2
+  * Always specify the letsencrypt cert_name so they are consistent
+
 ## 2.5.1
   * Fix os upgrades stat collection for ubuntu 20
 
