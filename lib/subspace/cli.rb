@@ -24,6 +24,11 @@ class Subspace::Cli
     program :version, Subspace::VERSION
     program :description, 'Ansible-backed server provisioning tool for rails'
 
+    unless system("which ansible > /dev/null")
+      puts "*** Subspace depends on ansible being on your PATH. Please install it: https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html"
+      exit 1
+    end
+
     command :init do |c|
       c.syntax = 'subspace init [vars]'
       c.summary = 'Run without options to initialize subspace.'
