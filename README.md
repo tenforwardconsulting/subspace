@@ -282,6 +282,21 @@ Installs logrotate and lets you configure logs for automatic rotation.  Example 
 
 ## newrelic
 
+## newrelic-infra
+This role will install the next-gen "Newrelic One" infrastructure agent which can perform a few different functions for newrelic.  The previous "newrelic" role is deprecated. 
+
+Variables: 
+    # Required, the newrelic license key you get after signing up. 
+    newrelic_license: "longhashthingyougetfromnewrelichere" 
+    # Optional - send logs to newrelic one's log aggregator.
+    newrelic_logs:
+      - name: rails-production
+        path: /u/apps/blah/shared/log/production.log
+      - name: nginx-error
+        path: /var/log/nginx/error.log
+
+
+
 ## nginx-rails
 
 Configures nginx to look at localhost:9292 for the socket/backend connection.  If you need to do fancy stuff you should simply override this role

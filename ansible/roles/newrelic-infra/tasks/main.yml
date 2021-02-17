@@ -1,0 +1,33 @@
+---
+  - name: Add New Relic apt key
+    apt_key:
+      url: https://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg 
+      state: present
+    become: true
+
+  - name: create license key
+    copy: 
+      dest: "/etc/newrelic-infra.yml"
+      content: |
+        license_key: {{newrelic_license}}
+
+  - name: Add New Relic apt repo
+    apt_repository:
+      repo: deb [arch=amd64] https://download.newrelic.com/infrastructure_agent/linux/apt focal main
+      state: present
+    become: true
+
+  - name: Install New Relic server agent
+    apt:
+      pkg: newrelic-infra
+      state: present
+      update_cache: true
+    become: true
+
+  - name: Configure application log forwarding if enabled
+    when: "{{ newrelic_logs|length }}"
+    become: true
+    template: 
+      dest: "/etc/newrelic-infra/logging.d/subspace.yml"
+      src: logs.yml.j2
+    notify: Restart newrelic-infra

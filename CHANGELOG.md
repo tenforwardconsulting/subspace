@@ -12,6 +12,7 @@ This project attempts to follow [semantic versioning](https://semver.org/)
 
 ## 2.5.3
   * Add a friendly error message if ansible is not installed
+  * Add new role to support New Relic One's infrastructure agent
 
 ## 2.5.2
   * Always specify the letsencrypt cert_name so they are consistent

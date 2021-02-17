@@ -1,4 +1,8 @@
 ---
+  - name: "Deprecation notice"
+    ansible.builtin.debug:
+      msg: The 'newrelic' role in subspace is deprecated. Please migration to Newrelic One and the 'newrelic-infra' role
+
   - name: Add New Relic apt repo
     apt_repository:
       repo: deb http://apt.newrelic.com/debian/ newrelic non-free
