@@ -10,6 +10,10 @@ This project attempts to follow [semantic versioning](https://semver.org/)
   * Not working on OSX - macs don't read from /etc/profile.d/
   * Stops showing color if you `sudo su`
 
+## 2.5.3
+  * Add a friendly error message if ansible is not installed
+  * Add new role to support New Relic One's infrastructure agent
+
 ## 2.5.2
   * Always specify the letsencrypt cert_name so they are consistent
 

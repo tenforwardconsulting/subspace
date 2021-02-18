@@ -1,0 +1,5 @@
+logs:
+{% for log in newrelic_logs %}
+  - name: {{log.name}}
+    file: {{log.path}}
+{% endfor %}
