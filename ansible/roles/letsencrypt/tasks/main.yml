@@ -52,13 +52,13 @@
     command: "{{certbot_bin}} certonly --email {{letsencrypt_email}} --domains {{item.domains | join(',')}} --cert-name {{item.cert_name}} --standalone --agree-tos --expand --non-interactive"
 
   - name: Update nginx default options
-    when: nginx_installed is defined
+    when: "'nginx' in role_names"
     get_url:
       url: https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf
       dest: /etc/letsencrypt/options-ssl-nginx.conf
 
   - name: Update apache default options
-    when: apache_installed is defined
+    when: "'apache' in role_names"
     get_url:
       url: https://raw.githubusercontent.com/certbot/certbot/master/certbot-apache/certbot_apache/options-ssl-apache.conf
       dest: /etc/letsencrypt/options-ssl-apache.conf
@@ -76,7 +76,7 @@
 
   - name: Setup cron job to auto renew
     become: true
-    when: apache_installed is defined
+    when: "'apache' in role_names"
     cron:
       name: Auto-renew SSL
       job: "{{certbot_bin}} renew --no-self-upgrade --apache >> /var/log/cron.log 2>&1"
@@ -86,7 +86,7 @@
 
   - name: Setup cron job to auto renew
     become: true
-    when: nginx_installed is defined
+    when: "'nginx' in role_names"
     cron:
       name: Auto-renew SSL
       job: "{{certbot_bin}} renew --no-self-upgrade --nginx >> /var/log/cron.log 2>&1"
