@@ -11,3 +11,22 @@
     set_fact:
       certbot_bin: "certbot"
 
+  - name: "Check for certbot-auto"
+    stat:
+      path: /opt/certbot/certbot-auto
+    register: certbot_auto_exists
+
+  - name: "Remove certbot-auto"
+    file:
+      path: /opt/certbot/certbot-auto
+      state: absent
+    when: certbot_auto_exists.stat.exists
+
+  - name: "Remove certbot-auto cron task"
+    cron:
+      name: Auto-renew SSL
+      job: "{{certbot_bin}} renew --no-self-upgrade --nginx >> /var/log/cron.log 2>&1"
+      hour: "0"
+      minute: "33"
+      state: absent
+    when: certbot_auto_exists.stat.exists
