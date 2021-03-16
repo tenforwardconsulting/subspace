@@ -2,13 +2,16 @@
 
 This is a [changelog](https://keepachangelog.com/en/0.3.0/).
 
-This project attempts to follow [semantic versioning](https://semver.org/)
+This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Known Bugs
 
 * Terminal Color
   * Not working on OSX - macs don't read from /etc/profile.d/
   * Stops showing color if you `sudo su`
+
+## Unreleased
+  * Remove duplicate nginx role from playbook templates
 
 ## 2.5.4
   * certbox => certbot
