@@ -153,7 +153,7 @@
           key: os_upgrades
           value: "{{stats_os_upgrades.stdout}}"
           hostname: "{{hostname}}"
-    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    when: (send_stats == true) and (stats_url is defined) and (stats_api_key is defined) and (stats_os_upgrades.stdout | length > 0)
     tags:
       - maintenance
       - stats
@@ -222,7 +222,7 @@
           key: os_security_upgrades
           value: "{{stats_os_security_upgrades.stdout}}"
           hostname: "{{hostname}}"
-    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    when: (send_stats == true) and (stats_url is defined) and (stats_api_key is defined) and (stats_os_security_upgrades.stdout | length > 0)
     tags:
       - maintenance
       - stats
