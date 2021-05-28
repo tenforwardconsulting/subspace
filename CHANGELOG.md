@@ -11,7 +11,10 @@ This project attempts to follow [semantic versioning](https://semver.org/).
   * Stops showing color if you `sudo su`
 
 ## Unreleased
+
+## 2.5.5
   * Remove duplicate nginx role from playbook templates
+  * Don't send stats if there have been no upgrades
 
 ## 2.5.4
   * certbox => certbot

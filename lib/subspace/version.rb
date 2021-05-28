@@ -1,3 +1,3 @@
 module Subspace
-  VERSION = "2.5.4"
+  VERSION = "2.5.5"
 end
