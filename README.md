@@ -428,8 +428,8 @@ After checking out the repo, run `bin/setup` to install dependencies. Then, run 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version:
 
   1. update the version number in `version.rb`
-  2. update the version number in motds
-  3. run `bundle exec rake release`
+  2. `gem build subspace.gemspec`
+  3. `gem push subspace-x.y.z.gem`
 
 This will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 

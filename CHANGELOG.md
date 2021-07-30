@@ -12,6 +12,10 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 2.5.6
+  * Fix sending security stats
+  * Make sure apt package acl is installed in common role so ansible can become a non-privileged user
+
 ## 2.5.5
   * Remove duplicate nginx role from playbook templates
   * Don't send stats if there have been no upgrades
