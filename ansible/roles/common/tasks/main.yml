@@ -125,6 +125,12 @@
       - maintenance
       - upgrade
 
+  - name: Install acl so ansible can become a non-privileged user
+    apt:
+      pkg: acl
+      state: present
+    become: true
+
   - name: Get os_upgrades stats
     shell:
       cmd: |
@@ -197,9 +203,8 @@
   - name: Get os_security_upgrades stats
     shell:
       cmd: |
-        sed -n "/$(date '+%Y-%m')/,+2p" updates.log | # Groups of lines from the current month
+        grep -A 1 $(date +%Y-%m) updates.log | # Groups of lines from the current month
         grep 'security' | # Only lines matching 'security'
-        grep -P -o '(^\d+)' | #Extract the numbers at the beginning of the lines
         awk '{s+=$1} END {print s}' # Sum all the lines
     args:
       chdir: /opt/subspace
