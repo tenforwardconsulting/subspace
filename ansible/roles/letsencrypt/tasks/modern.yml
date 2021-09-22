@@ -6,6 +6,13 @@
       state: present
     with_items:
       - ca-certificates
+    
+  - name: Install certbot-nginx
+    become: true
+    when: "'nginx' in role_names"
+    apt:
+      pkg: python3-certbot-nginx
+      state: present
 
   - name: "Set certbot binary"
     set_fact:
