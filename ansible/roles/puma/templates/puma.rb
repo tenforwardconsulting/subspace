@@ -1,3 +1,11 @@
+begin
+  # Needed for Puma 5 + puma-damon, but built in to Puma 4
+  # https://github.com/kigster/puma-daemon
+  require 'puma/daemon'
+rescue => LoadError
+  # Puma 4 has `daemonize` built in
+end
+
 # Change to match your CPU core count
 workers {{puma_workers}}
 # Min and Max threads per worker
