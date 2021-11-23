@@ -12,6 +12,11 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 2.5.7
+  * Add ability to set the timezone for servers instead of forcing to Central Time
+  * Update puma configuration to support puma 5 with puma-daemon
+  * Update letsencrypt to add certbot-nginx support for newer ubuntu
+
 ## 2.5.6
   * Fix sending security stats
   * Make sure apt package acl is installed in common role so ansible can become a non-privileged user

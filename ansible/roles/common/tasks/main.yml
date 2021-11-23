@@ -241,9 +241,9 @@
       - maintenance
       - stats
 
-  - name: set timezone to America/Chicago
+  - name: set timezone
     timezone:
-      name: America/Chicago
+      name: "{{timezone}}"
     tags:
       - maintenance
 
