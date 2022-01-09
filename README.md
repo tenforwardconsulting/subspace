@@ -283,11 +283,11 @@ Installs logrotate and lets you configure logs for automatic rotation.  Example 
 ## newrelic
 
 ## newrelic-infra
-This role will install the next-gen "Newrelic One" infrastructure agent which can perform a few different functions for newrelic.  The previous "newrelic" role is deprecated. 
+This role will install the next-gen "Newrelic One" infrastructure agent which can perform a few different functions for newrelic.  The previous "newrelic" role is deprecated.
 
-Variables: 
-    # Required, the newrelic license key you get after signing up. 
-    newrelic_license: "longhashthingyougetfromnewrelichere" 
+Variables:
+    # Required, the newrelic license key you get after signing up.
+    newrelic_license: "longhashthingyougetfromnewrelichere"
     # Optional - send logs to newrelic one's log aggregator.
     newrelic_logs:
       - name: rails-production
@@ -328,7 +328,14 @@ Optional variables:
 
 ## nodejs
 
-Used to install recent version of NodeJS. Must set `nodejs_version`. e.g. `nodejs_version: "8.x"`
+Used to install different versions of NodeJS. This uses NodeSource's apt repositories. You must define a variable called `nodejs_version` and choose a major version supported by NodeSource:
+
+    nodejs_version: 14.x
+    nodejs_version: 17.x
+    nodejs_version: lts
+    nodejs_version: current
+
+The full list of distributions is here: https://github.com/nodesource/distributions#installation-instructions
 
 ## papertrail
 
@@ -358,6 +365,8 @@ Default values (these are usually fine)
     database_pool: 5
     database_name: "{{project_name}}_{{rails_env}}"
     database_user: "{{project_name}}"
+    database_host: localhost
+    database_password: # usually defined in the encrypted vault
     job_queues:
       - default
       - mailers

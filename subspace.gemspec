@@ -24,7 +24,7 @@ Gem::Specification.new do |spec|
 
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
   spec.bindir        = "exe"
-  spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
+  spec.executables   << "subspace"
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency "bundler", "~> 2.1"
@@ -33,4 +33,5 @@ Gem::Specification.new do |spec|
 
   spec.add_runtime_dependency "commander", "~>4.2"
   spec.add_runtime_dependency "figaro", "~>1.0"
+  spec.add_runtime_dependency "executable-hooks", "~>1.0"
 end

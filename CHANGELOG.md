@@ -12,6 +12,12 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.0
+  * Added infrastructure management via Terraform!
+  * BREAKING: Consolidated inventory file into config/provision/inventory.yml
+    * No more hosts file
+    * No more host_vars directory
+
 ## 2.5.7
   * Add ability to set the timezone for servers instead of forcing to Central Time
   * Update puma configuration to support puma 5 with puma-daemon
