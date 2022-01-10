@@ -4,20 +4,17 @@ require 'securerandom'
 class Subspace::Commands::Init < Subspace::Commands::Base
   def initialize(args, options)
     options.default env: "dev"
-    @env = options[:env]
 
-    if !options[:ansible] && !options[:terraform]
+    @env = options.env
+
+    if options.ansibe.nil? && options.terraform.nil?
       # They didn't pass in any options (subspace init) so just do both
-      options[:ansibe] = options[:terraform] = true
+      options.ansible = true
+      options.terraform = true
     end
-
-    if options[:ansible]
-      init_ansible
-    end
-
-    if options[:terraform]
-      init_terraform
-    end
+    @init_ansible = options.ansible
+    @init_terraform = options.terraform
+    run
   end
 
   def run
@@ -26,7 +23,8 @@ class Subspace::Commands::Init < Subspace::Commands::Base
       abort unless answer.chomp == "yes"
     end
 
-    init_ansible
+    init_ansible if @init_ansible
+    init_terraform if @init_terraform
 
     puts """
     1. Create a server.
@@ -37,7 +35,7 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
     3. Set up your authorized_keys:
 
-      vim config/provision/authorized_keys
+      vim config/subspace/authorized_keys
 
     4. Then provision your server:
 
@@ -51,26 +49,26 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
   def init_ansible
     FileUtils.mkdir_p File.join dest_dir, "group_vars"
-    FileUtils.mkdir_p File.join dest_dir, "vars"
+    FileUtils.mkdir_p File.join dest_dir, "secrets"
     FileUtils.mkdir_p File.join dest_dir, "roles"
 
     copy ".gitignore"
     template "ansible.cfg"
-    template "inventory.yml", "inventory.#{@env}.yml"
     template "group_vars/all"
+    template "inventory.yml"
 
     create_vault_pass
     @hostname = hostname(@env)
-    template "group_vars/template", "group_vars/#{@env}"
-    create_vars_file_for_env @env
-    template "playbook.yml", "#{@env}.yml"
+    create_secrets_for @env
+    template "group_vars/template", "group_vars/#{@env}servers"
+    template "playbook.yml", "#{@env}servers.yml"
 
-    create_vars_file_for_env "development" #TODO rename to local
+    create_secrets_for "development" #TODO rename to local?
     init_appyml
   end
 
   def init_terraform
-
+    FileUtils.mkdir_p File.join dest_dir, "terraform"
   end
 
   def project_name
@@ -89,10 +87,10 @@ class Subspace::Commands::Init < Subspace::Commands::Base
     end
   end
 
-  def create_vars_file_for_env(env)
-    template "vars/template", "vars/#{env}.yml"
+  def create_secrets_for(env)
+    template "secrets/template", "secrets/#{env}.yml"
     Dir.chdir dest_dir do
-      `ansible-vault encrypt vars/#{env}.yml`
+      `ansible-vault encrypt secrets/#{env}.yml`
     end
   end
 

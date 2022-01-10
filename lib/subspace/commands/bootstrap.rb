@@ -23,7 +23,7 @@ class Subspace::Commands::Bootstrap < Subspace::Commands::Base
       "-m",
       "file",
       "-a",
-      "path=/home/{{ansible_ssh_user}}/.ssh state=directory mode=0700",
+      "path=/home/{{ansible_user}}/.ssh state=directory mode=0700",
       "-vvvv"
     ]
     cmd = cmd | pass_through_params

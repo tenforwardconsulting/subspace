@@ -11,7 +11,7 @@ require 'subspace/commands/init'
 require 'subspace/commands/override'
 require 'subspace/commands/provision'
 require 'subspace/commands/ssh'
-require 'subspace/commands/vars'
+require 'subspace/commands/secrets'
 require 'subspace/commands/maintain'
 require 'subspace/commands/maintenance_mode.rb'
 
@@ -30,7 +30,7 @@ class Subspace::Cli
     end
 
     command :init do |c|
-      c.syntax = 'subspace init [vars]'
+      c.syntax = 'subspace init'
       c.summary = 'Run without options to initialize subspace.'
       c.description = 'Some initialization routines can be run indiviaully, useful for upgrading'
       c.example 'init a new project with one default environment (default dev)', 'subspace init'
@@ -71,7 +71,7 @@ class Subspace::Cli
       c.syntax = 'subspace ssh [options]'
       c.summary = 'ssh to the remote server as the administrative user'
       c.description = ''
-      c.option '--user USER', "Use a different user (eg deploy).  Default is the ansible_ssh_user"
+      c.option '--user USER', "Use a different user (eg deploy).  Default is the ansible_user"
       Subspace::Commands::Ssh::PASS_THROUGH_PARAMS.each do |param_name|
         c.option "-#{param_name} #{param_name.upcase}", "Passed directly through to ssh command"
       end
@@ -92,15 +92,15 @@ class Subspace::Cli
       c.when_called Subspace::Commands::Override
     end
 
-    command :vars do |c, args|
-      c.syntax = 'subspace vars [environment]'
+    command :secrets do |c, args|
+      c.syntax = 'subspace secrets [environment]'
       c.summary = 'View or edit the encrypted variables for an environment'
       c.description = """By default, this will simply show the variables for a specific environemnt.
                          You can also edit variables, and we expect the functionality here to grow in the future.
-                         Running `subspace vars development --create` is usually a great way to bootstrap a new development environment."""
+                         Running `subspace secrets development --create` is usually a great way to bootstrap a new development environment."""
       c.option '--edit', "Edit the variables instead of view"
       c.option '--create', "Create config/application.yml with the variables from the specified environment"
-      c.when_called Subspace::Commands::Vars
+      c.when_called Subspace::Commands::Secrets
     end
 
     command :maintain do |c, args|

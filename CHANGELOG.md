@@ -14,9 +14,12 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## 3.0.0
   * Added infrastructure management via Terraform!
-  * BREAKING: Consolidated inventory file into config/provision/inventory.yml
+  * BREAKING: Consolidated inventory file into config/provision/inventory.env.yml
     * No more hosts file
     * No more host_vars directory
+    * No more group_vars directory
+    * All of the host/group configuration is in that one file now!
+  * BREAKING: `subspace vars` is now `subspace secrets`
 
 ## 2.5.7
   * Add ability to set the timezone for servers instead of forcing to Central Time

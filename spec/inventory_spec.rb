@@ -136,6 +136,11 @@ describe Subspace::Inventory do
         vars:
           global1: aaa
           global2: bbb
+          arr_var:
+          - this: is
+            an: array
+          - and: so
+            is: this
       EOS
     end
   end

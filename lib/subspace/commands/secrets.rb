@@ -1,4 +1,4 @@
-class Subspace::Commands::Vars < Subspace::Commands::Base
+class Subspace::Commands::Secrets < Subspace::Commands::Base
   def initialize(args, options)
     @environment = args.first
     @action = if options.edit
@@ -17,9 +17,9 @@ class Subspace::Commands::Vars < Subspace::Commands::Base
     when "create"
       create_local
     when "view", "edit"
-      ansible_command "ansible-vault", @action, "vars/#{@environment}.yml"
+      ansible_command "ansible-vault", @action, "secrets/#{@environment}.yml"
     else
-      abort "Invalid vars command"
+      abort "Invalid secrets command"
     end
   end
 
@@ -30,7 +30,7 @@ class Subspace::Commands::Vars < Subspace::Commands::Base
     end
     src = application_yml_template
     dest = "config/application.yml"
-    vars_file = File.join(project_path, "config/provision/vars/#{@environment}.yml")
+    vars_file = File.join(project_path, dest_dir, "/secrets/#{@environment}.yml")
     extra_vars = "project_path=#{project_path} vars_file=#{vars_file} src=#{src} dest=#{dest}"
     ansible_command "ansible-playbook", File.join(playbook_dir, "local_template.yml"), "--extra-vars", extra_vars
     say "File created at config/application.yml with #{@environment} secrets"
@@ -42,7 +42,7 @@ class Subspace::Commands::Vars < Subspace::Commands::Base
   private
 
   def application_yml_template
-    "config/provision/templates/application.yml.template"
+    "#{dest_dir}/templates/application.yml.template"
   end
 
 end

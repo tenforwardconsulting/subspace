@@ -13,7 +13,7 @@ module Subspace
       end
 
       def template_dir
-        File.join(gem_path, 'template', 'provision')
+        File.join(gem_path, 'template', 'subspace')
       end
 
       def gem_path
@@ -25,13 +25,13 @@ module Subspace
       end
 
       def dest_dir
-        "config/provision"
+        "config/subspace"
       end
 
       def template(src, dest = nil, render_binding = nil)
         return unless confirm_overwrite File.join(dest_dir, dest || src)
         template! src, dest, render_binding
-        say "Wrote #{dest}"
+        say "Wrote #{dest || src}"
       end
 
       def template!(src, dest = nil, render_binding = nil)
