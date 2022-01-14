@@ -3,7 +3,7 @@ require 'erb'
 require 'securerandom'
 class Subspace::Commands::Init < Subspace::Commands::Base
   def initialize(args, options)
-    options.default env: "dev"
+    options.default env: "staging"
 
     @env = options.env
 
@@ -21,8 +21,11 @@ class Subspace::Commands::Init < Subspace::Commands::Base
     if File.exists? dest_dir
       answer = ask "Subspace appears to be initialized.  Reply 'yes' to continue anyway: [no] "
       abort unless answer.chomp == "yes"
+    else
+      FileUtils.mkdir_p dest_dir
     end
 
+    init_pemfile
     init_ansible if @init_ansible
     init_terraform if @init_terraform
 
@@ -39,13 +42,23 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
     4. Then provision your server:
 
-      subspace provision dev
+      subspace provision staging
 
   """
 
   end
 
   private
+
+  def init_pemfile
+    pem = File.join dest_dir, "subspace.pem"
+    if File.exist?(pem)
+      say "Existing SSH Keypair exists.  Skipping keygen."
+    else
+      say "Creating SSH Keypair in #{pem}"
+      `ssh-keygen -t rsa -f #{pem}`
+    end
+  end
 
   def init_ansible
     FileUtils.mkdir_p File.join dest_dir, "group_vars"
@@ -68,7 +81,9 @@ class Subspace::Commands::Init < Subspace::Commands::Base
   end
 
   def init_terraform
-    FileUtils.mkdir_p File.join dest_dir, "terraform"
+    FileUtils.mkdir_p File.join dest_dir, "terraform", @env
+
+    template "terraform/template/main.tf", "terraform/#{@env}/main.tf"
   end
 
   def project_name

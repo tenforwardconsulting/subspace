@@ -1,0 +1,2 @@
+This terraform configuration is used solely to provision the tfstate backend.  
+It makes an s3 bucket and a user and you should not need to really mess with this after the project is bootstrapped. 

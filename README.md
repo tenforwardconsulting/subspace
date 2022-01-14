@@ -56,7 +56,7 @@ At the time of this writing, we pass through the `ansible-playbook` "tags" and
 "start-at-task" options. The tags option is probably the most useful.
 
 e.g. To run only the alienvault tasks (all of which have been tagged with the
-'alienvault' tag): `subspace provision dev --tags=alienvault`
+'alienvault' tag): `subspace provision staging --tags=alienvault`
 
 ### `subspace maintain <environment>`
 
@@ -109,7 +109,7 @@ ENABLE_SOME_FEATURE: false
 development:
   INSECURE_VARIABLE: "this isn't secret"
 
-dev:
+staging:
   INSECURE_VARIABLE: "but it changes"
 
 production:
@@ -138,7 +138,7 @@ Then,
 
 If you get an error saying you need a vault password file, you should be able to find it in 1Password. You might also need to update `ansible`.
 
-You'll want to do this for each environment (ie: `subspace provision qa`, etc.). Best to start with dev and work your way up.
+You'll want to do this for each environment (ie: `subspace provision qa`, etc.). Best to start with staging and work your way up.
 
 # Host configuration
 
@@ -286,6 +286,7 @@ Installs logrotate and lets you configure logs for automatic rotation.  Example 
 This role will install the next-gen "Newrelic One" infrastructure agent which can perform a few different functions for newrelic.  The previous "newrelic" role is deprecated.
 
 Variables:
+
     # Required, the newrelic license key you get after signing up.
     newrelic_license: "longhashthingyougetfromnewrelichere"
     # Optional - send logs to newrelic one's log aggregator.

@@ -33,7 +33,7 @@ class Subspace::Cli
       c.syntax = 'subspace init'
       c.summary = 'Run without options to initialize subspace.'
       c.description = 'Some initialization routines can be run indiviaully, useful for upgrading'
-      c.example 'init a new project with one default environment (default dev)', 'subspace init'
+      c.example 'init a new project with one default environment (default staging)', 'subspace init'
       c.example 'create a new fully automated production environment configuration', 'subspace init --terraform --env production'
       c.option '--ansible', 'initialize ansible for managing individual servers'
       c.option '--terraform', 'Initialize terraform for managing infrastructure'
