@@ -64,6 +64,14 @@
     tags:
       - maintenance
 
+  - name: apt-get update
+    apt: update_cache=yes cache_valid_time=86400
+    become: true
+    tags:
+      - upgrade
+      - maintenance
+    ignore_errors: yes
+
   - name: install aptitude
     apt:
       pkg: aptitude

@@ -1,17 +1,7 @@
-
-
-resource "aws_security_group" "lb_sg" {
-  name        = "load_balancer"
-  description = "Allow inbound web traffic"
-  vpc_id      = aws_default_vpc.default.id
-
-  ingress {
-    description      = "TLS from world"
-    from_port        = 443
-    to_port          = 443
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-  }
+resource "aws_security_group" "production-load-balancer" {
+  name        = "production-load-balancer"
+  description = "load-balancer"
+  vpc_id      = aws_vpc.production-internal.id
 
   ingress {
     description      = "HTTP from world"
@@ -19,7 +9,18 @@ resource "aws_security_group" "lb_sg" {
     to_port          = 80
     protocol         = "tcp"
     cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
+
+  ingress {
+    description      = "HTTPS from world"
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
   egress {
     from_port        = 0
     to_port          = 0
@@ -28,13 +29,14 @@ resource "aws_security_group" "lb_sg" {
     ipv6_cidr_blocks = ["::/0"]
   }
 }
-resource "aws_lb" "main" {
-  name               = "${var.project_name}-${var.project_environment}-lb"
+
+resource "aws_lb" "production" {
+  name               = "production"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.lb_sg.id]
-  subnets            = data.aws_subnets.default.ids
-  idle_timeout       = 300
+  security_groups    = [aws_security_group.production-load-balancer.id]
+  subnets            = [aws_subnet.production-internal-a.id, aws_subnet.production-internal-b.id, aws_subnet.production-internal-c.id]
+  idle_timeout       = 60
 
   enable_deletion_protection = true
 
@@ -43,20 +45,12 @@ resource "aws_lb" "main" {
 #     prefix  = "test-lb"
 #     enabled = true
 #   }
-
-  tags = {
-    Environment = "${var.project_environment}"
-  }
 }
 
-resource "aws_acm_certificate" "web" {
-  domain_name       = "app.looper.golf"
-  subject_alternative_names = ["prod.looper.golf"]
-  validation_method = "DNS"
-
-  tags = {
-    Environment = "${var.project_environment}"
-  }
+resource "aws_acm_certificate" "production" {
+  domain_name               = var.domain_name
+  subject_alternative_names = var.alternate_names
+  validation_method         = "DNS"
 
   lifecycle {
     create_before_destroy = true
@@ -64,46 +58,46 @@ resource "aws_acm_certificate" "web" {
 }
 
 resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.main.arn
+  load_balancer_arn = aws_lb.production.arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.http.arn
+    target_group_arn = aws_lb_target_group.production.arn
   }
 }
 
 resource "aws_lb_listener" "tls" {
-  load_balancer_arn = aws_lb.main.arn
+  load_balancer_arn = aws_lb.production.arn
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = aws_acm_certificate.web.arn
+  certificate_arn   = aws_acm_certificate.production.arn
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.http.arn
+    target_group_arn = aws_lb_target_group.production.arn
   }
 }
 
-resource "aws_lb_target_group" "http" {
-  name     = "${var.project_name}-http"
+resource "aws_lb_target_group" "production" {
+  name     = "production"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = aws_default_vpc.default.id
+  vpc_id   = aws_vpc.production-internal.id
   health_check {
     enabled             = true
-    matcher             = "200"
+    matcher             = "200,301"
     port                = "80"
     protocol            = "HTTP"
-    path                = "/auth/sign_in"
+    path                = "/"
     unhealthy_threshold = 2
   }
 }
 
 resource "aws_lb_target_group_attachment" "web" {
   count            = var.web_instance_count
-  target_group_arn = aws_lb_target_group.http.arn
+  target_group_arn = aws_lb_target_group.production.arn
   target_id        = aws_instance.web[count.index].id
   port             = 80
 }
