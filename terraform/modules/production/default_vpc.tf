@@ -24,6 +24,17 @@ resource "aws_subnet" "production-internal-c" {
   availability_zone = "${var.aws_region}c"
 }
 
+resource "aws_db_subnet_group" "production-subnet-group" {
+  name       = "production-subnet-group"
+  subnet_ids = [aws_subnet.production-internal-a.id, aws_subnet.production-internal-b.id, aws_subnet.production-internal-c.id]
+
+  tags = {
+    Name = "production-subnet-group"
+    Environment = var.project_environment
+    Project = var.project_name
+  }
+}
+
 data "aws_subnets" "subnets" {
   filter {
     name   = "vpc-id"
@@ -32,9 +43,17 @@ data "aws_subnets" "subnets" {
 }
 
 resource "aws_security_group" "production-webservers" {
-  name        = "production-webservers"
-  description = "webservers"
+  name        = "${var.project_environment}-webservers"
+  description = "${var.project_environment}-webservers"
   vpc_id      = aws_vpc.production-internal.id
+
+  ingress {
+    description      = "HTTP from lb"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    security_groups = [aws_security_group.production-load-balancer.id]
+  }
 
   egress {
     from_port        = 0
@@ -43,52 +62,11 @@ resource "aws_security_group" "production-webservers" {
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
-}
-
-resource "aws_security_group_rule" "webservers_webservers_traffic" {
-  security_group_id        = "${aws_security_group.production-webservers.id}"
-  description              = "All traffic from webservers"
-  from_port                = 0
-  to_port                  = 0
-  protocol                 = "-1"
-  source_security_group_id = aws_security_group.production-webservers.id
-  type                     = "ingress"
-}
-
-resource "aws_security_group_rule" "webservers_workers_traffic" {
-  security_group_id        = "${aws_security_group.production-webservers.id}"
-  description              = "All traffic from workers"
-  from_port                = 0
-  to_port                  = 0
-  protocol                 = "-1"
-  source_security_group_id = aws_security_group.production-workers.id
-  type                     = "ingress"
-}
-
-resource "aws_security_group_rule" "webservers_world_http" {
-  security_group_id = "${aws_security_group.production-webservers.id}"
-  description       = "HTTP from world"
-  from_port         = 80
-  to_port           = 80
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  ipv6_cidr_blocks  = ["::/0"]
-  type              = "ingress"
-}
-
-resource "aws_security_group_rule" "webservers_tenforward_ssh" {
-  security_group_id = "${aws_security_group.production-webservers.id}"
-  description       = "SSH from 10fw Office"
-  from_port         = 22
-  to_port           = 22
-  protocol          = "tcp"
-  cidr_blocks  = ["172.220.8.253/32"]
-  type              = "ingress"
 }
 
 resource "aws_security_group" "production-workers" {
-  name        = "production-workers"
-  description = "workers"
+  name        = "${var.project_environment}-workers"
+  description = "${var.project_environment}-workers"
   vpc_id      = aws_vpc.production-internal.id
 
   egress {
@@ -100,39 +78,39 @@ resource "aws_security_group" "production-workers" {
   }
 }
 
-resource "aws_security_group_rule" "workers_webservers_traffic" {
-  security_group_id        = "${aws_security_group.production-workers.id}"
-  description              = "All traffic from webservers"
-  from_port                = 0
-  to_port                  = 0
-  protocol                 = "-1"
-  source_security_group_id = aws_security_group.production-webservers.id
-  type                     = "ingress"
-}
+resource "aws_security_group" "production-internal" {
+  name        = "${var.project_environment}-internal"
+  description = "${var.project_environment}-internal"
+  vpc_id      = aws_vpc.production-internal.id
 
-resource "aws_security_group_rule" "workers_workers_traffic" {
-  security_group_id        = "${aws_security_group.production-workers.id}"
-  description              = "All traffic from workers"
-  from_port                = 0
-  to_port                  = 0
-  protocol                 = "-1"
-  source_security_group_id = aws_security_group.production-workers.id
-  type                     = "ingress"
-}
+  ingress {
+    description      = "All traffic from webservers and workers"
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    security_groups  = [aws_security_group.production-webservers.id, aws_security_group.production-workers.id]
+  }
 
-resource "aws_security_group_rule" "workers_tenforward_ssh" {
-  security_group_id = "${aws_security_group.production-workers.id}"
-  description       = "SSH from 10fw Office"
-  from_port         = 22
-  to_port           = 22
-  protocol          = "tcp"
-  cidr_blocks       = ["172.220.8.253/32"]
-  type              = "ingress"
+  ingress {
+    description      = "SSH from 10fw Office"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["172.220.8.253/32"]
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
 }
 
 resource "aws_security_group" "production-rds" {
-  name        = "production-rds"
-  description = "rds"
+  name        = "${var.project_environment}-rds"
+  description = "${var.project_environment}-rds"
   vpc_id      = aws_vpc.production-internal.id
 
   ingress {

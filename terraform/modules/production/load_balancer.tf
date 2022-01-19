@@ -1,6 +1,6 @@
 resource "aws_security_group" "production-load-balancer" {
-  name        = "production-load-balancer"
-  description = "load-balancer"
+  name        = "${var.project_environment}-load-balancer"
+  description = "${var.project_environment}-load-balancer"
   vpc_id      = aws_vpc.production-internal.id
 
   ingress {
@@ -31,7 +31,7 @@ resource "aws_security_group" "production-load-balancer" {
 }
 
 resource "aws_lb" "production" {
-  name               = "production"
+  name               = "${var.project_environment}-lb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.production-load-balancer.id]
@@ -81,7 +81,7 @@ resource "aws_lb_listener" "tls" {
 }
 
 resource "aws_lb_target_group" "production" {
-  name     = "production"
+  name     = "${var.project_environment}-lb-tg"
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.production-internal.id
@@ -90,7 +90,7 @@ resource "aws_lb_target_group" "production" {
     matcher             = "200,301"
     port                = "80"
     protocol            = "HTTP"
-    path                = "/"
+    path                = var.lb_health_check_path
     unhealthy_threshold = 2
   }
 }
