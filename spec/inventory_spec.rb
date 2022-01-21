@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'subspace/inventory'
+require 'json'
 
 describe Subspace::Inventory do
   let(:inventory) { Subspace::Inventory.new}
@@ -142,6 +143,66 @@ describe Subspace::Inventory do
           - and: so
             is: this
       EOS
+    end
+  end
+
+  context "Importing terraform output" do
+    let(:tf_output) { JSON.parse(File.read("spec/data/tf_inventory_output.json")) }
+
+    it "can read in hosts, ips, and groups into a blank inventory" do
+      inventory.merge(tf_output)
+      expect(inventory.hosts.keys).to eq ["staging-web1", "staging-web2", "staging-worker1"]
+      expect(inventory.hosts["staging-web1"].vars).to eq({
+        "ansible_host" => "10.1.1.1"
+      })
+      expect(inventory.hosts["staging-web2"].groups).to eq ["staging", "staging_web"]
+      expect(inventory.hosts["staging-worker1"].groups).to eq ["staging", "staging_worker"]
+    end
+
+    it "can read in hosts and export yml from a blank inventory" do
+      inventory.merge(tf_output)
+      expect(inventory.to_yml).to eq <<~EOS
+      ---
+      all:
+        hosts:
+          staging-web1:
+            ansible_host: 10.1.1.1
+          staging-web2:
+            ansible_host: 10.2.2.2
+          staging-worker1:
+            ansible_host: 10.3.3.3
+        children:
+          staging:
+            hosts:
+              staging-web1:
+              staging-web2:
+              staging-worker1:
+          staging_web:
+            hosts:
+              staging-web1:
+              staging-web2:
+          staging_worker:
+            hosts:
+              staging-worker1:
+      EOS
+    end
+
+    context "With an existing inventory from a different group" do
+      let(:inventory) { Subspace::Inventory.read("spec/data/inventory_prod.yml") }
+      it "can merge in new hosts without disturbing existing ones" do
+        inventory.merge(tf_output)
+        expect(inventory.hosts.keys).to match_array ["staging-web1", "staging-web2", "staging-worker1", "prod-web1", "prod-web2", "prod-worker1"]
+        expect(inventory.hosts["prod-web1"].groups).to eq ["prod", "prod_web"]
+      end
+    end
+
+    context "With an existing inventory from the same group" do
+      let(:inventory) { Subspace::Inventory.read("spec/data/inventory_staging.yml") }
+      it "can merge in new hosts replacing and removing old ones" do
+        inventory.merge(tf_output)
+        expect(inventory.hosts.keys).to match_array ["staging-web1", "staging-web2", "staging-worker1"]
+        expect(inventory.hosts["prod-web1"].groups).to eq ["prod", "prod_web"]
+      end
     end
   end
 end

@@ -1,4 +1,8 @@
 ---
+  - name: "Declare that monit is in use"
+    set_fact:
+      monit_installed: true
+
   - name: Configure monit to install instead of pin
     dpkg_selections:
       name: monit
@@ -32,3 +36,4 @@
       - restart_monit
     tags:
       - monit
+

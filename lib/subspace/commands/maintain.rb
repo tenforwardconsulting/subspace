@@ -11,6 +11,6 @@ class Subspace::Commands::Maintain < Subspace::Commands::Base
   def run
     ansible_options = ["--diff", "--tags=maintenance"]
     ansible_options = ansible_options | pass_through_params
-    ansible_command "ansible-playbook", "#{@environment}.yml", *ansible_options
+    ansible_playbook "#{@environment}.yml", *ansible_options
   end
 end

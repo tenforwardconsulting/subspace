@@ -26,8 +26,24 @@
   become: true
 
 - name: Restart nginx
+  when: not systemd_installed is defined
   action: service name=nginx state=restarted
   become: true
+
+- name: Restart nginx (systemd)
+  when: systemd_installed is defined
+  become: true
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: nginx
+
+- name: Enable nginx to start on reboot
+  when: systemd_installed is defined
+  become: true
+  systemd:
+    name: nginx
+    enabled: true
 
 - name: Nginx is installed
   set_fact:

@@ -12,6 +12,7 @@ require 'subspace/commands/override'
 require 'subspace/commands/provision'
 require 'subspace/commands/ssh'
 require 'subspace/commands/secrets'
+require 'subspace/commands/terraform'
 require 'subspace/commands/maintain'
 require 'subspace/commands/maintenance_mode.rb'
 
@@ -65,6 +66,12 @@ class Subspace::Cli
         c.option "--#{param_name} #{param_name.upcase}", "Passed directly through to ansible-playbook command"
       end
       c.when_called Subspace::Commands::Provision
+    end
+
+    command :tf do |c|
+      c.syntax = 'subspace tf [environment]'
+      c.summary = "Execute a terraform plan with the option to apply the plan after review"
+      c.when_called Subspace::Commands::Terraform
     end
 
     command :ssh do |c|

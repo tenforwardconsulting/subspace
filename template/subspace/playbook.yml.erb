@@ -3,7 +3,7 @@
     become: yes
 
     vars_files:
-      - ./vars/<%= @env %>.yml
+      - ./secrets/<%= @env %>.yml
 
     roles:
       - common

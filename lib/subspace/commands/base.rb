@@ -36,7 +36,7 @@ module Subspace
 
       def template!(src, dest = nil, render_binding = nil)
         dest ||= src
-        template = ERB.new File.read(File.join(template_dir, "#{src}.erb")), nil, '-'
+        template = ERB.new File.read(File.join(template_dir, "#{src}.erb")), trim_mode: '-'
         File.write File.join(dest_dir, dest), template.result(render_binding || binding)
       end
 
@@ -73,6 +73,10 @@ module Subspace
 
       def set_subspace_version
         ENV['SUBSPACE_VERSION'] = Subspace::VERSION
+      end
+
+      def inventory
+        @inventory ||= Subspace::Inventory.read("config/subspace/inventory.yml")
       end
     end
   end

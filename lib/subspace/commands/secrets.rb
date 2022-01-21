@@ -13,6 +13,7 @@ class Subspace::Commands::Secrets < Subspace::Commands::Base
   end
 
   def run
+    update_ansible_cfg
     case @action
     when "create"
       create_local

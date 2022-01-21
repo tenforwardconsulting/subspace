@@ -18,8 +18,8 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-resource "aws_security_group" "dev" {
-  name        = "dev server"
+resource "aws_security_group" "single" {
+  name        = "{{project_environment}}workhorse server"
   description = "Allow inbound web and ssh traffic"
   vpc_id      = aws_default_vpc.default.id
 
@@ -44,7 +44,7 @@ resource "aws_security_group" "dev" {
     from_port        = 22
     to_port          = 22
     protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
+    cidr_blocks      = var.ssh_cidr_blocks
   }
 
   egress {

@@ -1,0 +1,8 @@
+output "inventory" {
+  value = {
+    hostnames = ["${local.instance_hostname}"]
+    ip_addresses = [aws_eip.single.public_ip]
+    groups = ["${var.project_environment} ${var.project_environment}_web ${var.project_environment}_worker"]
+    user = [var.instance_user]
+  }
+}

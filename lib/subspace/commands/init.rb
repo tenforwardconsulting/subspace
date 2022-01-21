@@ -30,19 +30,29 @@ class Subspace::Commands::Init < Subspace::Commands::Base
     init_terraform if @init_terraform
 
     puts """
-    1. Create a server.
+    1. Inspect key config files:
+      - config/subspace/terraform/#{@env}/main.tf     # Main terraform file
+      - config/subspace/#{@env}.yml                   # Main ansible playbook
+      - config/subspace/group_vars                    # Ansible configuration options
+      - config/subspace/inventory.yml                 # Server Inventory
+      - config/subspace/templates/authorized_keys     # SSH Authorized Keys
+      - config/subspace/templates/application.yml     # Application Environment variables
 
-    2. Set your server's location:
+    2. create cloud infrastructure with terraform:
 
-      vim config/subspace/inventory.yml
+      subspace tf #{@env}`
 
-    3. Set up your authorized_keys:
+    3. Bootstrap the new server
 
-      vim config/subspace/authorized_keys
+      subspace boostrap staging1
 
-    4. Then provision your server:
+    4. Inspect new environment
+      - ensure the correct roles are present in #{@env}.yml
+      - Check ansible configuration variables in group_vars/#{@env}
 
-      subspace provision staging
+    4. Provision the new servers with ansible:
+
+      subspace provision stagingservers
 
   """
 
@@ -69,6 +79,7 @@ class Subspace::Commands::Init < Subspace::Commands::Base
     template "ansible.cfg"
     template "group_vars/all"
     template "inventory.yml"
+    template "templates/authorized_keys"
 
     create_vault_pass
     @hostname = hostname(@env)
@@ -83,7 +94,10 @@ class Subspace::Commands::Init < Subspace::Commands::Base
   def init_terraform
     FileUtils.mkdir_p File.join dest_dir, "terraform", @env
 
+    FileUtils.ln_sf File.join(gem_path, 'terraform', 'modules'), File.join(dest_dir, "terraform", ".subspace-tf-modules")
     template "terraform/template/main.tf", "terraform/#{@env}/main.tf"
+    copy "terraform/template/credentials.auto.tfvars", "terraform/#{@env}/credentials.auto.tfvars"
+    copy "terraform/.gitignore"
   end
 
   def project_name

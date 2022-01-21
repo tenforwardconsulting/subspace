@@ -6,7 +6,13 @@
   tags: puma
 
 - name: Add puma shared/config
-  template: src=puma.rb dest=/u/apps/{{project_name}}/shared/config/puma/{{rails_env}}.rb group=deploy owner=deploy force=yes mode=755
+  template:
+    src: puma.rb
+    dest: /u/apps/{{project_name}}/shared/config/puma/{{rails_env}}.rb
+    group: deploy
+    owner: deploy
+    force: yes
+    mode: 0755
   tags: puma
 
 - name: Make shared/tmp/sockets
@@ -14,23 +20,54 @@
   tags: tmp
 
 - name: Install puma monit script
+  when: monit_installed is defined
   template:
     src: puma-monit-rc
     dest: /etc/monit/conf-available/puma_{{project_name}}_{{rails_env}}
 
-- name: Clean up old puma monit scripts
-  shell: rm -f /etc/monit/conf.d/puma_*
-
 - name: mkdir /etc/monit/conf-enabled
+  when: monit_installed is defined
   file:
     path: /etc/monit/conf-enabled
     state: directory
 
 - name: Enable puma monit script
+  when: monit_installed is defined
   file:
     src: /etc/monit/conf-available/puma_{{project_name}}_{{rails_env}}
     dest: /etc/monit/conf-enabled/puma_{{project_name}}_{{rails_env}}
     state: link
   notify:
-    - restart_monit
+    - reload_monit
+
+- name: Install systemd script
+  when: systemd_installed is defined
+  become: true
+  template:
+    src: puma-systemd.service
+    dest: /etc/systemd/system/puma.service
+
+- name: Install systemd socket
+  when: systemd_installed is defined
+  become: true
+  template:
+    src: puma-systemd.socket
+    dest: /etc/systemd/system/puma.socket
+
+- name: enable systemd service
+  when: systemd_installed is defined
+  become: true
+  systemd:
+    name: puma.service
+    enabled: yes
+    daemon_reload: yes
+
+- name: disable systemd socket
+  when: systemd_installed is defined
+  become: true
+  systemd:
+    name: puma.socket
+    enabled: no
+    daemon_reload: yes
+
 

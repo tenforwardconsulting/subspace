@@ -1,0 +1,22 @@
+---
+all:
+  hosts:
+    prod-web1:
+      ansible_host: 10.6.6.6
+    prod-web2:
+      ansible_host: 10.8.8.8
+    prod-worker1:
+      ansible_host: 10.7.7.7
+  children:
+    prodservers:
+      hosts:
+        prod-web1:
+        prod-web2:
+        prod-worker1:
+    prod_web:
+      hosts:
+        prod-web1:
+        prod-web2:
+    prod_worker:
+      hosts:
+        prod-worker1:

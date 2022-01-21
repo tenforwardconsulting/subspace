@@ -2,7 +2,7 @@ resource "aws_instance" "single" {
   ami           = var.instance_ami
   instance_type = var.instance_type
   key_name      = aws_key_pair.subspace.key_name
-  vpc_security_group_ids = [aws_security_group.dev.id]
+  vpc_security_group_ids = [aws_security_group.single.id]
 
   tags = {
     Name = "${var.project_environment} Server"

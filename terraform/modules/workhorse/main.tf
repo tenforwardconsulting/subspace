@@ -9,8 +9,9 @@ terraform {
 
 provider aws {
   region = var.aws_region
-  # Bring your own credentials for now via
-  # AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+  # Set these values locally in credentials.auto.tfvars
+  access_key = var.aws_access_key_id
+  secret_key = var.aws_secret_access_key
 }
 
 resource "aws_key_pair" "subspace" {

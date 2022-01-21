@@ -1,7 +1,7 @@
 require 'yaml'
 module Subspace
   class Inventory
-    attr_accessor :group_vars, :hosts, :global_vars
+    attr_accessor :group_vars, :hosts, :global_vars, :path
     def initialize
       @hosts = {}
       @group_vars = {}
@@ -10,6 +10,7 @@ module Subspace
 
     def self.read(path)
       inventory = new
+      inventory.path = path
 
       yml = YAML.load(File.read(path)).to_h
 
@@ -40,8 +41,18 @@ module Subspace
       inventory
     end
 
-    def write(path)
+    def write(path=nil)
+      File.write(@path || path, self.to_yml)
+    end
 
+    def merge(inventory_json)
+      inventory_json["inventory"]["value"]["hostnames"].each_with_index do |host, i|
+        hosts[host] ||= Host.new(host)
+        hosts[host].vars["ansible_host"] = inventory_json["inventory"]["value"]["ip_addresses"][i]
+        hosts[host].vars["ansible_user"] = inventory_json["inventory"]["value"]["user"][i]
+        hosts[host].vars["hostname"] = host
+        hosts[host].groups = inventory_json["inventory"]["value"]["groups"][i].split(/\s/)
+      end
     end
 
     def to_yml

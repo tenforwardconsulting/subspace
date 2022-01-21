@@ -1,0 +1,36 @@
+[Unit]
+Description=Puma HTTP Server
+After=network.target
+
+# Uncomment for socket activation (see below)
+# Requires=puma.socket
+
+[Service]
+# Puma supports systemd's `Type=notify` and watchdog service
+# monitoring, if the [sd_notify](https://github.com/agis/ruby-sdnotify) gem is installed,
+# as of Puma 5.1 or later.
+# On earlier versions of Puma or JRuby, change this to `Type=simple` and remove
+# the `WatchdogSec` line.
+Type=simple
+
+# If your Puma process locks up, systemd's watchdog will restart it within seconds.
+# WatchdogSec=10
+
+# Preferably configure a non-privileged user
+User=deploy
+
+WorkingDirectory=/u/apps/{{project_name}}/current
+
+# Helpful for debugging socket activation, etc.
+# Environment=PUMA_DEBUG=1
+
+# SystemD will not run puma even if it is in your path. You must specify
+# an absolute URL to puma. For example /usr/local/bin/puma
+
+# Variant: Use `bundle exec --keep-file-descriptors puma` instead of binstub
+ExecStart=bundle exec --keep-file-descriptors puma -C /u/apps/{{project_name}}/current/config/puma/{{rails_env}}.rb
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

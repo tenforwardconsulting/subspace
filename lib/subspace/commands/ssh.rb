@@ -22,7 +22,7 @@ class Subspace::Commands::Ssh < Subspace::Commands::Base
     user = host_vars["ansible_user"]
     host = host_vars["ansible_host"]
     port = host_vars["ansible_port"] || 22
-    cmd = "ssh #{user}@#{host} -p #{port} #{pass_through_params.join(" ")}"
+    cmd = "ssh #{user}@#{host} -p #{port} -i config/subspace/subspace.pem #{pass_through_params.join(" ")}"
     say "> #{cmd} \n"
     exec cmd
   end

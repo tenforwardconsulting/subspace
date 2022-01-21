@@ -1,0 +1,39 @@
+{
+  "inventory": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "hostnames": [
+          "tuple",
+          [
+            "string"
+          ]
+        ],
+        "ip_addresses": [
+          "tuple",
+          [
+            "string"
+          ]
+        ]
+      }
+    ],
+    "value": {
+      "hostnames": [
+        "staging-web1",
+        "staging-web2",
+        "staging-worker1"
+      ],
+      "ip_addresses": [
+        "10.1.1.1",
+        "10.2.2.2",
+        "10.3.3.3"
+      ],
+      "groups": [
+        "stagingservers staging_web",
+        "stagingservers staging_web",
+        "stagingservers staging_worker"
+      ]
+    }
+  }
+}

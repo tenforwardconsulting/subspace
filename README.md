@@ -119,7 +119,7 @@ production:
 
 Further, you can use the extremely command to create a local copy of `config/application.yml`
 
-    # Create a local copy of config/application.yml with the secrets encrypted in vars/development.yml
+    # Create a local copy of config/application.yml with the secrets encrypted in secrets/development.yml
     $ subspace vars development --create
 
 This can get you up and running in development securely, the only thing you need to distribute to new team members is the vault password.  Grab it from a teammate and put it into `config/provision/.vault_pass`

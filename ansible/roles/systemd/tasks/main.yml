@@ -1,0 +1,10 @@
+---
+  - name: "Declare that systemd is in use"
+    set_fact:
+      systemd_installed: true
+
+  - name: "Ensure systemd is installed"
+    apt:
+      name: systemd
+      state: latest
+      update_cache: yes

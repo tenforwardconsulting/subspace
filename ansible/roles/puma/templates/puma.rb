@@ -1,10 +1,13 @@
+{% if monit_installed is defined %}
 begin
   # Needed for Puma 5 + puma-damon, but built in to Puma 4
   # https://github.com/kigster/puma-daemon
+  # however not needed if we're using systemd which is the future
   require 'puma/daemon'
 rescue => LoadError
   # Puma 4 has `daemonize` built in
 end
+{% endif %}
 
 # Change to match your CPU core count
 workers {{puma_workers}}
@@ -23,9 +26,12 @@ bind "tcp://127.0.0.1:9292"
 # Logging
 stdout_redirect "#{app_dir}/log/puma.stdout.log", "#{app_dir}/log/puma.stderr.log", true
 
-# Set master PID and state locations
-daemonize
-pidfile "/u/apps/{{project_name}}/shared/tmp/pids/puma.pid"
+if defined? Puma::Daemon
+  # Set master PID and state locations
+  daemonize
+  pidfile "/u/apps/{{project_name}}/shared/tmp/pids/puma.pid"
+end
+
 state_path "/u/apps/{{project_name}}/shared/tmp/pids/puma.state"
 activate_control_app
 
