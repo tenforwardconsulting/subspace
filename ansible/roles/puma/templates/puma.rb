@@ -4,7 +4,9 @@ begin
   # https://github.com/kigster/puma-daemon
   # however not needed if we're using systemd which is the future
   require 'puma/daemon'
-rescue => LoadError
+  daemonize
+rescue LoadError => e
+  daemonize
   # Puma 4 has `daemonize` built in
 end
 {% endif %}
@@ -26,12 +28,7 @@ bind "tcp://127.0.0.1:9292"
 # Logging
 stdout_redirect "#{app_dir}/log/puma.stdout.log", "#{app_dir}/log/puma.stderr.log", true
 
-if defined? Puma::Daemon
-  # Set master PID and state locations
-  daemonize
-  pidfile "/u/apps/{{project_name}}/shared/tmp/pids/puma.pid"
-end
-
+pidfile "/u/apps/{{project_name}}/shared/tmp/pids/puma.pid"
 state_path "/u/apps/{{project_name}}/shared/tmp/pids/puma.state"
 activate_control_app
 

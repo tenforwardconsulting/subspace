@@ -1,5 +1,4 @@
 require 'json'
-require 'debug'
 module Subspace
   module Commands
     class Terraform < Subspace::Commands::Base

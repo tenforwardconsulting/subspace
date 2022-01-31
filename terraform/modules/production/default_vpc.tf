@@ -35,6 +35,20 @@ resource "aws_db_subnet_group" "production-subnet-group" {
   }
 }
 
+resource "aws_route_table" "production" {
+  vpc_id = aws_vpc.production-internal.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.gw.id
+  }
+}
+
+resource "aws_main_route_table_association" "a" {
+  vpc_id         = aws_vpc.production-internal.id
+  route_table_id = aws_route_table.production.id
+}
+
 data "aws_subnets" "subnets" {
   filter {
     name   = "vpc-id"

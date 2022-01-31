@@ -19,10 +19,11 @@ class Subspace::Commands::Ssh < Subspace::Commands::Base
       return
     end
     host_vars = inventory.hosts[@host].vars
-    user = host_vars["ansible_user"]
-    host = host_vars["ansible_host"]
-    port = host_vars["ansible_port"] || 22
-    cmd = "ssh #{user}@#{host} -p #{port} -i config/subspace/subspace.pem #{pass_through_params.join(" ")}"
+    user = host_vars["ansible_ssh_user"]
+    host = host_vars["ansible_ssh_host"]
+    port = host_vars["ansible_ssh_port"] || 22
+    pem = host_vars["ansible_ssh_private_key_file"] || 'subspace.pem'
+    cmd = "ssh #{user}@#{host} -p #{port} -i config/subspace/#{pem} #{pass_through_params.join(" ")}"
     say "> #{cmd} \n"
     exec cmd
   end
