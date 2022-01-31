@@ -1,4 +1,4 @@
 check process resque
   with pidfile /u/apps/{{project_name}}/shared/tmp/pids/resque.pid
-  start program = "/bin/su - deploy -c 'cd /u/apps/{{project_name}}/current && RAILS_ENV={{rails_env}} COUNT={{resque_concurrency}} QUEUES={{hostname}},{{ job_queues | join(',') }} BACKGROUND=yes PIDFILE=/u/apps/{{project_name}}/shared/tmp/pids/resque.pid bundle exec rake resque:work'" with timeout 30 seconds
+  start program = "/bin/su - deploy -c 'cd /u/apps/{{project_name}}/current && RAILS_ENV={{rails_env}} QUEUES={{hostname}},{{ job_queues | join(',') }} BACKGROUND=yes PIDFILE=/u/apps/{{project_name}}/shared/tmp/pids/resque.pid bundle exec rake resque:work'" with timeout 30 seconds
   stop program = "/bin/su - deploy -c 'kill -s TERM `cat /u/apps/{{project_name}}/shared/tmp/pids/resque.pid`'" with timeout 30 seconds
