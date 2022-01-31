@@ -1,0 +1,2 @@
+---
+  resque_concurrency: 10

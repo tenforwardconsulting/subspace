@@ -13,6 +13,12 @@ module Subspace
       private
 
       def update_ansible_cfg
+        if `pip show mitogen` =~ /^Location: (.*?)$/m
+          @mitogen_path = $1
+          puts "🏎🚀🚅Mitogen found at #{@mitogen_path}.  WARP 9!....ENGAGE!🚀"
+        else
+          puts "Mitogen not detected.  Ansible will be slow.  Run `pip install mitogen` to fix."
+        end
         template! "ansible.cfg"
       end
     end

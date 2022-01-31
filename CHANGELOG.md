@@ -12,6 +12,10 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 2.5.8
+  * Add a new role for configuring a monit-based resque server
+  * Auto-detect mitogen for speed
+
 ## 2.5.7
   * Add ability to set the timezone for servers instead of forcing to Central Time
   * Update puma configuration to support puma 5 with puma-daemon
