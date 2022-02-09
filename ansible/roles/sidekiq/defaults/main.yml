@@ -1,2 +1,2 @@
 ---
-  sidekiq_concurrency: 10
+  sidekiq_concurrency: 1

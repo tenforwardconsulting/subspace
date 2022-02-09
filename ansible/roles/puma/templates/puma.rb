@@ -2,7 +2,7 @@ begin
   # Needed for Puma 5 + puma-damon, but built in to Puma 4
   # https://github.com/kigster/puma-daemon
   require 'puma/daemon'
-rescue => LoadError
+rescue LoadError => e
   # Puma 4 has `daemonize` built in
 end
 

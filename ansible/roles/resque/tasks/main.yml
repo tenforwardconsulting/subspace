@@ -1,0 +1,15 @@
+---
+  - name: Install resque monit script
+    template:
+      src: resque-monit-rc
+      dest: /etc/monit/conf-available/resque_{{project_name}}_{{rails_env}}
+    become: true
+
+  - name: Enable resque monit script
+    file:
+      src: /etc/monit/conf-available/resque_{{project_name}}_{{rails_env}}
+      dest: /etc/monit/conf-enabled/resque_{{project_name}}_{{rails_env}}
+      state: link
+    notify:
+      - reload_monit
+      - restart_monit

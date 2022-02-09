@@ -283,11 +283,11 @@ Installs logrotate and lets you configure logs for automatic rotation.  Example 
 ## newrelic
 
 ## newrelic-infra
-This role will install the next-gen "Newrelic One" infrastructure agent which can perform a few different functions for newrelic.  The previous "newrelic" role is deprecated. 
+This role will install the next-gen "Newrelic One" infrastructure agent which can perform a few different functions for newrelic.  The previous "newrelic" role is deprecated.
 
-Variables: 
-    # Required, the newrelic license key you get after signing up. 
-    newrelic_license: "longhashthingyougetfromnewrelichere" 
+Variables:
+    # Required, the newrelic license key you get after signing up.
+    newrelic_license: "longhashthingyougetfromnewrelichere"
     # Optional - send logs to newrelic one's log aggregator.
     newrelic_logs:
       - name: rails-production
@@ -373,6 +373,14 @@ Installs redis on the server.
     # Change to * if you want tthis available everywhere.
     redis_bind: 127.0.0.1
 
+## resque
+
+Install monitoring and automatic startup for resque workers via monit. You MUST set the `job_queues` variable as follows:
+
+    job_queues:
+      - default
+      - mailers
+      - exports
 ## ruby-common
 
 Installs ruby on the machine.  YOu can set a version by picking off the download url and sha hash from ruby-lang.org
@@ -387,9 +395,13 @@ Installs ruby on the machine.  YOu can set a version by picking off the download
 
 This will install a monit script that keeps sidekiq running.  We spawn one sidekiq instance that manages as many queues as you need.  Varaibles of note:
 
+    # Process these background job queues
     job_queues:
       - default
       - mailers
+
+    # Number of sidekiq *processes* to run
+    sidekiq_concurrency: 1
 
 * Note that as of v0.4.13, we now also add a unique job queue for each host with its hostname.  This is handy if you need to assign a job to a specific host.  In general you should use named queues, but occasionally this is useful and there's no harm in having it there unused.
 
@@ -407,7 +419,14 @@ Thanks to the following repositories for making their roles available:
 * https://github.com/mtpereira/ansible-passenger
 
 
-# Development
+# Mitogen
+
+In order to dramatically speed up ansible, you can install Mitogen: https://github.com/mitogen-hq/mitogen/blob/master/docs/ansible_detailed.rst
+
+    pip install -g mitogen
+
+Subspace will automatically detect this and update your ansible.cfg file so it is blazing fast.
+
 
 ## Directory Structure
 
