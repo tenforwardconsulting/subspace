@@ -20,11 +20,13 @@ class Subspace::Commands::Bootstrap < Subspace::Commands::Base
   def ensure_ssh_dir
     cmd = ["ansible",
       @host_spec,
+      "--private-key",
+      "config/subspace/subspace.pem",
+      "-v",
       "-m",
       "file",
       "-a",
       "path=/home/{{ansible_user}}/.ssh state=directory mode=0700",
-      "-vvvv"
     ]
     cmd = cmd | pass_through_params
     bootstrap_command cmd
@@ -34,12 +36,13 @@ class Subspace::Commands::Bootstrap < Subspace::Commands::Base
     update_ansible_cfg
     cmd = ["ansible",
       @host_spec,
+      "--private-key",
+      "config/subspace/subspace.pem",
       "-m",
       "raw",
       "-a",
       "test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)",
-      "--become",
-      "-vvvv"
+      "--become"
     ]
     cmd = cmd | pass_through_params
     bootstrap_command cmd

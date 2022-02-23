@@ -16,6 +16,6 @@ variable ssh_cidr_blocks {
   default = ["0.0.0.0/0"]
 }
 
-locals {
-  instance_hostname = "${var.project_environment}-main"
+variable instance_hostname {
+  type = string
 }

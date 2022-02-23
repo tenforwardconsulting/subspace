@@ -74,6 +74,7 @@ class Subspace::Commands::Init < Subspace::Commands::Base
     FileUtils.mkdir_p File.join dest_dir, "group_vars"
     FileUtils.mkdir_p File.join dest_dir, "secrets"
     FileUtils.mkdir_p File.join dest_dir, "roles"
+    FileUtils.mkdir_p File.join dest_dir, "templates"
 
     copy ".gitignore"
     template "ansible.cfg"
@@ -96,7 +97,6 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
     FileUtils.ln_sf File.join(gem_path, 'terraform', 'modules'), File.join(dest_dir, "terraform", ".subspace-tf-modules")
     template "terraform/template/main.tf", "terraform/#{@env}/main.tf"
-    copy "terraform/template/credentials.auto.tfvars", "terraform/#{@env}/credentials.auto.tfvars"
     copy "terraform/.gitignore"
   end
 
@@ -124,7 +124,6 @@ class Subspace::Commands::Init < Subspace::Commands::Base
   end
 
   def init_appyml
-    FileUtils.mkdir_p File.join dest_dir, "templates"
     copy "templates/application.yml.template"
   end
 end
