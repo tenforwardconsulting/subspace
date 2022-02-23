@@ -19,9 +19,12 @@ data "aws_availability_zones" "available" {
 }
 
 resource "aws_security_group" "single" {
-  name        = "{{project_environment}}workhorse server"
+  name        = "${var.project_environment} workhorse server"
   description = "Allow inbound web and ssh traffic"
   vpc_id      = aws_default_vpc.default.id
+  lifecycle {
+    create_before_destroy = true
+  }
 
   ingress {
     description      = "TLS from world"

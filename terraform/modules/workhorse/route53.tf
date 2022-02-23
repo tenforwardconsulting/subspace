@@ -7,7 +7,7 @@ resource "aws_route53_zone" "primary" {
 
 resource "aws_route53_record" "single" {
   zone_id = aws_route53_zone.primary.zone_id
-  name    = "${local.instance_hostname}"
+  name    = "${var.instance_hostname}"
   type    = "A"
   ttl     = "300"
   records = [aws_eip.single.public_ip]
@@ -18,5 +18,5 @@ resource "aws_route53_record" "cname" {
   name    = "${var.project_environment}"
   type    = "CNAME"
   ttl     = "300"
-  records = ["${local.instance_hostname}.${var.domain_name}."]
+  records = ["${var.instance_hostname}.${var.domain_name}."]
 }

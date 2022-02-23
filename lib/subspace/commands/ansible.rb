@@ -3,8 +3,6 @@ module Subspace
     module Ansible
       def ansible_playbook(*args)
         args.push "--diff"
-        args.push "-i"
-        args.push "inventory.yml"
         args.push "--private-key"
         args.push "subspace.pem"
         ansible_command("ansible-playbook", *args)
