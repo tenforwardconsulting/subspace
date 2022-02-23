@@ -100,10 +100,6 @@ class Subspace::Commands::Init < Subspace::Commands::Base
     copy "terraform/.gitignore"
   end
 
-  def project_name
-    File.basename(Dir.pwd)
-  end
-
   def hostname(env)
     "#{project_name.gsub('_', '-')}-#{env}"
   end

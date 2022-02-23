@@ -38,8 +38,7 @@ class Subspace::Commands::Bootstrap < Subspace::Commands::Base
       "raw",
       "-a",
       "test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)",
-      "--become",
-      "-vvvv"
+      "--become"
     ]
     cmd = cmd | pass_through_params
     bootstrap_command cmd

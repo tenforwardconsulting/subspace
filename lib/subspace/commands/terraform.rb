@@ -10,6 +10,8 @@ module Subspace
       end
 
       def run
+        check_aws_credentials or exit
+        ensure_terraform or exit
         if @args.any?
           terraform_command(@args.shift, *@args)
         else
@@ -43,6 +45,37 @@ module Subspace
         end
         inventory.merge(@output)
         inventory.write
+      end
+
+      def check_aws_credentials
+        ENV["AWS_ACCESS_KEY_ID"] = nil
+        ENV["AWS_SECRET_ACCESS_KEY"] = nil
+
+        profile = "subspace-#{project_name}"
+
+        system("aws --profile #{profile} configure list &> /dev/null ")
+        if $? != 0
+          puts "No AWS Profile '#{profile}' configured.  Please enter your credentials."
+          system("aws --profile #{profile} configure")
+          system("aws --profile #{profile} configure list &> /dev/null ")
+          if $? != 0
+            puts "FATAL: could not configure aws.  Please try again"
+            exit
+          end
+        else
+          puts "Using AWS Profile #{profile}"
+        end
+        true
+      end
+
+      def ensure_terraform
+         if `terraform -v --json | jq -r .terraform_version` =~ /1\.\d+/
+            puts "Terraform found."
+            return true
+         else
+            puts "Please install terraform at least 1.1 locally"
+            return false
+         end
       end
     end
   end

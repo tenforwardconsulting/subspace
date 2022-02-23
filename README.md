@@ -36,8 +36,10 @@ Or install it yourself as:
 
 ### `subspace init`
 
-Initialize the project for subspace. Creates `config/provision` with all
+Initialize the project for subspace. Creates `config/subspace` with all
 necessary files.
+
+Subspace 3 supports terraform.  You will need to create an IAM user manually with administrative access to the target AWS environment for terraform. 
 
 ### `subspace bootstrap <environment>`
 
@@ -397,9 +399,13 @@ Installs ruby on the machine.  YOu can set a version by picking off the download
 
 This will install a monit script that keeps sidekiq running.  We spawn one sidekiq instance that manages as many queues as you need.  Varaibles of note:
 
+    # Process these queues on this server
     job_queues:
       - default
       - mailers
+    
+    # Run multiple sidekiq workers concurrently
+    sidekiq_workers: 1 
 
 * Note that as of v0.4.13, we now also add a unique job queue for each host with its hostname.  This is handy if you need to assign a job to a specific host.  In general you should use named queues, but occasionally this is useful and there's no harm in having it there unused.
 
