@@ -97,7 +97,6 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
     FileUtils.ln_sf File.join(gem_path, 'terraform', 'modules'), File.join(dest_dir, "terraform", ".subspace-tf-modules")
     template "terraform/template/main.tf", "terraform/#{@env}/main.tf"
-    # copy "terraform/template/credentials.auto.tfvars", "terraform/#{@env}/credentials.auto.tfvars"
     copy "terraform/.gitignore"
   end
 
