@@ -20,6 +20,7 @@ This project attempts to follow [semantic versioning](https://semver.org/).
     * No more group_vars directory
     * All of the host/group configuration is in that one file now!
   * BREAKING: `subspace vars` is now `subspace secrets`
+  * BREAKING: sidekiq_concurrency renamed to sidekiq_workers, default changed from 10 -> 1
 
 ## 2.5.7
   * Add ability to set the timezone for servers instead of forcing to Central Time

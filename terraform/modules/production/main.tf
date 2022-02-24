@@ -9,6 +9,7 @@ terraform {
 
 provider aws {
   region = var.aws_region
+  profile = "subspace-${var.project_name}"
   default_tags {
     tags = {
       Environment = var.project_environment

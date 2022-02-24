@@ -21,7 +21,15 @@ module Subspace
       end
 
       def project_path
+        unless File.exist?(File.join(Dir.pwd, "config", "subspace"))
+          say "Subspace must be run from the project root"
+          exit
+        end
         Dir.pwd # TODO make sure this is correct if they for whatever reason aren't running subspace from the project root??
+      end
+
+      def project_name
+        File.basename(project_path) # TODO see above, this should probably be in a configuration somewhere
       end
 
       def dest_dir

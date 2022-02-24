@@ -7,11 +7,10 @@ terraform {
   }
 }
 
+# Subspace will prompt for credentials if they are not found in ~/.aws/credentials
 provider aws {
   region = var.aws_region
-  # Set these values locally in credentials.auto.tfvars
-  access_key = var.aws_access_key_id
-  secret_key = var.aws_secret_access_key
+  profile = "subspace-${var.project_name}"
 }
 
 resource "aws_key_pair" "subspace" {
