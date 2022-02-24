@@ -1,6 +1,0 @@
----
-  dependencies:
-    - {
-      role: mtpereira.passenger,
-      become: true
-    }

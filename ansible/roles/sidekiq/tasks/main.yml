@@ -1,33 +1,11 @@
 ---
-  - name: Install sidekiq monit script
-    when: monit_installed is defined
-    template:
-      src: sidekiq-monit-rc
-      dest: /etc/monit/conf-available/sidekiq_{{project_name}}_{{rails_env}}
-    become: true
-
-  - name: Clean up old sidekiq monit scripts
-    shell: rm -f /etc/monit/conf.d/sidekiq_*
-
-  - name: Enable sidekiq monit script
-    when: monit_installed is defined
-    file:
-      src: /etc/monit/conf-available/sidekiq_{{project_name}}_{{rails_env}}
-      dest: /etc/monit/conf-enabled/sidekiq_{{project_name}}_{{rails_env}}
-      state: link
-    notify:
-      - reload_monit
-      - restart_monit
-
-  - name: Install systemd script
-    when: systemd_installed is defined
+  - name: Install systemd sidekiq script
     become: true
     template:
       src: sidekiq-systemd.service
       dest: /etc/systemd/system/sidekiq.service
 
-  - name: Snable systemd service
-    when: systemd_installed is defined
+  - name: Enable systemd sidekiq service
     become: true
     systemd:
       name: sidekiq
