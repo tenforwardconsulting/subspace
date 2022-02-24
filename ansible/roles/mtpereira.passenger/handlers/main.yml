@@ -1,8 +1,0 @@
----
-- name: apache restart
-  service: name=apache2 state=restarted
-  become: yes
-
-- name: nginx restart
-  service: name=nginx state=restarted
-  become: yes

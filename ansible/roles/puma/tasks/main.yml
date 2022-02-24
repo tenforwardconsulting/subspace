@@ -19,43 +19,19 @@
   file: path=/u/apps/{{project_name}}/shared/tmp/sockets group=deploy owner=deploy state=directory
   tags: tmp
 
-- name: Install puma monit script
-  when: monit_installed is defined
-  template:
-    src: puma-monit-rc
-    dest: /etc/monit/conf-available/puma_{{project_name}}_{{rails_env}}
-
-- name: mkdir /etc/monit/conf-enabled
-  when: monit_installed is defined
-  file:
-    path: /etc/monit/conf-enabled
-    state: directory
-
-- name: Enable puma monit script
-  when: monit_installed is defined
-  file:
-    src: /etc/monit/conf-available/puma_{{project_name}}_{{rails_env}}
-    dest: /etc/monit/conf-enabled/puma_{{project_name}}_{{rails_env}}
-    state: link
-  notify:
-    - reload_monit
-
 - name: Install systemd script
-  when: systemd_installed is defined
   become: true
   template:
     src: puma-systemd.service
     dest: /etc/systemd/system/puma.service
 
 - name: Install systemd socket
-  when: systemd_installed is defined
   become: true
   template:
     src: puma-systemd.socket
     dest: /etc/systemd/system/puma.socket
 
 - name: enable systemd service
-  when: systemd_installed is defined
   become: true
   systemd:
     name: puma.service
@@ -63,7 +39,6 @@
     daemon_reload: yes
 
 - name: disable systemd socket
-  when: systemd_installed is defined
   become: true
   systemd:
     name: puma.socket

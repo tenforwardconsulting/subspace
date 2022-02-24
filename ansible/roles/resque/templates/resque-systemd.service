@@ -1,0 +1,52 @@
+[Unit]
+Description=resque
+# consider adding redis-server.service if Redis is local and systemd-managed.
+After=syslog.target network.target
+
+# See these pages for lots of options:
+#
+#   https://www.freedesktop.org/software/systemd/man/systemd.service.html
+#   https://www.freedesktop.org/software/systemd/man/systemd.exec.html
+#
+# THOSE PAGES ARE CRITICAL FOR ANY LINUX DEVOPS WORK; read them multiple
+# times! systemd is a critical tool for all developers to know and understand.
+#
+[Service]
+#
+#      !!!!  !!!!  !!!!
+#
+Type=simple
+
+WorkingDirectory=/u/apps/{{project_name}}/current
+
+ExecStart=/usr/local/bin/bundle exec rake resque:work
+
+# Uncomment this if you are going to use this as a system service
+# if using as a user service then leave commented out, or you will get an error trying to start the service
+# !!! Change this to your deploy user account if you are using this as a system service !!!
+User=deploy
+Group=deploy
+UMask=0002
+
+# Greatly reduce Ruby memory fragmentation and heap usage
+# https://www.mikeperham.com/2018/04/25/taming-rails-memory-bloat/
+Environment=MALLOC_ARENA_MAX=2
+Environment=RAILS_ENV=staging
+Environment=COUNT=1
+Environment=QUEUES=staging-app1,mailers,default
+Environment=BACKGROUND=yes
+Environment=PIDFILE=/u/apps/wida-store/shared/tmp/pids/resque.pid
+
+# if we crash, restart
+RestartSec=1
+Restart=on-failure
+
+# output goes to /var/log/syslog (Ubuntu) or /var/log/messages (CentOS)
+StandardOutput=syslog
+StandardError=syslog
+
+# This will default to "bundler" if we don't specify it
+SyslogIdentifier=resque
+
+[Install]
+WantedBy=multi-user.target

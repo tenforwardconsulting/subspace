@@ -1,5 +1,0 @@
-  - name: Add sudoers.d file so that deploy can run passenger-status without entering password.
-    copy:
-      src: sudoers-passenger
-      dest: /etc/sudoers.d/passenger
-    become: true

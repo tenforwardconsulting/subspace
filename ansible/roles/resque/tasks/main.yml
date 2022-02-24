@@ -1,0 +1,12 @@
+---
+  - name: Install systemd resque script
+    become: true
+    template:
+      src: resque-systemd.service
+      dest: /etc/systemd/system/resque.service
+
+  - name: Enable systemd resque service
+    become: true
+    systemd:
+      name: resque
+      enabled: yes
