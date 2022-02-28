@@ -15,11 +15,13 @@ After=syslog.target network.target
 #
 #      !!!!  !!!!  !!!!
 #
-Type=simple
+Type=forking
 
 WorkingDirectory=/u/apps/{{project_name}}/current
 
 ExecStart=/usr/local/bin/bundle exec rake resque:work
+ExecStop=/bin/kill -s QUIT $MAINPID
+PIDFile=/u/apps/wida-store/shared/tmp/pids/resque.pid
 
 # Uncomment this if you are going to use this as a system service
 # if using as a user service then leave commented out, or you will get an error trying to start the service

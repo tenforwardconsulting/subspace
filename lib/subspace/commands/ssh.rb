@@ -11,7 +11,6 @@ class Subspace::Commands::Ssh < Subspace::Commands::Base
   end
 
   def run
-    inventory = Subspace::Inventory.read("config/subspace/inventory.yml")
     if !inventory.hosts[@host]
       say "No host '#{@host}' found. "
       all_hosts = inventory.hosts.keys
@@ -19,9 +18,9 @@ class Subspace::Commands::Ssh < Subspace::Commands::Base
       return
     end
     host_vars = inventory.hosts[@host].vars
-    user = host_vars["ansible_ssh_user"]
-    host = host_vars["ansible_ssh_host"]
-    port = host_vars["ansible_ssh_port"] || 22
+    user = host_vars["ansible_user"]
+    host = host_vars["ansible_host"]
+    port = host_vars["ansible_port"] || 22
     pem = host_vars["ansible_ssh_private_key_file"] || 'subspace.pem'
     cmd = "ssh #{user}@#{host} -p #{port} -i config/subspace/#{pem} #{pass_through_params.join(" ")}"
     say "> #{cmd} \n"

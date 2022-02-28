@@ -9,4 +9,6 @@
     become: true
     systemd:
       name: resque
+      daemon_reload: true
       enabled: yes
+      state: started
