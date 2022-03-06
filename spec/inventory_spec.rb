@@ -9,7 +9,6 @@ describe Subspace::Inventory do
     it 'can add a host' do
       host = Subspace::Inventory::Host.new("web1")
       host.vars = {var1: "a", var2: "b"}
-      host.groups = []
       inventory.hosts["web1"] = host
       expect(inventory.to_yml).to eq <<~EOS
         ---
@@ -23,8 +22,8 @@ describe Subspace::Inventory do
     end
 
     it "can add a couple hosts to a group" do
-      inventory.hosts["web1"] = Subspace::Inventory::Host.new("web1", groups: ["webservers"])
-      inventory.hosts["web2"] = Subspace::Inventory::Host.new("web2", groups: ["webservers"])
+      inventory.hosts["web1"] = Subspace::Inventory::Host.new("web1", group_list: ["webservers"])
+      inventory.hosts["web2"] = Subspace::Inventory::Host.new("web2", group_list: ["webservers"])
 
       expect(inventory.to_yml).to eq <<~EOS
         ---
@@ -42,8 +41,8 @@ describe Subspace::Inventory do
 
     # TODO I don't know if I want to do this, I think group_vars/ might be better
     it "can add group vars to a group with hosts in it" do
-      inventory.hosts["web1"] = Subspace::Inventory::Host.new("web1", groups: ["webservers"])
-      inventory.hosts["web2"] = Subspace::Inventory::Host.new("web2", groups: ["webservers"])
+      inventory.hosts["web1"] = Subspace::Inventory::Host.new("web1", group_list: ["webservers"])
+      inventory.hosts["web2"] = Subspace::Inventory::Host.new("web2", group_list: ["webservers"])
       inventory.group_vars["webservers"] = {
         var1: "a",
         var2: "b"
@@ -66,8 +65,8 @@ describe Subspace::Inventory do
     end
 
     it "can add global vars too" do
-      inventory.hosts["web1"] = Subspace::Inventory::Host.new("web1", groups: ["webservers"])
-      inventory.hosts["web2"] = Subspace::Inventory::Host.new("web2", groups: ["webservers"])
+      inventory.hosts["web1"] = Subspace::Inventory::Host.new("web1", group_list: ["webservers"])
+      inventory.hosts["web2"] = Subspace::Inventory::Host.new("web2", group_list: ["webservers"])
       inventory.group_vars["webservers"] = {
         var1: "a",
         var2: "b"
@@ -100,6 +99,10 @@ describe Subspace::Inventory do
 
     it "knows all the hosts" do
       expect(inventory.hosts.keys).to match_array %w(mail.example.com one.example.com two.example.com three.example.com foo.example.com bar.example.com)
+    end
+
+    it "knows all the groups" do
+      expect(inventory.groups.keys).to match_array %w(all webservers dbservers east west)
     end
 
     it "writes (most of) the yaml back after reading it" do
@@ -153,10 +156,11 @@ describe Subspace::Inventory do
       inventory.merge(tf_output)
       expect(inventory.hosts.keys).to eq ["staging-web1", "staging-web2", "staging-worker1"]
       expect(inventory.hosts["staging-web1"].vars).to eq({
-        "ansible_host" => "10.1.1.1"
+        "ansible_host" => "10.1.1.1",
+        "hostname" => "staging-web1"
       })
-      expect(inventory.hosts["staging-web2"].groups).to eq ["staging", "staging_web"]
-      expect(inventory.hosts["staging-worker1"].groups).to eq ["staging", "staging_worker"]
+      expect(inventory.hosts["staging-web2"].group_list).to eq ["staging", "staging_web"]
+      expect(inventory.hosts["staging-worker1"].group_list).to eq ["staging", "staging_worker"]
     end
 
     it "can read in hosts and export yml from a blank inventory" do
@@ -167,10 +171,13 @@ describe Subspace::Inventory do
         hosts:
           staging-web1:
             ansible_host: 10.1.1.1
+            hostname: staging-web1
           staging-web2:
             ansible_host: 10.2.2.2
+            hostname: staging-web2
           staging-worker1:
             ansible_host: 10.3.3.3
+            hostname: staging-worker1
         children:
           staging:
             hosts:
@@ -192,7 +199,7 @@ describe Subspace::Inventory do
       it "can merge in new hosts without disturbing existing ones" do
         inventory.merge(tf_output)
         expect(inventory.hosts.keys).to match_array ["staging-web1", "staging-web2", "staging-worker1", "prod-web1", "prod-web2", "prod-worker1"]
-        expect(inventory.hosts["prod-web1"].groups).to eq ["prod", "prod_web"]
+        expect(inventory.hosts["prod-web1"].group_list).to eq ["prod", "prod_web"]
       end
     end
 
@@ -200,8 +207,8 @@ describe Subspace::Inventory do
       let(:inventory) { Subspace::Inventory.read("spec/data/inventory_staging.yml") }
       it "can merge in new hosts replacing and removing old ones" do
         inventory.merge(tf_output)
-        expect(inventory.hosts.keys).to match_array ["staging-web1", "staging-web2", "staging-worker1"]
-        expect(inventory.hosts["prod-web1"].groups).to eq ["prod", "prod_web"]
+        expect(inventory.hosts.keys).to match_array ["staging-web6", "staging-worker7", "staging-web1", "staging-web2", "staging-worker1"]
+        expect(inventory.hosts["staging-web6"].vars["ansible_host"]).to eq "10.6.6.6"
       end
     end
   end

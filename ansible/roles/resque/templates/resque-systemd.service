@@ -21,7 +21,7 @@ WorkingDirectory=/u/apps/{{project_name}}/current
 
 ExecStart=/usr/local/bin/bundle exec rake resque:work
 ExecStop=/bin/kill -s QUIT $MAINPID
-PIDFile=/u/apps/wida-store/shared/tmp/pids/resque.pid
+PIDFile=/u/apps/{{project_name}}/shared/tmp/pids/resque.pid
 
 # Uncomment this if you are going to use this as a system service
 # if using as a user service then leave commented out, or you will get an error trying to start the service
@@ -33,11 +33,11 @@ UMask=0002
 # Greatly reduce Ruby memory fragmentation and heap usage
 # https://www.mikeperham.com/2018/04/25/taming-rails-memory-bloat/
 Environment=MALLOC_ARENA_MAX=2
-Environment=RAILS_ENV=staging
+Environment=RAILS_ENV={{rails_env}}
 Environment=COUNT=1
-Environment=QUEUES=staging-app1,mailers,default
+Environment=QUEUES={{ job_queues | join(' ') }}
 Environment=BACKGROUND=yes
-Environment=PIDFILE=/u/apps/wida-store/shared/tmp/pids/resque.pid
+Environment=PIDFILE=/u/apps/{{project_name}}/shared/tmp/pids/resque.pid
 
 # if we crash, restart
 RestartSec=1

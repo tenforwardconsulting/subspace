@@ -27,7 +27,7 @@ module Subspace
         # Each group defines its host membership
         group["hosts"].each do |host, vars|
           inventory.hosts[host] ||= Host.new(host, vars: vars || {})
-          inventory.hosts[host].groups.push name
+          inventory.hosts[host].group_list.push name
         end
 
         if group["vars"]
@@ -49,22 +49,23 @@ module Subspace
       inventory_json["inventory"]["value"]["hostnames"].each_with_index do |host, i|
         hosts[host] ||= Host.new(host)
         hosts[host].vars["ansible_host"] = inventory_json["inventory"]["value"]["ip_addresses"][i]
-        hosts[host].vars["ansible_user"] = inventory_json["inventory"]["value"]["user"][i]
+        # TODO this isn't populated yet by TF
+        # TODO write a test for TF output?
+        # hosts[host].vars["ansible_user"] = inventory_json["inventory"]["value"]["user"][i]
         hosts[host].vars["hostname"] = host
-        hosts[host].groups = inventory_json["inventory"]["value"]["groups"][i].split(/\s/)
+        hosts[host].group_list = inventory_json["inventory"]["value"]["groups"][i].split(/\s/)
       end
     end
 
     def to_yml
-      all_hosts = {}
       all_groups = {}
+      all_hosts = {}
       @hosts.each do |name, host|
         all_hosts[host.name] = host.vars.empty? ? nil : host.vars.transform_keys(&:to_s)
-        host.groups.each do |group|
+        host.group_list.each do |group|
           all_groups[group] ||= { "hosts" => {}}
           all_groups[group]["hosts"][host.name] = nil
         end
-
       end
 
       @group_vars.each do |group, vars|
@@ -88,21 +89,35 @@ module Subspace
       YAML.dump(yml)
     end
 
-    class Host
-      attr_accessor :vars, :groups, :name
+    def groups
+      @groups ||= begin
+        all_groups = {"all" => Group.new("all", vars: {}, host_list: hosts.keys) }
+        @hosts.each do |name, host|
+          host.group_list.each do |group|
+            all_groups[group] ||= Group.new(group, vars: @group_vars[group])
+            all_groups[group].host_list.append(host)
+          end
+        end
+        all_groups
+      end
+    end
 
-      def initialize(name, vars: {}, groups: [])
+    class Host
+      attr_accessor :vars, :group_list, :name
+
+      def initialize(name, vars: {}, group_list: [])
         @name = name
         @vars = vars
-        @groups = groups
+        @group_list = group_list
       end
     end
 
     class Group
-      attr_accessor :name, :vars
-      def initialize(name, vars: {})
+      attr_accessor :name, :vars, :host_list
+      def initialize(name, vars: {}, host_list: [])
         @name = name
         @vars = vars
+        @host_list = host_list
       end
     end
   end

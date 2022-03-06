@@ -7,6 +7,7 @@ require 'subspace'
 require 'subspace/commands/base'
 require 'subspace/commands/bootstrap'
 require 'subspace/commands/configure'
+require 'subspace/commands/exec'
 require 'subspace/commands/init'
 require 'subspace/commands/override'
 require 'subspace/commands/provision'
@@ -83,6 +84,17 @@ class Subspace::Cli
         c.option "-#{param_name} #{param_name.upcase}", "Passed directly through to ssh command"
       end
       c.when_called Subspace::Commands::Ssh
+    end
+
+    command :exec do |c|
+      c.syntax = 'subspace exec <host-spec> "<statement>" [options]'
+      c.summary = 'execute <statement> on all hosts matching <host-spec>'
+      c.description = ''
+      c.option '--user USER', "Use a different user (eg deploy).  Default is the ansible_user"
+      Subspace::Commands::Exec::PASS_THROUGH_PARAMS.each do |param_name|
+        c.option "-#{param_name} #{param_name.upcase}", "Passed directly through to ssh command"
+      end
+      c.when_called Subspace::Commands::Exec
     end
 
     command :configure do |c, args|

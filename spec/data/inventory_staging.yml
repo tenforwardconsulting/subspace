@@ -6,7 +6,7 @@ all:
     staging-worker7:
       ansible_host: 10.7.7.7
   children:
-    stagingservers:
+    staging:
       hosts:
         staging-web6:
         staging-worker7:

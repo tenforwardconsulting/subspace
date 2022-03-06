@@ -30,9 +30,9 @@
         "10.3.3.3"
       ],
       "groups": [
-        "stagingservers staging_web",
-        "stagingservers staging_web",
-        "stagingservers staging_worker"
+        "staging staging_web",
+        "staging staging_web",
+        "staging staging_worker"
       ]
     }
   }
