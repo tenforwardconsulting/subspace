@@ -43,11 +43,11 @@ resource "aws_security_group" "single" {
   }
 
   ingress {
-    description      = "SSH from world"
+    description      = "SSH from 10fw Office"
     from_port        = 22
     to_port          = 22
     protocol         = "tcp"
-    cidr_blocks      = var.ssh_cidr_blocks
+    cidr_blocks      = ["172.220.8.253/32"]
   }
 
   egress {
