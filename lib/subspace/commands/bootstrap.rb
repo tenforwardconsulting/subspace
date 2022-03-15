@@ -1,5 +1,4 @@
 class Subspace::Commands::Bootstrap < Subspace::Commands::Base
-  PASS_THROUGH_PARAMS = ["private-key"]
 
   def initialize(args, options)
     @host_spec = args.first
@@ -11,40 +10,34 @@ class Subspace::Commands::Bootstrap < Subspace::Commands::Base
 
   def run
     # ansible atlanta -m copy -a "src=/etc/hosts dest=/tmp/hosts"
-    install_python
-    ensure_ssh_dir
+    hosts = inventory.find_hosts!(@host_spec)
+    update_ansible_cfg
+    hosts.each do |host|
+      say "Bootstapping #{host.vars["hostname"]}..."
+      learn_host(host)
+      install_python(host)
+    end
+
   end
 
   private
 
-  def ensure_ssh_dir
-    cmd = ["ansible",
-      @host_spec,
-      "--private-key",
-      "config/subspace/subspace.pem",
-      "-v",
-      "-m",
-      "file",
-      "-a",
-      "path=/home/{{ansible_user}}/.ssh state=directory mode=0700",
-    ]
-    cmd = cmd | pass_through_params
-    bootstrap_command cmd
+  def learn_host(host)
+    system "ssh-keygen -R #{host.vars["ansible_host"]}"
+    system "ssh-keyscan -H #{host.vars["ansible_host"]} >> ~/.ssh/known_hosts"
   end
 
-  def install_python
-    update_ansible_cfg
+  def install_python(host)
     cmd = ["ansible",
-      @host_spec,
+      host.name,
       "--private-key",
       "config/subspace/subspace.pem",
       "-m",
       "raw",
       "-a",
-      "test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)",
+      "test -e /usr/bin/python3 || (apt -y update && apt install -y python3)",
       "--become"
     ]
-    cmd = cmd | pass_through_params
     bootstrap_command cmd
   end
 

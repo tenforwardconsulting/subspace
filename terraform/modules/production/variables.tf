@@ -8,10 +8,19 @@ variable instance_ami { type = string }
 # worker.tf
 variable worker_instance_type { type = string }
 variable worker_instance_count { type = number }
+variable worker_volume_size {
+  type = number
+  default = 32 #GB
+}
 
 # web.tf
 variable web_instance_type { type = string }
 variable web_instance_count { type = number }
+variable web_volume_size {
+  type = number
+  default = 16 #GB
+}
+
 
 # load_balancer.tf
 variable domain_name { type = string }

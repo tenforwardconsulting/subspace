@@ -6,6 +6,7 @@ class Subspace::Commands::Init < Subspace::Commands::Base
     options.default env: "staging"
 
     @env = options.env
+    @template = options.template || "staging"
 
     if options.ansibe.nil? && options.terraform.nil?
       # They didn't pass in any options (subspace init) so just do both
@@ -40,11 +41,11 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
     2. create cloud infrastructure with terraform:
 
-      subspace tf #{@env}`
+      subspace tf #{@env}
 
     3. Bootstrap the new server
 
-      subspace boostrap staging1
+      subspace boostrap #{@env}1
 
     4. Inspect new environment
       - ensure the correct roles are present in #{@env}.yml
@@ -52,7 +53,7 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
     4. Provision the new servers with ansible:
 
-      subspace provision stagingservers
+      subspace provision #{@env}
 
   """
 
@@ -85,18 +86,22 @@ class Subspace::Commands::Init < Subspace::Commands::Base
     create_vault_pass
     @hostname = hostname(@env)
     create_secrets_for @env
-    template "group_vars/template", "group_vars/#{@env}servers"
-    template "playbook.yml", "#{@env}servers.yml"
+    template "group_vars/template", "group_vars/#{@env}"
+    template "playbook.yml", "#{@env}.yml"
 
     create_secrets_for "development" #TODO rename to local?
     init_appyml
   end
 
   def init_terraform
-    FileUtils.mkdir_p File.join dest_dir, "terraform", @env
+    Subspace::Commands::Terraform.ensure_terraform
+    Subspace::Commands::Terraform.check_aws_credentials(project_name)
 
+    FileUtils.mkdir_p File.join dest_dir, "terraform", @env
     FileUtils.ln_sf File.join(gem_path, 'terraform', 'modules'), File.join(dest_dir, "terraform", ".subspace-tf-modules")
-    template "terraform/template/main.tf", "terraform/#{@env}/main.tf"
+
+    set_latest_ami
+    template "terraform/template/main-#{@template}.tf", "terraform/#{@env}/main.tf"
     copy "terraform/.gitignore"
   end
 
@@ -121,5 +126,13 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
   def init_appyml
     copy "templates/application.yml.template"
+  end
+
+  def set_latest_ami
+    @latest_ami = `aws --profile subspace-crs ec2 describe-images \
+    --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64*' \
+    --query 'Images[*].[ImageId,CreationDate]' --output text \
+    | sort -k2 -r \
+    | head -n1 | cut -f1`.chomp
   end
 end

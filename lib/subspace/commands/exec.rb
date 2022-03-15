@@ -12,17 +12,8 @@ class Subspace::Commands::Exec < Subspace::Commands::Base
   end
 
   def run
-    hosts = []
-    if inventory.groups[@host_spec]
-      hosts = inventory.groups[@host_spec].host_list
-    elsif inventory.hosts[@host_spec]
-      hosts = [@host_spec]
-    else
-      say "No inventory matching: '#{@host_spec}' found. "
-      say (["Available hosts:"] + inventory.hosts.keys).join("\n\t")
-      say (["Available groups:"] + inventory.groups.keys).join("\n\t")
-      exit
-    end
+    hosts = inventory.find_hosts!(@host_spec)
+
     say "> Running `#{@command}` on #{hosts.join ','}"
     ansible_command "ansible", @host_spec, "-m", "command", "-a", @command
   end

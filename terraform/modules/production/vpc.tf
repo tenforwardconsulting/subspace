@@ -30,8 +30,6 @@ resource "aws_db_subnet_group" "production-subnet-group" {
 
   tags = {
     Name = "production-subnet-group"
-    Environment = var.project_environment
-    Project = var.project_name
   }
 }
 

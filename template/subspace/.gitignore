@@ -2,4 +2,5 @@
 ansible.cfg
 *.retry
 *.tfstate*
+*.pem
 .terraform

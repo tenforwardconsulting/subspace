@@ -1,0 +1,110 @@
+terraform {
+  # Default backend is just local.
+
+  # Uncomment to use s3
+  # backend "s3" {
+  #   bucket = "subspace-backend-<%= project_name %>"
+  #   key    = "subspace.<%= @env %>.tfstate"
+  #   region = "us-west-2"
+  # }
+
+  # Uncomment to use Terraform Cloud
+  # cloud {
+  #   organization = "<%= project_name %>"
+  #
+  #   workspaces {
+  #     name = "<%= @env %>"
+  #   }
+  # }
+
+}
+
+provider aws {
+  region = "us-west-2"
+  profile = "subspace-<%= project_name %>"
+  default_tags {
+    tags = {
+      Environment = "<%= @env %>"
+      Project     = "<%= project_name %>"
+    }
+  }
+}
+
+variable database_password { type = string }
+
+module production {
+  # source = "<%= File.join(gem_path, 'terraform', 'modules') %>/production"
+  source = "../.subspace-tf-modules/production"
+  project_name = "<%= project_name %>"
+  project_environment =  "<%= @env %>"
+  aws_region = ## "us-west-2"
+  lb_health_check_path = "/"
+
+  # Ubuntu Server 20.04 LTS (HVM), SSD Volume Type
+  instance_ami = "<%= @latest_ami %>"
+  web_instance_type = "t3.small"
+  web_instance_count = 2
+  worker_instance_type = "t3.medium"
+  worker_instance_count = 1
+  worker_volume_size = 100
+
+  database_engine = "postgres"
+  database_engine_version = ## "14.1"
+  database_instance_class = "db.t3.medium"
+  database_name = "<%= "#{project_name}_#{@env}" %>"
+  database_username = "<%= project_name %>"
+  database_password = var.database_password
+  database_allocated_storage = 100
+  database_max_allocated_storage = 1000
+  database_iops = 1000
+
+  domain_name = ## "www.<%= project_name %>.com"
+  alternate_names = []
+}
+
+resource "aws_s3_bucket" "bucket" {
+  bucket = "<%= "#{project_name}-#{@env}-assets" %>"
+  acl    = "private"
+}
+
+resource "aws_s3_bucket_public_access_block" "block_public_acls" {
+  bucket = aws_s3_bucket.bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_iam_user" "s3_user" {
+  name = "<%= "#{project_name}-#{@env}-assets" %>-subspace-s3-user"
+}
+
+resource "aws_iam_user_policy" "s3-upload" {
+  name = "test"
+  user = aws_iam_user.s3_user.name
+
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+            "s3:PutObject",
+            "s3:PutObjectAcl",
+            "s3:GetObject",
+            "s3:GetObjectVersion",
+            "s3:GetBucketAcl",
+            "s3:DeleteObject",
+            "s3:DeleteObjectVersion"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:s3:::<%= "#{project_name}-#{@env}-assets" %>",
+                "arn:aws:s3:::<%= "#{project_name}-#{@env}-assets" %>/*"
+            ]
+        }
+    ]
+}
+EOF
+}

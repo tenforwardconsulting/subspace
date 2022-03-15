@@ -45,7 +45,10 @@ module Subspace
       def template!(src, dest = nil, render_binding = nil)
         dest ||= src
         template = ERB.new File.read(File.join(template_dir, "#{src}.erb")), trim_mode: '-'
-        File.write File.join(dest_dir, dest), template.result(render_binding || binding)
+        result = template.result(render_binding || binding)
+
+
+        File.write File.join(dest_dir, dest), result
       end
 
       def copy(src, dest = nil)

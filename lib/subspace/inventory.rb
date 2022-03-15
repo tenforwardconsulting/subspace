@@ -8,6 +8,20 @@ module Subspace
       @global_vars = {}
     end
 
+    # Find all the hosts in the host/group or exit
+    def find_hosts!(host_spec)
+      if self.groups[host_spec]
+        return self.groups[host_spec].host_list
+      elsif self.hosts[host_spec]
+        return [host_spec]
+      else
+        say "No inventory matching: '#{host_spec}' found. "
+        say (["Available hosts:"] + self.hosts.keys).join("\n\t")
+        say (["Available groups:"] + self.groups.keys).join("\n\t")
+        exit
+      end
+    end
+
     def self.read(path)
       inventory = new
       inventory.path = path
@@ -51,7 +65,7 @@ module Subspace
         hosts[host].vars["ansible_host"] = inventory_json["inventory"]["value"]["ip_addresses"][i]
         # TODO this isn't populated yet by TF
         # TODO write a test for TF output?
-        # hosts[host].vars["ansible_user"] = inventory_json["inventory"]["value"]["user"][i]
+        hosts[host].vars["ansible_user"] = inventory_json["inventory"]["value"]["user"][i]
         hosts[host].vars["hostname"] = host
         hosts[host].group_list = inventory_json["inventory"]["value"]["groups"][i].split(/\s/)
       end

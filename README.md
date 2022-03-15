@@ -39,7 +39,7 @@ Or install it yourself as:
 Initialize the project for subspace. Creates `config/subspace` with all
 necessary files.
 
-Subspace 3 supports terraform.  You will need to create an IAM user manually with administrative access to the target AWS environment for terraform. 
+Subspace 3 supports terraform.  You will need to create an IAM user manually with administrative access to the target AWS environment for terraform.
 
 ### `subspace bootstrap <environment>`
 
@@ -382,8 +382,10 @@ Customize:
 
 Installs redis on the server.
 
-    # Change to * if you want tthis available everywhere.
+    # Change to * if you want this available everywhere instead of localhost
     redis_bind: 127.0.0.1
+
+    redis_bind: "*"
 
 ## ruby-common
 
@@ -403,9 +405,9 @@ This will install a monit script that keeps sidekiq running.  We spawn one sidek
     job_queues:
       - default
       - mailers
-    
+
     # Run multiple sidekiq workers concurrently
-    sidekiq_workers: 1 
+    sidekiq_workers: 1
 
 * Note that as of v0.4.13, we now also add a unique job queue for each host with its hostname.  This is handy if you need to assign a job to a specific host.  In general you should use named queues, but occasionally this is useful and there's no harm in having it there unused.
 
