@@ -14,6 +14,7 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## 3.0.0
   * Added infrastructure management via Terraform!
+  * Added new `subspace exec` command for manual remote management
   * BREAKING: Consolidated inventory file into config/provision/inventory.env.yml
     * No more hosts file
     * No more host_vars directory
@@ -21,6 +22,7 @@ This project attempts to follow [semantic versioning](https://semver.org/).
     * All of the host/group configuration is in that one file now!
   * BREAKING: `subspace vars` is now `subspace secrets`
   * BREAKING: sidekiq_concurrency renamed to sidekiq_workers, default changed from 10 -> 1
+
 
 ## 2.5.7
   * Add ability to set the timezone for servers instead of forcing to Central Time

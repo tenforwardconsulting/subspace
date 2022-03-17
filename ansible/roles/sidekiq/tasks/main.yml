@@ -10,3 +10,6 @@
     systemd:
       name: sidekiq
       enabled: yes
+      daemon_reload: true
+
+# TODO Read the gemfile and make sure they have sidekiq 6????

@@ -5,6 +5,7 @@
       pkg: redis-server
       state: present
       update_cache: true
+
   - name: Set bind IP
     become: true
     lineinfile:
@@ -12,3 +13,9 @@
       regexp: '^bind '
       line: 'bind {{redis_bind}}'
       state: present
+
+  - name: restart redis
+    become: true
+    systemd:
+      name: redis
+      state: restarted

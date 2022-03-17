@@ -14,6 +14,10 @@ resource "aws_instance" "web" {
     Environment = var.project_environment
     Project = var.project_name
   }
+
+  root_block_device {
+    volume_size = var.web_volume_size
+  }
 }
 
 # Associate an elastic IP with each web server

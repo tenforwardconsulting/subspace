@@ -8,6 +8,9 @@ resource "aws_instance" "single" {
     Name = "${var.project_environment} Server"
     Environment = var.project_environment
   }
+  root_block_device {
+    volume_size = var.instance_volume_size
+  }
 }
 
 # Associate an elastic IP with each single server

@@ -23,3 +23,8 @@ resource "aws_key_pair" "subspace" {
   public_key = file("../../../subspace.pem.pub")
 }
 
+resource "aws_kms_key" "subspace" {
+  description             = "Subspace managed KMS key"
+  deletion_window_in_days = 10
+}
+

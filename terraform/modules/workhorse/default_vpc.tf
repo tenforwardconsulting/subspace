@@ -1,6 +1,3 @@
-# Production was already set up here in the default VPC and I don't want to move it
-# So look up the subnets instead
-
 resource "aws_default_vpc" "default" {
   tags = {
     Name = "Default VPC"
@@ -43,11 +40,11 @@ resource "aws_security_group" "single" {
   }
 
   ingress {
-    description      = "SSH from 10fw Office"
+    description      = "SSH Access"
     from_port        = 22
     to_port          = 22
     protocol         = "tcp"
-    cidr_blocks      = ["172.220.8.253/32"]
+    cidr_blocks      = ssh_cidr_blocks
   }
 
   egress {

@@ -12,6 +12,8 @@ variable domain_name { type = string}
 variable instance_type { type = string }
 variable instance_ami  { type = string }
 variable instance_user { type = string }
+variable instance_volume_size { type = number }
+
 variable ssh_cidr_blocks {
   default = ["0.0.0.0/0"]
 }

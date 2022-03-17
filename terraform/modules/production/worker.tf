@@ -8,6 +8,11 @@ resource "aws_instance" "worker" {
   monitoring             = true
 
   disable_api_termination = true
+  root_block_device {
+    volume_size = var.worker_volume_size
+    encrypted = true
+    kms_key_id = aws_kms_key.subspace.id
+  }
 
   tags = {
     Name = "worker${count.index+1}"
