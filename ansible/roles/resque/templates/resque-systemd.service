@@ -35,7 +35,7 @@ UMask=0002
 Environment=MALLOC_ARENA_MAX=2
 Environment=RAILS_ENV={{rails_env}}
 Environment=COUNT=1
-Environment=QUEUES={{ job_queues | join(' ') }}
+Environment=QUEUES={{ job_queues | join(',') }}
 Environment=BACKGROUND=yes
 Environment=PIDFILE=/u/apps/{{project_name}}/shared/tmp/pids/resque.pid
 
