@@ -4,6 +4,8 @@ variable aws_region { type = string }
 variable project_name { type = string }
 variable project_environment { type = string }
 variable instance_ami { type = string }
+variable subspace_public_key { type = string }
+variable ssh_cidr_blocks { type = list }
 
 # worker.tf
 variable worker_instance_type { type = string }
@@ -23,8 +25,14 @@ variable web_volume_size {
 
 
 # load_balancer.tf
-variable domain_name { type = string }
-variable alternate_names { type = list(string) }
+variable lb_domain_name {
+  type = string
+  default = ""
+}
+variable lb_alternate_names {
+  type = list(string)
+  default = []
+}
 variable lb_health_check_path { type = string }
 
 # database.tf

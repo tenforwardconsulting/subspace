@@ -7,15 +7,14 @@ resource "aws_instance" "worker" {
   vpc_security_group_ids = [aws_security_group.production-webservers.id, aws_security_group.production-internal.id]
   monitoring             = true
 
-  disable_api_termination = true
   root_block_device {
     volume_size = var.worker_volume_size
     encrypted = true
-    kms_key_id = aws_kms_key.subspace.id
+    kms_key_id = aws_kms_key.subspace.arn
   }
 
   tags = {
-    Name = "worker${count.index+1}"
+    Name = "${var.project_environment}-worker${count.index+1}"
   }
 }
 
@@ -25,7 +24,7 @@ resource aws_eip "worker" {
   instance = aws_instance.worker[count.index].id
 
   tags = {
-    Name = "worker${count.index+1}"
+    Name = "${var.project_environment}-worker${count.index+1}"
   }
 }
 

@@ -20,7 +20,7 @@ module Subspace
       private
 
       def update_ansible_cfg
-        if `pip show mitogen` =~ /^Location: (.*?)$/m
+        if `pip show mitogen 2>&1` =~ /^Location: (.*?)$/m
           @mitogen_path = $1
           puts "🏎🚀🚅Mitogen found at #{@mitogen_path}.  WARP 9!....ENGAGE!🚀"
         else
