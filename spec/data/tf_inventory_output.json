@@ -4,15 +4,35 @@
     "type": [
       "object",
       {
+        "groups": [
+          "tuple",
+          [
+            "string",
+            "string",
+            "string"
+          ]
+        ],
         "hostnames": [
           "tuple",
           [
+            "string",
+            "string",
             "string"
           ]
         ],
         "ip_addresses": [
           "tuple",
           [
+            "string",
+            "string",
+            "string"
+          ]
+        ],
+        "users": [
+          "tuple",
+          [
+            "string",
+            "string",
             "string"
           ]
         ]
@@ -33,6 +53,11 @@
         "staging staging_web",
         "staging staging_web",
         "staging staging_worker"
+      ],
+      "users": [
+        "ubuntu",
+        "ubuntu",
+        "ubuntu"
       ]
     }
   }

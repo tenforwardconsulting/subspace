@@ -39,6 +39,7 @@ module production {
   project_environment =  "<%= @env %>"
   aws_region = ## "us-west-2"
   lb_health_check_path = "/"
+  subspace_public_key = file("../../subspace.pem.pub")
 
   # Ubuntu Server 20.04 LTS (HVM), SSD Volume Type
   instance_ami = "<%= @latest_ami %>"
@@ -47,6 +48,7 @@ module production {
   worker_instance_type = "t3.medium"
   worker_instance_count = 1
   worker_volume_size = 100
+  ssh_cidr_blocks = [] # Put office/local/vpn IP addresses here
 
   database_engine = "postgres"
   database_engine_version = ## "14.1"
@@ -58,17 +60,21 @@ module production {
   database_max_allocated_storage = 1000
   database_iops = 1000
 
-  domain_name = ## "www.<%= project_name %>.com"
-  alternate_names = []
+  # lb_domain_name = "www.<%= project_name %>.com"
+  # lb_alternate_names = []
+}
+
+output "inventory" {
+  value = module.production.inventory
 }
 
 resource "aws_s3_bucket" "bucket" {
-  bucket = "<%= "#{project_name}-#{@env}-assets" %>"
+  bucket               = "<%= "#{project_name}-#{@env}-assets" %>"
   acl    = "private"
 }
 
 resource "aws_s3_bucket_public_access_block" "block_public_acls" {
-  bucket = aws_s3_bucket.bucket.id
+  bucket                  = aws_s3_bucket.bucket.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -108,3 +114,4 @@ resource "aws_iam_user_policy" "s3-upload" {
 }
 EOF
 }
+

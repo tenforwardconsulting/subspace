@@ -104,11 +104,11 @@ resource "aws_security_group" "production-internal" {
   }
 
   ingress {
-    description      = "SSH from 10fw Office"
+    description      = "SSH Access"
     from_port        = 22
     to_port          = 22
     protocol         = "tcp"
-    cidr_blocks      = ["172.220.8.253/32"]
+    cidr_blocks      = var.ssh_cidr_blocks
   }
 
   egress {

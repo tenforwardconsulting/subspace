@@ -48,7 +48,7 @@ module Subspace
           terraform_command(@args.shift, *@args)
         else
           puts "No command specified, running plan/apply"
-          terraform_command("init") or return
+          terraform_command("init", "-upgrade") or return
           terraform_command("apply") or return
           update_inventory
         end

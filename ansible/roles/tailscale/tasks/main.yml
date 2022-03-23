@@ -1,0 +1,25 @@
+---
+  - name: "Add Tailscale apt key"
+    become: true
+    apt_key:
+      url: https://pkgs.tailscale.com/stable/ubuntu/{{ansible_distribution_release}}.gpg
+      state: present
+
+  - name: "Add Tailscale apt repos"
+    become: true
+    apt_repository:
+      repo: "deb https://pkgs.tailscale.com/stable/ubuntu {{ansible_distribution_release}} main"
+      state: present
+
+  - name: "Install tailscale from api"
+    apt:
+      name: tailscale
+      state: latest
+      update_cache: yes
+
+  - name: "Join the tailnet"
+    become: true
+    command: tailscale up --auth-key {{tailscale_auth_key}} {{tailscale_options}}
+
+
+

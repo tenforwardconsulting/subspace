@@ -61,11 +61,17 @@ module Subspace
 
     def merge(inventory_json)
       inventory_json["inventory"]["value"]["hostnames"].each_with_index do |host, i|
-        hosts[host] ||= Host.new(host)
+        if hosts[host]
+          old_ip = hosts[host].vars["ansible_host"]
+          new_ip = inventory_json["inventory"]["value"]["ip_addresses"][i]
+          if old_ip != new_ip
+            say "  * Host '#{host}' IP address changed! You may need to update the inventory! (#{old_ip} => #{new_ip})"
+          end
+          next
+        end
+        hosts[host] = Host.new(host)
         hosts[host].vars["ansible_host"] = inventory_json["inventory"]["value"]["ip_addresses"][i]
-        # TODO this isn't populated yet by TF
-        # TODO write a test for TF output?
-        hosts[host].vars["ansible_user"] = inventory_json["inventory"]["value"]["user"][i]
+        hosts[host].vars["ansible_user"] = inventory_json["inventory"]["value"]["users"][i]
         hosts[host].vars["hostname"] = host
         hosts[host].group_list = inventory_json["inventory"]["value"]["groups"][i].split(/\s/)
       end
@@ -109,7 +115,7 @@ module Subspace
         @hosts.each do |name, host|
           host.group_list.each do |group|
             all_groups[group] ||= Group.new(group, vars: @group_vars[group])
-            all_groups[group].host_list.append(host)
+            all_groups[group].host_list.append(name)
           end
         end
         all_groups

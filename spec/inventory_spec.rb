@@ -157,6 +157,7 @@ describe Subspace::Inventory do
       expect(inventory.hosts.keys).to eq ["staging-web1", "staging-web2", "staging-worker1"]
       expect(inventory.hosts["staging-web1"].vars).to eq({
         "ansible_host" => "10.1.1.1",
+        "ansible_user" => "ubuntu",
         "hostname" => "staging-web1"
       })
       expect(inventory.hosts["staging-web2"].group_list).to eq ["staging", "staging_web"]
@@ -171,12 +172,15 @@ describe Subspace::Inventory do
         hosts:
           staging-web1:
             ansible_host: 10.1.1.1
+            ansible_user: ubuntu
             hostname: staging-web1
           staging-web2:
             ansible_host: 10.2.2.2
+            ansible_user: ubuntu
             hostname: staging-web2
           staging-worker1:
             ansible_host: 10.3.3.3
+            ansible_user: ubuntu
             hostname: staging-worker1
         children:
           staging:

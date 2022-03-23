@@ -7,16 +7,14 @@ resource "aws_instance" "web" {
   vpc_security_group_ids = [aws_security_group.production-webservers.id, aws_security_group.production-internal.id]
   monitoring             = true
 
-  disable_api_termination = true
-
   tags = {
-    Name = "web${count.index+1}"
-    Environment = var.project_environment
-    Project = var.project_name
+    Name = "${var.project_environment}-web${count.index+1}"
   }
 
   root_block_device {
     volume_size = var.web_volume_size
+    encrypted = true
+    kms_key_id = aws_kms_key.subspace.arn
   }
 }
 
@@ -26,9 +24,7 @@ resource aws_eip "web" {
   instance = aws_instance.web[count.index].id
 
   tags = {
-    Name = "web${count.index+1}"
-    Environment = var.project_environment
-    Project = var.project_name
+    Name = "${var.project_environment}-web${count.index+1}"
   }
 }
 
