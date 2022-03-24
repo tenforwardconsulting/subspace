@@ -20,6 +20,3 @@
   - name: "Join the tailnet"
     become: true
     command: tailscale up --auth-key {{tailscale_auth_key}} {{tailscale_options}}
-
-
-

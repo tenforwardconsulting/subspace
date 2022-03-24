@@ -8,6 +8,10 @@ output certification_dns_options {
   value = aws_acm_certificate.production[*].domain_validation_options
 }
 
+output database_endpoint {
+  value = aws_db_instance.production.endpoint
+}
+
 output "inventory" {
   value = {
     hostnames = concat(aws_instance.web[*].tags_all.Name, aws_instance.worker[*].tags_all.Name)

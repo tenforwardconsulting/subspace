@@ -1,12 +1,12 @@
 ---
   - name: Add New Relic apt key
     apt_key:
-      url: https://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg 
+      url: https://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg
       state: present
     become: true
 
   - name: create license key
-    copy: 
+    copy:
       dest: "/etc/newrelic-infra.yml"
       content: |
         license_key: {{newrelic_license}}
@@ -27,7 +27,7 @@
   - name: Configure application log forwarding if enabled
     when: "{{ newrelic_logs|length }}"
     become: true
-    template: 
+    template:
       dest: "/etc/newrelic-infra/logging.d/subspace.yml"
       src: logs.yml.j2
     notify: Restart newrelic-infra
