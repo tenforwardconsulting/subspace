@@ -33,8 +33,7 @@ provider aws {
 variable database_password { type = string }
 
 module production {
-  # source = "<%= File.join(gem_path, 'terraform', 'modules') %>/production"
-  source = "../.subspace-tf-modules/production"
+  source = "github.com/tenforwardconsulting/terraform-subspace-production"
   project_name = "<%= project_name %>"
   project_environment =  "<%= @env %>"
   aws_region = ## "us-west-2"

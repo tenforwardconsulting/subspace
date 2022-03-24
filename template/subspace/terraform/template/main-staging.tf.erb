@@ -20,8 +20,7 @@ terraform {
 }
 
 module workhorse {
-  # source = "<%= File.join(gem_path, 'terraform', 'modules') %>/workhorse"
-  source = "../.subspace-tf-modules/workhorse"
+  source = "github.com/tenforwardconsulting/terraform-subspace-workhorse"
   project_name = "<%= project_name %>"
   project_environment = "<%= @env %>"
   aws_region = "us-west-2"

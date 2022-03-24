@@ -99,8 +99,6 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
     FileUtils.mkdir_p File.join dest_dir, "terraform", @env
 
-    FileUtils.ln_sf File.join(gem_path, 'terraform', 'modules'), File.join(dest_dir, "terraform", ".subspace-tf-modules")
-
     set_latest_ami
     template "terraform/template/main-#{@template}.tf", "terraform/#{@env}/main.tf"
     copy "terraform/.gitignore"
