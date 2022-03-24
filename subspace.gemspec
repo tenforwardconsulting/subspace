@@ -13,6 +13,13 @@ Gem::Specification.new do |spec|
   spec.description   = %q{WIP -- don't use this :)}
   spec.homepage      = "https://github.com/tenforwardconsulting/subspace"
   spec.license       = "MIT"
+  spec.post_install_message = <<~EOS
+    *** Subspace 3 has many breaking changes
+    Primarily, the entire configuration directory structure has moved from config/provision to config/subspace.
+    You will need to migrate your old configuration to the new location, or downgrade to Subspace 2 if this was not intentional.
+    Please review the Upgrade guide: https://github.com/tenforwardconsulting/subspace/UPGRADING.md
+    EOS
+
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
   # to allow pushing to a single host or delete this section to allow pushing to any host.
