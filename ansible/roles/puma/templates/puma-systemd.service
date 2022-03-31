@@ -28,7 +28,7 @@ WorkingDirectory=/u/apps/{{project_name}}/current
 # an absolute URL to puma. For example /usr/local/bin/puma
 
 # Variant: Use `bundle exec --keep-file-descriptors puma` instead of binstub
-ExecStart=bundle exec --keep-file-descriptors puma -C /u/apps/{{project_name}}/current/config/puma/{{rails_env}}.rb
+ExecStart=/usr/local/bin/bundle exec --keep-file-descriptors puma -C /u/apps/{{project_name}}/current/config/puma/{{rails_env}}.rb
 
 Restart=always
 
