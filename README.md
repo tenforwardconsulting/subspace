@@ -425,7 +425,11 @@ In order to dramatically speed up ansible, you can install Mitogen: https://gith
 
     pip install -g mitogen
 
-Subspace will automatically detect this and update your ansible.cfg file so it is blazing fast.
+Subspace will automatically detect this and update your ansible.cfg file so it is blazing fast.  Sometimes this can cause issues with older servers that have weird pythons, so if you have mitogen installed locally but dont wan't to use it, you can set an environment variable:
+
+    DISABLE_MITOGEN=1 subspace provision staging
+
+
 
 
 ## Directory Structure
