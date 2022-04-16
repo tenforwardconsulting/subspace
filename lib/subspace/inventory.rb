@@ -11,9 +11,9 @@ module Subspace
     # Find all the hosts in the host/group or exit
     def find_hosts!(host_spec)
       if self.groups[host_spec]
-        return self.groups[host_spec].host_list
+        return self.groups[host_spec].host_list.map { |m| self.hosts[m] }
       elsif self.hosts[host_spec]
-        return [host_spec]
+        return [self.hosts[host_spec]]
       else
         say "No inventory matching: '#{host_spec}' found. "
         say (["Available hosts:"] + self.hosts.keys).join("\n\t")

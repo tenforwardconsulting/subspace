@@ -15,3 +15,14 @@ letsencrypt_email:
 nodejs_version:  # 16.x
 ssl_enabled: true
 postgresql_version: # 14
+
+logrotate_scripts:
+  - name: rails
+    path: "/u/apps/{{project_name}}/shared/log/{{rails_env}}.log"
+    options:
+      - weekly
+      - size 100M
+      - missingok
+      - compress
+      - delaycompress
+      - copytruncate

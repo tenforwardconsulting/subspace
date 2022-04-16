@@ -17,7 +17,6 @@ class Subspace::Commands::Bootstrap < Subspace::Commands::Base
       learn_host(host)
       install_python(host)
     end
-
   end
 
   private

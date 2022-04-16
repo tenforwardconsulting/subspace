@@ -24,6 +24,9 @@ module workhorse {
   project_name = "<%= project_name %>"
   project_environment = "<%= @env %>"
   aws_region = "us-west-2"
+  subspace_public_key = file("../../subspace.pem.pub")
+  # zone_id = "ZOJ6811VRVYBT" # 10fw.net
+  # subdomain = "<%= project_name.gsub("_", "-") %>"
 
 
   # Ubuntu Server 20.04 LTS (HVM), SSD Volume Type
@@ -31,4 +34,9 @@ module workhorse {
   instance_user = "ubuntu"
   instance_type = "t3.medium"
   instance_hostname = "${var.project_environment}-app1"
+  instance_volume_size = 20
+}
+
+output "inventory" {
+  value = module.production.inventory
 }

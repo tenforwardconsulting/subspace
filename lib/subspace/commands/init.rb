@@ -3,10 +3,10 @@ require 'erb'
 require 'securerandom'
 class Subspace::Commands::Init < Subspace::Commands::Base
   def initialize(args, options)
-    options.default env: "staging"
+    options.default env: "dev"
 
     @env = options.env
-    @template = options.template || "staging"
+    @template = options.template || "dev"
 
     if options.ansibe.nil? && options.terraform.nil?
       # They didn't pass in any options (subspace init) so just do both
@@ -54,6 +54,8 @@ class Subspace::Commands::Init < Subspace::Commands::Base
     4. Provision the new servers with ansible:
 
       subspace provision #{@env}
+
+    !!MAKE SURE YOU PUT config/subspace/subspace.pem SOMEWHERE!!
 
   """
 
@@ -128,7 +130,7 @@ class Subspace::Commands::Init < Subspace::Commands::Base
   end
 
   def set_latest_ami
-    @latest_ami = `aws --profile subspace-crs ec2 describe-images \
+    @latest_ami = `aws --profile subspace-#{project_name} ec2 describe-images \
     --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64*' \
     --query 'Images[*].[ImageId,CreationDate]' --output text \
     | sort -k2 -r \

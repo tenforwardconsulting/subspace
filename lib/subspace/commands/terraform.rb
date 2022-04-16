@@ -78,8 +78,6 @@ module Subspace
         inventory.merge(@output)
         inventory.write
       end
-
-
     end
   end
 end
