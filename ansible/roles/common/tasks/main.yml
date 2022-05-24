@@ -327,3 +327,7 @@
       - stats
 
   - import_tasks: swap.yml
+    when: swap_space is defined
+
+  - import_tasks: no_swap.yml
+    when: swap_space is not defined

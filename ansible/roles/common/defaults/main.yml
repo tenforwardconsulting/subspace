@@ -1,5 +1,4 @@
 ---
-  swap_space: 512M
   deploy_user: deploy
   send_stats: false
   timezone: America/Chicago
