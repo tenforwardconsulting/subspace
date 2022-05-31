@@ -14,7 +14,7 @@ class Subspace::Commands::Init < Subspace::Commands::Base
       options.terraform = true
     end
 
-    if @template.nil? && options.terraform.true
+    if @template.nil? && options.terraform == true
       say "Please specify a terraform template, such as 'workhorse' or 'oxenwagen': subspace init --env #{env} --template workhorse"
       return
     end

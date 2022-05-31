@@ -32,8 +32,8 @@ provider aws {
 
 variable database_password { type = string }
 
-module production {
-  source = "github.com/tenforwardconsulting/terraform-subspace-production"
+module oxenwagen {
+  source = "github.com/tenforwardconsulting/terraform-subspace-oxenwagen"
   project_name = "<%= project_name %>"
   project_environment =  "<%= @env %>"
   aws_region = ## "us-west-2"
@@ -64,7 +64,7 @@ module production {
 }
 
 output "inventory" {
-  value = module.production.inventory
+  value = module.oxenwagen.inventory
 }
 
 resource "aws_s3_bucket" "bucket" {
