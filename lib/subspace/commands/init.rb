@@ -6,13 +6,19 @@ class Subspace::Commands::Init < Subspace::Commands::Base
     options.default env: "dev"
 
     @env = options.env
-    @template = options.template || "dev"
+    @template = options.template
 
     if options.ansibe.nil? && options.terraform.nil?
       # They didn't pass in any options (subspace init) so just do both
       options.ansible = true
       options.terraform = true
     end
+
+    if @template.nil? && options.terraform.true
+      say "Please specify a terraform template, such as 'workhorse' or 'oxenwagen': subspace init --env #{env} --template workhorse"
+      return
+    end
+
     @init_ansible = options.ansible
     @init_terraform = options.terraform
     run
