@@ -20,7 +20,7 @@ terraform {
 }
 
 module workhorse {
-  source = "github.com/tenforwardconsulting/terraform-subspace-workhorse"
+  source = "github.com/tenforwardconsulting/terraform-subspace-workhorse?ref=v1.0.0"
   project_name = "<%= project_name %>"
   project_environment = "<%= @env %>"
   aws_region = "us-west-2"
@@ -37,6 +37,6 @@ module workhorse {
   instance_volume_size = 20
 }
 
-output "inventory" {
-  value = module.workhorse.inventory
+output "workhorse" {
+  value = module.workhorse
 }
