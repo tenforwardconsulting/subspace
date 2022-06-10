@@ -1,5 +1,0 @@
----
-  puma_workers: 1
-  puma_min_threads: 4
-  puma_max_threads: 16
-
