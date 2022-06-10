@@ -60,20 +60,20 @@ module Subspace
     end
 
     def merge(inventory_json)
-      inventory_json["inventory"]["value"]["hostnames"].each_with_index do |host, i|
+      inventory_json["inventory"]["hostnames"].each_with_index do |host, i|
         if hosts[host]
           old_ip = hosts[host].vars["ansible_host"]
-          new_ip = inventory_json["inventory"]["value"]["ip_addresses"][i]
+          new_ip = inventory_json["inventory"]["ip_addresses"][i]
           if old_ip != new_ip
             say "  * Host '#{host}' IP address changed! You may need to update the inventory! (#{old_ip} => #{new_ip})"
           end
           next
         end
         hosts[host] = Host.new(host)
-        hosts[host].vars["ansible_host"] = inventory_json["inventory"]["value"]["ip_addresses"][i]
-        hosts[host].vars["ansible_user"] = inventory_json["inventory"]["value"]["users"][i]
+        hosts[host].vars["ansible_host"] = inventory_json["inventory"]["ip_addresses"][i]
+        hosts[host].vars["ansible_user"] = inventory_json["inventory"]["users"][i]
         hosts[host].vars["hostname"] = host
-        hosts[host].group_list = inventory_json["inventory"]["value"]["groups"][i].split(/\s/)
+        hosts[host].group_list = inventory_json["inventory"]["groups"][i].split(/\s/)
       end
     end
 
