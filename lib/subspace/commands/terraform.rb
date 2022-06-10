@@ -73,7 +73,7 @@ module Subspace
       def update_inventory
         puts "Apply succeeded, updating inventory."
         Dir.chdir "config/subspace/terraform/#{@env}" do
-          @output = JSON.parse `terraform output inventory -json`
+          @output = JSON.parse `terraform output -json inventory`
         end
         inventory.merge(@output)
         inventory.write
