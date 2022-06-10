@@ -3,4 +3,19 @@
   apt: update_cache=yes cache_valid_time=86400
 
 - name: Install Memcached.
-  apt: name=memcached state=present
+  apt:
+    name: memcached
+    state: present
+
+- name: Configure memcache bind address
+  lineinfile:
+    path: /etc/memcached.conf
+    regex: "^(#\\s*)?-l"
+    state: present
+    line: "-l {{memcache_bind}}"
+
+- name: restart memcached
+  systemd:
+    name: memcached
+    state: restarted
+    enabled: yes

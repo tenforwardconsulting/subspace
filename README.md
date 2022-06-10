@@ -32,6 +32,14 @@ Or install it yourself as:
 
     $ gem install subspace
 
+### Mitogen
+Optionally, you can install a python/pip packaged called "Mitogen" which dramatically speeds up running ansible over ssh.  See [Here](https://github.com/mitogen-hq/mitogen/blob/master/docs/ansible_detailed.rst) for details.
+
+    pip install mitogen
+
+Subspace will try and detect if mitogen is present and use it can.  If mitogen causes problems (sometimes it can cause problems depending on the system versions, and particaularly when brand new versions of anible come up and it hasn't updated), you can disable it:
+
+    DISABLE_MITOGEN=1 subspace provision env
 ## Usage
 
 ### `subspace init`
@@ -204,8 +212,7 @@ Aside from basic statistics like free memory, disk, load averages, etc, we have 
 3. If nginx is installed, it will collect stats from the "status port"
 4. (TODO) add something for pumas
 5. (TODO) add something for sidekiq
-6. (TODO) add something for memcache
-7. If you're using our standard lograge format, you can enable lograge collection which will provide stats on request count and timers (db/view/total)
+6. If you're using our standard lograge format, you can enable lograge collection which will provide stats on request count and timers (db/view/total)
 
     rails_lograge: true
 
@@ -275,6 +282,14 @@ Installs logrotate and lets you configure logs for automatic rotation.  Example 
           - copytruncate
 
 ## memcache
+
+Installs memcache on the server.  By default, memcache will only listen on localhost which needs to be changed if other servers needs to connect.
+
+    # Default Value
+    memcache_bind: "127.0.0.1"
+
+    # bind to all interfaces
+    memcache_bind: "0.0.0.0"
 
 ## monit
 

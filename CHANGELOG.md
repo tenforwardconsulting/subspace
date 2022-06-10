@@ -22,6 +22,7 @@ This project attempts to follow [semantic versioning](https://semver.org/).
     * All of the host/group configuration is in that one file now!
   * BREAKING: `subspace vars` is now `subspace secrets`
   * BREAKING: sidekiq_concurrency renamed to sidekiq_workers, default changed from 10 -> 1
+  * BREAKING: swap_space variable must be defined for the `common` ansible role (previously defaulted to 512MB)
 
 
 ## 2.5.7
