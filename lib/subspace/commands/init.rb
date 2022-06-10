@@ -15,8 +15,8 @@ class Subspace::Commands::Init < Subspace::Commands::Base
     end
 
     if @template.nil? && options.terraform == true
-      say "Please specify a terraform template, such as 'workhorse' or 'oxenwagen': subspace init --env #{env} --template workhorse"
-      return
+      answer = ask "What template/server configuration would you like to use? e.g. 'workhorse' or 'oxenwagen'"
+      @template = answer
     end
 
     @init_ansible = options.ansible
