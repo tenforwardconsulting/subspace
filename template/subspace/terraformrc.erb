@@ -1,0 +1,9 @@
+provider_installation {
+  filesystem_mirror {
+    path    = "<%= File.join(gem_path, 'terraform', 'modules') %>"
+    include = ["subspace/*/*"]
+  }
+  direct {
+    exclude = ["subspace/*/*"]
+  }
+}

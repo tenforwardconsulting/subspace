@@ -1,4 +1,5 @@
 require 'yaml'
+require 'subspace/inventory'
 class Subspace::Commands::Ssh < Subspace::Commands::Base
   PASS_THROUGH_PARAMS = ["i"]
 
@@ -10,18 +11,19 @@ class Subspace::Commands::Ssh < Subspace::Commands::Base
   end
 
   def run
-    if !File.exists? "config/provision/host_vars/#{@host}"
+    if !inventory.hosts[@host]
       say "No host '#{@host}' found. "
-      all_hosts = Dir["config/provision/host_vars/*"].collect {|f| File.basename(f) }
+      all_hosts = inventory.hosts.keys
       say (["Available hosts:"] + all_hosts).join("\n\t")
       return
     end
-    host_vars = YAML.load_file("config/provision/host_vars/#{@host}")
-    user = @user || host_vars["ansible_ssh_user"] || host_vars["ansible_user"]
-    host = host_vars["ansible_ssh_host"] || host_vars["ansible_host"]
-    port = host_vars["ansible_ssh_port"] || host_vars["ansible_port"] || 22
-    cmd = "ssh #{user}@#{host} -p #{port} #{pass_through_params.join(" ")}"
-    say cmd
+    host_vars = inventory.hosts[@host].vars
+    user = host_vars["ansible_user"]
+    host = host_vars["ansible_host"]
+    port = host_vars["ansible_port"] || 22
+    pem = host_vars["ansible_ssh_private_key_file"] || 'subspace.pem'
+    cmd = "ssh #{user}@#{host} -p #{port} -i config/subspace/#{pem} #{pass_through_params.join(" ")}"
+    say "> #{cmd} \n"
     exec cmd
   end
 end

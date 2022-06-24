@@ -1,2 +1,2 @@
 ---
-  sidekiq_concurrency: 1
+  sidekiq_workers: 1

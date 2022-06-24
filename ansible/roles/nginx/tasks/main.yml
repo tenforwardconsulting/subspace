@@ -25,9 +25,18 @@
     state: link
   become: true
 
-- name: Restart nginx
-  action: service name=nginx state=restarted
+- name: Restart nginx (systemd)
   become: true
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: nginx
+
+- name: Enable nginx to start on reboot
+  become: true
+  systemd:
+    name: nginx
+    enabled: true
 
 - name: Nginx is installed
   set_fact:

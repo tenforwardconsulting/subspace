@@ -1,0 +1,6 @@
+.vault_pass
+ansible.cfg
+*.retry
+*.tfstate*
+*.pem
+.terraform

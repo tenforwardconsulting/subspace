@@ -9,8 +9,6 @@ class Subspace::Commands::Provision < Subspace::Commands::Base
   end
 
   def run
-    ansible_options = ["--diff"]
-    ansible_options = ansible_options | pass_through_params
-    ansible_command "ansible-playbook", "#{@environment}.yml", *ansible_options
+    ansible_playbook "#{@environment}.yml", *pass_through_params
   end
 end

@@ -1,19 +1,15 @@
 ---
-  - name: Install sidekiq monit script
-    template:
-      src: sidekiq-monit-rc
-      dest: /etc/monit/conf-available/sidekiq_{{project_name}}_{{rails_env}}
+  - name: Install systemd sidekiq script
     become: true
+    template:
+      src: sidekiq-systemd.service
+      dest: /etc/systemd/system/sidekiq.service
 
-  - name: Clean up old sidekiq monit scripts
-    shell: rm -f /etc/monit/conf.d/sidekiq_*
+  - name: Enable systemd sidekiq service
+    become: true
+    systemd:
+      name: sidekiq
+      enabled: yes
+      daemon_reload: true
 
-  - name: Enable sidekiq monit script
-    file:
-      src: /etc/monit/conf-available/sidekiq_{{project_name}}_{{rails_env}}
-      dest: /etc/monit/conf-enabled/sidekiq_{{project_name}}_{{rails_env}}
-      state: link
-    notify:
-      - reload_monit
-      - restart_monit
-
+# TODO Read the gemfile and make sure they have sidekiq 6????

@@ -1,15 +1,14 @@
 ---
-  - name: Install resque monit script
-    template:
-      src: resque-monit-rc
-      dest: /etc/monit/conf-available/resque_{{project_name}}_{{rails_env}}
+  - name: Install systemd resque script
     become: true
+    template:
+      src: resque-systemd.service
+      dest: /etc/systemd/system/resque.service
 
-  - name: Enable resque monit script
-    file:
-      src: /etc/monit/conf-available/resque_{{project_name}}_{{rails_env}}
-      dest: /etc/monit/conf-enabled/resque_{{project_name}}_{{rails_env}}
-      state: link
-    notify:
-      - reload_monit
-      - restart_monit
+  - name: Enable systemd resque service
+    become: true
+    systemd:
+      name: resque
+      daemon_reload: true
+      enabled: yes
+      state: started

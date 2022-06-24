@@ -1,0 +1,28 @@
+# Conventions and defaults are defined here
+project_name: <%= project_name %>
+database_host: localhost
+use_sudo: true
+
+# ruby-common
+# pull the checksum/url from https://www.ruby-lang.org/en/downloads/
+ruby_version: # ruby-2.7.1
+ruby_checksum: # d418483bdd0000576c1370571121a6eb24582116db0b7bb2005e90e250eae418
+ruby_download_location: # https://cache.ruby-lang.org/pub/ruby/2.7/ruby-2.7.1.tar.gz
+bundler_version: # 2.3.5
+
+# Other stuff
+letsencrypt_email:
+nodejs_version:  # 16.x
+ssl_enabled: true
+postgresql_version: # 14
+
+logrotate_scripts:
+  - name: rails
+    path: "/u/apps/{{project_name}}/shared/log/{{rails_env}}.log"
+    options:
+      - weekly
+      - size 100M
+      - missingok
+      - compress
+      - delaycompress
+      - copytruncate

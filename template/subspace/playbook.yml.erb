@@ -1,0 +1,18 @@
+---
+  - hosts: <%= @env %>
+    become: yes
+
+    vars_files:
+      - ./secrets/<%= @env %>.yml
+
+    roles:
+      - common
+      - nodejs
+      - yarn
+      - ruby-common
+      - rails
+      - puma
+      - letsencrypt
+      - nginx
+      - postgresql
+      - logrotate

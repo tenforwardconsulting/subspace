@@ -1,9 +1,16 @@
 module Subspace
   module Commands
     module Ansible
+      def ansible_playbook(*args)
+        args.push "--diff"
+        args.push "--private-key"
+        args.push "subspace.pem"
+        ansible_command("ansible-playbook", *args)
+      end
+
       def ansible_command(command, *args)
         update_ansible_cfg
-        Dir.chdir "config/provision" do
+        Dir.chdir "config/subspace" do
           say ">> Running #{command} #{args.join(' ')}"
           system(command, *args, out: $stdout, err: $stderr)
           say "<< Done"
@@ -13,7 +20,9 @@ module Subspace
       private
 
       def update_ansible_cfg
-        if `pip show mitogen` =~ /^Location: (.*?)$/m
+        if ENV["DISABLE_MITOGEN"]
+          puts "Mitogen explicitly disabled.  Skipping detection. "
+        elsif `pip show mitogen 2>&1` =~ /^Location: (.*?)$/m
           @mitogen_path = $1
           puts "🏎🚀🚅Mitogen found at #{@mitogen_path}.  WARP 9!....ENGAGE!🚀"
         else

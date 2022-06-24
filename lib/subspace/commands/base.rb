@@ -13,7 +13,7 @@ module Subspace
       end
 
       def template_dir
-        File.join(gem_path, 'template', 'provision')
+        File.join(gem_path, 'template', 'subspace')
       end
 
       def gem_path
@@ -21,23 +21,34 @@ module Subspace
       end
 
       def project_path
+        unless File.exist?(File.join(Dir.pwd, "config", "subspace"))
+          say "Subspace must be run from the project root"
+          exit
+        end
         Dir.pwd # TODO make sure this is correct if they for whatever reason aren't running subspace from the project root??
       end
 
+      def project_name
+        File.basename(project_path) # TODO see above, this should probably be in a configuration somewhere
+      end
+
       def dest_dir
-        "config/provision"
+        "config/subspace"
       end
 
       def template(src, dest = nil, render_binding = nil)
         return unless confirm_overwrite File.join(dest_dir, dest || src)
         template! src, dest, render_binding
-        say "Wrote #{dest}"
+        say "Wrote #{dest || src}"
       end
 
       def template!(src, dest = nil, render_binding = nil)
         dest ||= src
-        template = ERB.new File.read(File.join(template_dir, "#{src}.erb")), nil, '-'
-        File.write File.join(dest_dir, dest), template.result(render_binding || binding)
+        template = ERB.new File.read(File.join(template_dir, "#{src}.erb")), trim_mode: '-'
+        result = template.result(render_binding || binding)
+
+
+        File.write File.join(dest_dir, dest), result
       end
 
       def copy(src, dest = nil)
@@ -73,6 +84,10 @@ module Subspace
 
       def set_subspace_version
         ENV['SUBSPACE_VERSION'] = Subspace::VERSION
+      end
+
+      def inventory
+        @inventory ||= Subspace::Inventory.read("config/subspace/inventory.yml")
       end
     end
   end

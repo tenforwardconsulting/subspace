@@ -64,6 +64,14 @@
     tags:
       - maintenance
 
+  - name: apt-get update
+    apt: update_cache=yes cache_valid_time=86400
+    become: true
+    tags:
+      - upgrade
+      - maintenance
+    ignore_errors: yes
+
   - name: install aptitude
     apt:
       pkg: aptitude
@@ -72,12 +80,11 @@
     tags:
       - maintenance
 
-  - name: apt-get update
-    apt: update_cache=yes cache_valid_time=86400
-    become: true
-    tags:
-      - upgrade
-      - maintenance
+  - name: "Ensure systemd is installed"
+    apt:
+      name: systemd
+      state: latest
+      update_cache: yes
 
   - name: Add ppa:ondrej/nginx apt repository for TLS 1.3
     apt_repository:
@@ -276,7 +283,7 @@
 
   - name: Update authorized_keys for deploy user
     copy:
-      src: authorized_keys
+      src: templates/authorized_keys
       dest: "/home/{{deploy_user}}/.ssh/authorized_keys"
       owner: "{{deploy_user}}"
     become: true
@@ -320,3 +327,7 @@
       - stats
 
   - import_tasks: swap.yml
+    when: swap_space is defined
+
+  - import_tasks: no_swap.yml
+    when: swap_space is not defined

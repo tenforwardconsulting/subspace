@@ -71,22 +71,7 @@
   command: "{{ ruby_location }}/bin/gem update --system"
   become: true
 
-- name: Remove old bundler bin
-  file:
-    path: "{{ ruby_location }}/bin/bundle"
-    state: absent
-  become: true
-
-- name: Uninstall Bundler
-  gem:
-    name: bundler
-    state: absent
-    user_install: no
-    executable: "{{ ruby_location }}/bin/gem"
-  become: true
-  ignore_errors: yes
-
-- name: Install Bundler
+- name: Install/update Bundler
   shell: "{{ ruby_location }}/bin/gem install bundler -v {{ bundler_version }}"
   become: true
 

@@ -1,0 +1,18 @@
+---
+all:
+  hosts:
+    staging-web6:
+      ansible_host: 10.6.6.6
+    staging-worker7:
+      ansible_host: 10.7.7.7
+  children:
+    staging:
+      hosts:
+        staging-web6:
+        staging-worker7:
+    staging_web:
+      hosts:
+        staging-web6:
+    staging_worker:
+      hosts:
+        staging-worker7:

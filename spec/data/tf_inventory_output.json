@@ -1,0 +1,64 @@
+{
+  "inventory": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "groups": [
+          "tuple",
+          [
+            "string",
+            "string",
+            "string"
+          ]
+        ],
+        "hostnames": [
+          "tuple",
+          [
+            "string",
+            "string",
+            "string"
+          ]
+        ],
+        "ip_addresses": [
+          "tuple",
+          [
+            "string",
+            "string",
+            "string"
+          ]
+        ],
+        "users": [
+          "tuple",
+          [
+            "string",
+            "string",
+            "string"
+          ]
+        ]
+      }
+    ],
+    "value": {
+      "hostnames": [
+        "staging-web1",
+        "staging-web2",
+        "staging-worker1"
+      ],
+      "ip_addresses": [
+        "10.1.1.1",
+        "10.2.2.2",
+        "10.3.3.3"
+      ],
+      "groups": [
+        "staging staging_web",
+        "staging staging_web",
+        "staging staging_worker"
+      ],
+      "users": [
+        "ubuntu",
+        "ubuntu",
+        "ubuntu"
+      ]
+    }
+  }
+}

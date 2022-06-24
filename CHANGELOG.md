@@ -12,10 +12,22 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.0rc1
+  * Added infrastructure management via Terraform!
+  * Added new `subspace exec` command for manual remote management
+  * BREAKING: Consolidated inventory file into config/provision/inventory.env.yml
+    * No more hosts file
+    * No more host_vars directory
+    * No more group_vars directory
+    * All of the host/group configuration is in that one file now!
+  * BREAKING: `subspace vars` is now `subspace secrets`
+  * BREAKING: sidekiq_concurrency renamed to sidekiq_workers, default changed from 10 -> 1
+  * BREAKING: swap_space variable must be defined for the `common` ansible role (previously defaulted to 512MB)
+  * BREAKING: removed defaults from rails, postgis, puma roles
+
 ## 2.5.8
   * Add a new role for configuring a monit-based resque server
   * Auto-detect mitogen for speed
-
 ## 2.5.7
   * Add ability to set the timezone for servers instead of forcing to Central Time
   * Update puma configuration to support puma 5 with puma-daemon

@@ -40,6 +40,6 @@
     pause:
       seconds: 3
 
-  - name: restart_monit
+  - name: restart monit services
     shell: monit restart all
     become: true

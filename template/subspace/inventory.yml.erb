@@ -1,0 +1,11 @@
+---
+all:
+  hosts:
+    <%= @env %>1:
+      ansible_host: localhost
+      ansible_user: ubuntu
+      ansible_ssh_private_key_file: subspace.pem
+      hostname: web1
+  children:
+    <%= @env %>:
+      <%= @env %>1:

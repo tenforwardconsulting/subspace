@@ -1,0 +1,26 @@
+## rails
+rails_env: <%= @env %>
+
+database_pool: 5
+database_name: "{{project_name}}_{{rails_env}}"
+database_user: "{{project_name}}"
+database_adapter: postgresql
+# job_queues:
+#   - default
+#   - mailers
+
+# nginx / letsencrypt
+server_name: "{{ansible_host}}"
+
+## postgresql
+# postgresql_version: 14
+# postgresql_authentication:
+#   - type: local
+#     user: "{{database_user}}"
+#     database: 'all'
+#     method: trust
+
+## puma
+puma_workers: 1
+puma_min_threads: 4
+puma_max_threads: 16

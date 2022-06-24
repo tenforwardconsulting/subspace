@@ -32,12 +32,22 @@ Or install it yourself as:
 
     $ gem install subspace
 
+### Mitogen
+Optionally, you can install a python/pip packaged called "Mitogen" which dramatically speeds up running ansible over ssh.  See [Here](https://github.com/mitogen-hq/mitogen/blob/master/docs/ansible_detailed.rst) for details.
+
+    pip install mitogen
+
+Subspace will try and detect if mitogen is present and use it can.  If mitogen causes problems (sometimes it can cause problems depending on the system versions, and particaularly when brand new versions of anible come up and it hasn't updated), you can disable it:
+
+    DISABLE_MITOGEN=1 subspace provision env
 ## Usage
 
 ### `subspace init`
 
-Initialize the project for subspace. Creates `config/provision` with all
+Initialize the project for subspace. Creates `config/subspace` with all
 necessary files.
+
+Subspace 3 supports terraform.  You will need to create an IAM user manually with administrative access to the target AWS environment for terraform.
 
 ### `subspace bootstrap <environment>`
 
@@ -56,7 +66,7 @@ At the time of this writing, we pass through the `ansible-playbook` "tags" and
 "start-at-task" options. The tags option is probably the most useful.
 
 e.g. To run only the alienvault tasks (all of which have been tagged with the
-'alienvault' tag): `subspace provision dev --tags=alienvault`
+'alienvault' tag): `subspace provision staging --tags=alienvault`
 
 ### `subspace maintain <environment>`
 
@@ -109,7 +119,7 @@ ENABLE_SOME_FEATURE: false
 development:
   INSECURE_VARIABLE: "this isn't secret"
 
-dev:
+staging:
   INSECURE_VARIABLE: "but it changes"
 
 production:
@@ -119,7 +129,7 @@ production:
 
 Further, you can use the extremely command to create a local copy of `config/application.yml`
 
-    # Create a local copy of config/application.yml with the secrets encrypted in vars/development.yml
+    # Create a local copy of config/application.yml with the secrets encrypted in secrets/development.yml
     $ subspace vars development --create
 
 This can get you up and running in development securely, the only thing you need to distribute to new team members is the vault password.  Grab it from a teammate and put it into `config/provision/.vault_pass`
@@ -138,7 +148,7 @@ Then,
 
 If you get an error saying you need a vault password file, you should be able to find it in 1Password. You might also need to update `ansible`.
 
-You'll want to do this for each environment (ie: `subspace provision qa`, etc.). Best to start with dev and work your way up.
+You'll want to do this for each environment (ie: `subspace provision qa`, etc.). Best to start with staging and work your way up.
 
 # Host configuration
 
@@ -202,8 +212,7 @@ Aside from basic statistics like free memory, disk, load averages, etc, we have 
 3. If nginx is installed, it will collect stats from the "status port"
 4. (TODO) add something for pumas
 5. (TODO) add something for sidekiq
-6. (TODO) add something for memcache
-7. If you're using our standard lograge format, you can enable lograge collection which will provide stats on request count and timers (db/view/total)
+6. If you're using our standard lograge format, you can enable lograge collection which will provide stats on request count and timers (db/view/total)
 
     rails_lograge: true
 
@@ -274,6 +283,14 @@ Installs logrotate and lets you configure logs for automatic rotation.  Example 
 
 ## memcache
 
+Installs memcache on the server.  By default, memcache will only listen on localhost which needs to be changed if other servers needs to connect.
+
+    # Default Value
+    memcache_bind: "127.0.0.1"
+
+    # bind to all interfaces
+    memcache_bind: "0.0.0.0"
+
 ## monit
 
 ## mysql
@@ -286,6 +303,7 @@ Installs logrotate and lets you configure logs for automatic rotation.  Example 
 This role will install the next-gen "Newrelic One" infrastructure agent which can perform a few different functions for newrelic.  The previous "newrelic" role is deprecated.
 
 Variables:
+
     # Required, the newrelic license key you get after signing up.
     newrelic_license: "longhashthingyougetfromnewrelichere"
     # Optional - send logs to newrelic one's log aggregator.
@@ -328,7 +346,14 @@ Optional variables:
 
 ## nodejs
 
-Used to install recent version of NodeJS. Must set `nodejs_version`. e.g. `nodejs_version: "8.x"`
+Used to install different versions of NodeJS. This uses NodeSource's apt repositories. You must define a variable called `nodejs_version` and choose a major version supported by NodeSource:
+
+    nodejs_version: 14.x
+    nodejs_version: 17.x
+    nodejs_version: lts
+    nodejs_version: current
+
+The full list of distributions is here: https://github.com/nodesource/distributions#installation-instructions
 
 ## papertrail
 
@@ -358,6 +383,8 @@ Default values (these are usually fine)
     database_pool: 5
     database_name: "{{project_name}}_{{rails_env}}"
     database_user: "{{project_name}}"
+    database_host: localhost
+    database_password: # usually defined in the encrypted vault
     job_queues:
       - default
       - mailers
@@ -370,7 +397,7 @@ Customize:
 
 Installs redis on the server.
 
-    # Change to * if you want tthis available everywhere.
+    # Change to * if you want this available everywhere instead of localhost
     redis_bind: 127.0.0.1
 
 ## resque
@@ -381,6 +408,9 @@ Install monitoring and automatic startup for resque workers via monit. You MUST 
       - default
       - mailers
       - exports
+
+    redis_bind: "*"
+
 ## ruby-common
 
 Installs ruby on the machine.  YOu can set a version by picking off the download url and sha hash from ruby-lang.org
@@ -395,13 +425,13 @@ Installs ruby on the machine.  YOu can set a version by picking off the download
 
 This will install a monit script that keeps sidekiq running.  We spawn one sidekiq instance that manages as many queues as you need.  Varaibles of note:
 
-    # Process these background job queues
+    # Process these queues on this server
     job_queues:
       - default
       - mailers
 
     # Number of sidekiq *processes* to run
-    sidekiq_concurrency: 1
+    sidekiq_workers: 1
 
 * Note that as of v0.4.13, we now also add a unique job queue for each host with its hostname.  This is handy if you need to assign a job to a specific host.  In general you should use named queues, but occasionally this is useful and there's no harm in having it there unused.
 
