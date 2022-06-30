@@ -12,6 +12,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 2.5.9
+  * backport disabling mitogen
+
 ## 2.5.8
   * Add a new role for configuring a monit-based resque server
   * Auto-detect mitogen for speed
