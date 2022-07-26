@@ -369,29 +369,36 @@ The full list of distributions is here: https://github.com/nodesource/distributi
     database_user: "{{project_name}}"
 
 ## puma
+Use the puma app server for your rails app.  Usually combined with nginx to server as a static file server and reverse proxy. 
 
-add puma gem to gemfile
-add config/puma to symlinks in deploy.rb
+**Prerequesites:**
+  - add `gem puma` to your gemfile
+  - add `config/puma/` to the `linked_dirs` config in capistrano's `deploy.rb`
 
+This role will generate a reasonable `puma.rb` and configure it to be controlled by systemd. 
+
+**Variables:**
+
+    puma_workers: 1        # Puma process count (usually == vCPU count)
+    puma_min_threads: 4    # Min threads/process
+    puma_max_threads: 16   # Max threads/process
 
 ## rails
 
 Provisions for a rails app.  This one is probably pretty important.
 
-Default values (these are usually fine)
+We no longer provider default values, so make sure to define all the following variables: 
 
+    rails_env: production
     database_pool: 5
     database_name: "{{project_name}}_{{rails_env}}"
     database_user: "{{project_name}}"
     database_host: localhost
+    database_adapter: postgresql
     database_password: # usually defined in the encrypted vault
     job_queues:
       - default
       - mailers
-
-Customize:
-
-    rails_env: [whatever]
 
 ## redis
 
