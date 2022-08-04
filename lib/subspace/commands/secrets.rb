@@ -50,7 +50,7 @@ class Subspace::Commands::Secrets < Subspace::Commands::Base
 
 
     say "Writing new password to .vault_pass.new"
-    File.write "config/subspace/.vault_pass.new", SecureRandom.base64(24) + \n
+    File.write "config/subspace/.vault_pass.new", SecureRandom.base64(24) + "\n"
     success = ansible_command "ansible-vault", "rekey", "--vault-password-file", ".vault_pass", "--new-vault-password-file", ".vault_pass.new", "-v", *secret_files
     if success
       FileUtils.mv "config/subspace/.vault_pass", "config/subspace/.vault_pass.old"
