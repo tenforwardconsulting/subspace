@@ -12,7 +12,11 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
-## 3.0.0rc1
+## 3.0.0.rc2
+  * Removed outdated awscli role
+  * Added `subspace secrets rekey` to generate and rekey ansible-vault secrets
+
+## 3.0.0.rc1
   * Added infrastructure management via Terraform!
   * Added new `subspace exec` command for manual remote management
   * BREAKING: Consolidated inventory file into config/provision/inventory.env.yml

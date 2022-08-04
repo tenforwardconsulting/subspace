@@ -8,13 +8,15 @@ module Subspace
         ansible_command("ansible-playbook", *args)
       end
 
-      def ansible_command(command, *args)
-        update_ansible_cfg
+      def ansible_command(command, *args, update_ansible_cfg: true)
+        update_ansible_cfg if update_ansible_cfg
+        retval = false
         Dir.chdir "config/subspace" do
           say ">> Running #{command} #{args.join(' ')}"
-          system(command, *args, out: $stdout, err: $stderr)
+          retval = system(command, *args, out: $stdout, err: $stderr)
           say "<< Done"
         end
+        retval
       end
 
       private
