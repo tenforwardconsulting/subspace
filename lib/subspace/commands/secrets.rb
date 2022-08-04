@@ -1,15 +1,19 @@
 class Subspace::Commands::Secrets < Subspace::Commands::Base
   def initialize(args, options)
-    @environment = args.first
-    @action = if options.edit
-      "edit"
-    elsif options.create
-      "create"
+    if args.first == "rekey"
+      rekey
     else
-      "view"
-    end
+      @environment = args.first
+      @action = if options.edit
+        "edit"
+      elsif options.create
+        "create"
+      else
+        "view"
+      end
 
-    run
+      run
+    end
   end
 
   def run
@@ -38,6 +42,22 @@ class Subspace::Commands::Secrets < Subspace::Commands::Base
     say "-------------------------------------------------------------------\n"
 
     system "cat", "config/application.yml"
+  end
+
+  def rekey
+    secret_files = Dir.glob("config/subspace/secrets/*.yml").map {|x| "secrets/#{File.basename(x)}"}
+    exit unless agree("This will re-key your secrets with a new random vault_pass. (#{secret_files}).  Proceed? (yes to continue) ")
+
+
+    say "Writing new password to .vault_pass.new"
+    File.write "config/subspace/.vault_pass.new", SecureRandom.base64(24) + \n
+    success = ansible_command "ansible-vault", "rekey", "--vault-password-file", ".vault_pass", "--new-vault-password-file", ".vault_pass.new", "-v", *secret_files
+    if success
+      FileUtils.mv "config/subspace/.vault_pass", "config/subspace/.vault_pass.old"
+      FileUtils.mv "config/subspace/.vault_pass.new", "config/subspace/.vault_pass"
+    else
+      say "Something went wrong, not changing .vault_pass"
+    end
   end
 
   private

@@ -150,7 +150,7 @@ describe Subspace::Inventory do
   end
 
   context "Importing terraform output" do
-    let(:tf_output) { JSON.parse(File.read("spec/data/tf_inventory_output.json")) }
+    let(:tf_output) { JSON.parse(File.read("spec/data/tf_inventory_output.json"))["inventory"]["value"] }
 
     it "can read in hosts, ips, and groups into a blank inventory" do
       inventory.merge(tf_output)
