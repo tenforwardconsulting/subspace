@@ -101,11 +101,23 @@ common     | authorized\_keys          | updates the authorized\_keys file for t
 rails      | appyml                    |
 monit      | monit                     | All tasks in the monit role have been tagged 'monit'
 
-### `subspace vars <environment> [--edit] [--create]`
+### `subspace secrets <environment> [--edit] [--create]`
 
-Manage environment variables on different platforms.  The default action is simply to show the vars defined for an environment.  Pass --edit to edit them in the system editor.
+The `secrets` command will manage encrypted secrets for different environments.  The default action is simply to show the secrets defined for an environment.  Pass --edit to edit them in the system editor (vim, etc).
 
-The new system uses a file in `config/provision/templates/application.yml.template` that contains environment variables for all environments.  The configuration that is not secret is visible and version controlled, while the secrets are stored in the vault files for their environments. The default file created by `subspace init`  looks like this:
+This uses `ansible-vault` under the hood and requires a vault password file.  You will need to get the `.vault_pass` from from a teammate out of band, and put it into `config/provision/.vault_pass`
+
+These secrets are used during provisioning to populate variables in a few different places:
+1. `config/application.yml`, which uses the `figaro` gem to manage environment variables in rails.
+2. `config/database.yml`, which handles the database connection password.
+
+
+Subspace uses a template file in `config/provision/templates/application.yml.template` that contains environment variables for all environments.  If you have non-secret variables that change based on the target server, you can simply put that in plaintext in the template file. This was, the configuration that is not secret is visible and version controlled, while the secrets are stored in the vault files for their environments.
+
+NOTE: application.yml should be in the `.gitignore`, since subspace creates a new version on the server and symlinks it on top of whatever is checked in. You should make changes to the template file instead, which should be checked in to version control.
+
+
+The default template created by `subspace init`  looks like this:
 
 ```
 # These environment variables are applied to all environments, and can be secret or not
@@ -113,7 +125,7 @@ The new system uses a file in `config/provision/templates/application.yml.templa
 # This is secret and can be changed on all three environment easily by using subspace vars <env> --edit
 SECRET_KEY_BASE: {{secret_key_base}}
 
-#This is not secret, and is the same value for all environments
+# This is not secret, and is the same value for all environments
 ENABLE_SOME_FEATURE: false
 
 development:
@@ -127,14 +139,12 @@ production:
 
 ```
 
-Further, you can use the extremely command to create a local copy of `config/application.yml`
+You can also use this command to automatically create a local version of `config/application.yml` based on the template and encrypted secrets for a specific environment.
 
     # Create a local copy of config/application.yml with the secrets encrypted in secrets/development.yml
     $ subspace vars development --create
 
-This can get you up and running in development securely, the only thing you need to distribute to new team members is the vault password.  Grab it from a teammate and put it into `config/provision/.vault_pass`
-
-NOTE: application.yml should be in the `.gitignore`, since subspace creates a new version on the server and symlinks it on top of whatever is checked in.
+This can get you up and running quickly in development securely.
 
 ## Procedure for updating on projects
 
@@ -146,13 +156,13 @@ Then,
 
 * `subspace provision production`
 
-If you get an error saying you need a vault password file, you should be able to find it in 1Password. You might also need to update `ansible`.
+If you get an error saying you need a vault password file, you should get it out-of-band from . You might also need to update `ansible`.
 
 You'll want to do this for each environment (ie: `subspace provision qa`, etc.). Best to start with staging and work your way up.
 
 # Host configuration
 
-We need to know some info about hosts, but not much.  See the files for details, it's mostly the hostname and the user that can administer the system, eg `ubuntu` on AWS/ubuntu, `ec2-user`, or even `root` (not recommended)
+We need to know some info about hosts, but not much.  See the files for details, it's mostly the hostname and the user that can administer the system, eg `ubuntu` on AWS/ubuntu, `ec2-user`, or even `root` (not recommended, but used on linode/Digital Ocean)
 
 # Role Configuration
 
@@ -369,13 +379,13 @@ The full list of distributions is here: https://github.com/nodesource/distributi
     database_user: "{{project_name}}"
 
 ## puma
-Use the puma app server for your rails app.  Usually combined with nginx to server as a static file server and reverse proxy. 
+Use the puma app server for your rails app.  Usually combined with nginx to server as a static file server and reverse proxy.
 
 **Prerequesites:**
   - add `gem puma` to your gemfile
   - add `config/puma/` to the `linked_dirs` config in capistrano's `deploy.rb`
 
-This role will generate a reasonable `puma.rb` and configure it to be controlled by systemd. 
+This role will generate a reasonable `puma.rb` and configure it to be controlled by systemd.
 
 **Variables:**
 
@@ -387,7 +397,7 @@ This role will generate a reasonable `puma.rb` and configure it to be controlled
 
 Provisions for a rails app.  This one is probably pretty important.
 
-We no longer provider default values, so make sure to define all the following variables: 
+We no longer provider default values, so make sure to define all the following variables:
 
     rails_env: production
     database_pool: 5
