@@ -15,6 +15,8 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 ## 3.0.0.rc2
   * Removed outdated awscli role
   * Added `subspace secrets rekey` to generate and rekey ansible-vault secrets
+  * Update tailscale role
+  * Don't default to using pemfile (use tailscale instead!)
 
 ## 3.0.0.rc1
   * Added infrastructure management via Terraform!

@@ -3,13 +3,11 @@ module Subspace
     module Ansible
       def ansible_playbook(*args)
         args.push "--diff"
-        args.push "--private-key"
-        args.push "subspace.pem"
         ansible_command("ansible-playbook", *args)
       end
 
-      def ansible_command(command, *args, update_ansible_cfg: true)
-        update_ansible_cfg if update_ansible_cfg
+      def ansible_command(command, *args)
+        update_ansible_cfg
         retval = false
         Dir.chdir "config/subspace" do
           say ">> Running #{command} #{args.join(' ')}"

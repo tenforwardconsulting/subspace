@@ -15,8 +15,7 @@ class Subspace::Commands::Inventory < Subspace::Commands::Base
   end
 
   def list_inventory
-    inventory.find_hosts!(@env || "all").each do |host_name|
-      host = inventory.hosts[host_name]
+    inventory.find_hosts!(@env || "all").each do |host|
       puts "#{host.name}\t#{host.vars["ansible_host"]}\t(#{host.group_list.join ','})"
     end
   end
