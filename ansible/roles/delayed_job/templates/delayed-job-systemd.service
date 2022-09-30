@@ -1,0 +1,33 @@
+[Unit]
+Description=Start delayed_job_{{job_queue}}{{loop_index}} instance
+After=syslog.target network.target
+
+[Service]
+Type=simple
+
+# Uncomment this if you are going to use this as a system service
+# if using as a user service then leave commented out, or you will get an error trying to start the service
+# !!! Change this to your deploy user account if you are using this as a system service !!!
+User=deploy
+Group=deploy
+UMask=0002
+
+Environment=RAILS_ENV={{rails_env}}
+
+WorkingDirectory=/u/apps/{{project_name}}/current
+ExecStart=/usr/local/bin/bundle exec {{delayed_job_command}} --identifier={{job_queue}}{{loop_index}} --queue={{job_queue}} start
+ExecStop=/usr/local/bin/bundle exec {{delayed_job_command}} --identifier={{job_queue}}{{loop_index}} --queue={{job_queue}} stop
+TimeoutSec=120
+PIDFile=/u/apps/{{project_name}}/shared/tmp/pids/delayed_job_{{job_queue}}{{loop_index}}.pid
+
+# if we crash, restart
+RestartSec=1
+Restart=on-failure
+
+StandardOutput=syslog
+StandardError=syslog
+# This will default to "bundler" if we don't specify it
+SyslogIdentifier=delayed_job
+
+[Install]
+WantedBy=multi-user.target

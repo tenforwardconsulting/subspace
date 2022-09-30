@@ -1,45 +1,28 @@
 ---
   - set_fact: delayed_job_installed="true"
 
-  - name: Monit Stop All
-    shell: monit stop all
+  - name: Install systemd delayed_job script
     become: true
-    ignore_errors: yes
-
-  - name: Wait for monit to stop
-    shell: monit status | grep Monitored | wc -l | awk '{print $1 $2}'
-    register: monit_stopped
-    retries: 10
-    until: monit_stopped.stdout == "0"
-    delay: 10
-    become: true
-
-  - name: Install delayed_job monit script
+    vars:
+      job_queue: "{{ item }}"
+      loop_index: "{{ loop_index }}"
     template:
-      src: delayed-job-monit-rc
-      dest: /etc/monit/conf.d/delayed_job_{{project_name}}_{{rails_env}}
-    become: true
+      src: delayed-job-systemd.service
+      dest: /etc/systemd/system/delayed_job_{{ item }}{{ loop_index }}.service
+    loop: "{{ job_queues }}"
+    loop_control:
+      index_var: loop_index
+      loop_var: item
 
-  - name: Remove old upstart files
-    file:
-      path: /etc/init/delayed-job.conf
-      state: absent
+  - name: Enable systemd delayed_job service
     become: true
+    systemd:
+      name: "delayed_job_{{ item }}{{ loop_index }}"
+      daemon_reload: true
+      enabled: yes
+      state: started
+    loop: "{{ job_queues }}"
+    loop_control:
+      loop_var: item
+      index_var: loop_index
 
-  - name: Remove old monit files
-    file:
-      path: /etc/monit/conf.d/delayed_job
-      state: absent
-    become: true
-
-  - name: reload_monit
-    shell: monit reload
-    become: true
-
-  - name: wait
-    pause:
-      seconds: 3
-
-  - name: restart monit services
-    shell: monit restart all
-    become: true
