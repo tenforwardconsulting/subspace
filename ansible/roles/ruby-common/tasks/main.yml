@@ -40,7 +40,7 @@
 - name: Download the Ruby source code
   get_url: url={{ ruby_download_location }}
            dest=/usr/local/src/
-           sha256sum={{ ruby_checksum }}
+           checksum={{ ruby_checksum }}
   become: true
 
 - name: Generate the Ruby installation script
