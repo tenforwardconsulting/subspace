@@ -23,7 +23,7 @@ Role Variables
 
 > ruby_version: This variable controls the version of Ruby that will be compiled and installed. It should correspond with the tarball filename excluding the ".tar.gz" extension (e.g. "ruby-1.9.3-p484").
 
-> ruby_checksum: The SHA256 checksum of the gzipped tarball that will be downloaded and compiled.
+> ruby_checksum: The checksum of the gzipped tarball that will be downloaded and compiled. (prefix with algorithm, e.g. sha256:abcdef01234567890)
 
 > ruby_download_location: The URL that the tarball should be retrieved from. Using the ruby_version variable within this variable is a good practice (e.g. "http://cache.ruby-lang.org/pub/ruby/1.9/{{ ruby_version }}.tar.gz").
 
