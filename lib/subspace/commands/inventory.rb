@@ -8,6 +8,8 @@ class Subspace::Commands::Inventory < Subspace::Commands::Base
       capistrano_deployrb
     when "list"
       list_inventory
+    when "keyscan"
+      keyscan_inventory
     else
       say "Unknown or missing command to inventory: #{command}"
       say "try subspace inventory [list, capistrano]"
@@ -17,6 +19,14 @@ class Subspace::Commands::Inventory < Subspace::Commands::Base
   def list_inventory
     inventory.find_hosts!(@env || "all").each do |host|
       puts "#{host.name}\t#{host.vars["ansible_host"]}\t(#{host.group_list.join ','})"
+    end
+  end
+
+  def keyscan_inventory
+    inventory.find_hosts!(@env || "all").each do |host|
+      ip = host.vars["ansible_host"]
+      system %Q(ssh-keygen -R #{ip})
+      system %Q(ssh-keyscan -Ht ed25519 #{ip} >> "$HOME/.ssh/known_hosts")
     end
   end
 

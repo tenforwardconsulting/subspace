@@ -17,6 +17,7 @@ This project attempts to follow [semantic versioning](https://semver.org/).
   * Added `subspace secrets rekey` to generate and rekey ansible-vault secrets
   * Update tailscale role
   * Don't default to using pemfile (use tailscale instead!)
+  * Add `subspace inventory keyscan` to fix ssh fingerprints
 
 ## 3.0.0.rc1
   * Added infrastructure management via Terraform!

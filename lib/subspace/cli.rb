@@ -155,6 +155,7 @@ class Subspace::Cli
 
         capistrano - generate config/deploy/[env].rb.  Requires the --env option.
         list       - list the current inventory as understood by subspace.
+        keyscan    - Update ~/.known_hosts with new host key fingerprints
         EOS
       c.option "--env ENVIRONMENT", "Optional: Limit function to a specific environment (aka group)"
       c.when_called Subspace::Commands::Inventory
