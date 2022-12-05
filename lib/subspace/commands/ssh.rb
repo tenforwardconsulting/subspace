@@ -21,7 +21,7 @@ class Subspace::Commands::Ssh < Subspace::Commands::Base
     if host_vars.key?('ansible_ssh_user')
       say "Supposed to be ansible_user not ansible_ssh_user"
     end
-    user = host_vars["ansible_user"]
+    user = @user || host_vars["ansible_user"]
     host = host_vars["ansible_host"]
     port = host_vars["ansible_port"] || 22
     pem = host_vars["ansible_ssh_private_key_file"]
