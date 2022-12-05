@@ -216,4 +216,13 @@ describe Subspace::Inventory do
       end
     end
   end
+
+  context "find_hosts!" do
+    let(:inventory) { Subspace::Inventory.read("spec/data/inventory_complex.yml") }
+    it "can find hosts by group" do
+      prod_hosts = inventory.find_hosts!("webservers")
+      expect(prod_hosts.count).to eq 2
+      expect(prod_hosts.map(&:name)).to eq ["foo.example.com", "bar.example.com"]
+    end
+  end
 end
