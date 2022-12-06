@@ -105,14 +105,14 @@ monit      | monit                     | All tasks in the monit role have been t
 
 The `secrets` command will manage encrypted secrets for different environments.  The default action is simply to show the secrets defined for an environment.  Pass --edit to edit them in the system editor (vim, etc).
 
-This uses `ansible-vault` under the hood and requires a vault password file.  You will need to get the `.vault_pass` from from a teammate out of band, and put it into `config/provision/.vault_pass`
+This uses `ansible-vault` under the hood and requires a vault password file.  You will need to get the `.vault_pass` from from a teammate out of band (secrets.10fw.ne, 1password, sticky-note, etc), and put it into `config/provision/.vault_pass`
 
 These secrets are used during provisioning to populate variables in a few different places:
 1. `config/application.yml`, which uses the `figaro` gem to manage environment variables in rails.
 2. `config/database.yml`, which handles the database connection password.
 
 
-Subspace uses a template file in `config/provision/templates/application.yml.template` that contains environment variables for all environments.  If you have non-secret variables that change based on the target server, you can simply put that in plaintext in the template file. This was, the configuration that is not secret is visible and version controlled, while the secrets are stored in the vault files for their environments.
+Subspace uses a template file in `config/provision/templates/application.yml.template` that contains environment variables for all environments.  If you have non-secret variables that change based on the target server, you can simply put that in plaintext in the template file. This was designed so the configuration that is not secret is visible and version controlled, while the secret values are stored in the vault files for their environments.
 
 NOTE: application.yml should be in the `.gitignore`, since subspace creates a new version on the server and symlinks it on top of whatever is checked in. You should make changes to the template file instead, which should be checked in to version control.
 
@@ -156,7 +156,7 @@ Then,
 
 * `subspace provision production`
 
-If you get an error saying you need a vault password file, you should get it out-of-band from . You might also need to update `ansible`.
+If you get an error saying you need a vault password file, you need to get it from somoene on the team (see above). You might also need to update `ansible`.
 
 You'll want to do this for each environment (ie: `subspace provision qa`, etc.). Best to start with staging and work your way up.
 
