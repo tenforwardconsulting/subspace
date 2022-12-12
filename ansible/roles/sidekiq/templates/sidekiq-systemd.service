@@ -32,7 +32,7 @@ Type=notify
 WatchdogSec=10
 
 WorkingDirectory=/u/apps/{{project_name}}/current
-ExecStart=/usr/local/bin/bundle exec sidekiq -e {{rails_env}} --queue {{hostname}} {{ job_queues | map('regex_replace',  '^(.*)$', '--queue \\1') | join(' ') }}
+ExecStart=/usr/local/bin/bundle exec sidekiq -e {{rails_env}} --queue {{hostname}} {{ job_queues | map('regex_replace',  '^(.*)$', '--queue \\1') | join(' ') }} -c {{sidekiq_workers}}
 
 # Use `systemctl kill -s TSTP sidekiq` to quiet the Sidekiq process
 
