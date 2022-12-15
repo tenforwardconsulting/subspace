@@ -19,6 +19,7 @@ This project attempts to follow [semantic versioning](https://semver.org/).
   * Don't default to using pemfile (use tailscale instead!)
   * Add `subspace inventory keyscan` to fix ssh fingerprints
   * Use `sidekiq_workers` var in systemd
+  * Tailscale hostname is now {{project_name}}-{{hostname}}
 
 ## 3.0.0.rc1
   * Added infrastructure management via Terraform!
