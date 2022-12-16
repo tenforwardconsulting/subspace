@@ -19,4 +19,4 @@
 
   - name: "Join the tailnet"
     become: true
-    command: tailscale up --ssh --auth-key={{tailscale_auth_key}} --hostname={{hostname}} --accept-risk=lose-ssh {{tailscale_options}}
+    command: tailscale up --ssh --auth-key={{tailscale_auth_key}} --hostname={{project_name}}-{{hostname}} --accept-risk=lose-ssh {{tailscale_options}}
