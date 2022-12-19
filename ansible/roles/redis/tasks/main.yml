@@ -1,9 +1,19 @@
 ---
+  - name: Add an Apt signing key for redis repo
+    ansible.builtin.apt_key:
+      url: https://packages.redis.io/gpg
+      state: present
+
+  - name: Add redis repository into sources list
+    ansible.builtin.apt_repository:
+      repo: deb https://packages.redis.io/deb {{ ansible_distribution_release }} main
+      state: present
+
   - name: Install Redis
     become: true
     apt:
-      pkg: redis-server
-      state: present
+      name: redis-server
+      state: latest
       update_cache: true
 
   - name: Set bind IP
