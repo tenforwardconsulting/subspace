@@ -285,7 +285,7 @@ For example, to force a manual DNS challenge you can do the following:
         - example.com
         - "*.example.com"
 
-(you will need to futz around the first time but it should work on renewals)
+(you will need to futz around the first time and manually install the DNS record, but it should work on renewals)
 
 Note that this role needs to be included _before_ the webserver (apache or nginx) role
 
@@ -314,14 +314,6 @@ Installs memcache on the server.  By default, memcache will only listen on local
 
     # bind to all interfaces
     memcache_bind: "0.0.0.0"
-
-## monit
-
-## mysql
-
-## mysql2_gem
-
-## newrelic
 
 ## newrelic-infra
 This role will install the next-gen "Newrelic One" infrastructure agent which can perform a few different functions for newrelic.  The previous "newrelic" role is deprecated.
@@ -430,6 +422,11 @@ Installs redis on the server.
 
     # Change to * if you want this available everywhere instead of localhost
     redis_bind: 127.0.0.1
+
+As of Subspace 3.0, this uses the official redis apt repo instead of the debian/ubuntu ones.  If you previously had installed redis from the distro, you will need to manually uninstall, purge, and reinstall.  This should not delete any data but back it up just in case.
+
+    sudo apt-get purge redis-server
+    sudo apt-get install redis-server
 
 ## resque
 

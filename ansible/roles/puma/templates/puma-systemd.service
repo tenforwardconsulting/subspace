@@ -23,6 +23,7 @@ WorkingDirectory=/u/apps/{{project_name}}/current
 
 # Helpful for debugging socket activation, etc.
 # Environment=PUMA_DEBUG=1
+Environment=RAILS_ENV={{rails_env}}
 
 # SystemD will not run puma even if it is in your path. You must specify
 # an absolute URL to puma. For example /usr/local/bin/puma
