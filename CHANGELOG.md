@@ -11,6 +11,8 @@ This project attempts to follow [semantic versioning](https://semver.org/).
   * Stops showing color if you `sudo su`
 
 ## Unreleased
+## 2.5.10
+  * Backport the fix for ansible's change of get_url checksum arguments
 
 ## 2.5.9
   * backport disabling mitogen
