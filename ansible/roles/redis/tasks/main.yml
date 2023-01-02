@@ -8,8 +8,16 @@
     ansible.builtin.apt_repository:
       repo: deb https://packages.redis.io/deb {{ ansible_distribution_release }} main
       state: present
+    register: redis_apt_repo
 
-  - name: Install Redis
+  - name: Purge distro redis package
+    apt:
+      name: redis-server
+      state: absent
+      purge: true
+    when: redis_apt_repo.changed
+
+  - name: Install Redis from official repo
     become: true
     apt:
       name: redis-server
