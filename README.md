@@ -386,7 +386,7 @@ Install monitoring and automatic startup for resque workers via monit. You MUST 
 Installs ruby on the machine.  YOu can set a version by picking off the download url and sha hash from ruby-lang.org
 
     ruby_version: ruby-2.4.1
-    ruby_checksum: a330e10d5cb5e53b3a0078326c5731888bb55e32c4abfeb27d9e7f8e5d000250
+    ruby_checksum: sha256:a330e10d5cb5e53b3a0078326c5731888bb55e32c4abfeb27d9e7f8e5d000250
     ruby_download_location: 'https://cache.ruby-lang.org/pub/ruby/2.4/ruby-2.4.1.tar.gz'
     bundler_version: 2.0.1
 
