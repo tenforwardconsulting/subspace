@@ -261,20 +261,34 @@ Defaults:
 
 ## letsencrypt
 
-By default, this creates a single certificate for every server alias/server name in the configuration file.
-If you'd like more control over the certs created, you can define the variables `le_ssl_certs` as follows:
+This creates a single certificate for every server alias/server name in the configuration file.
 
-    le_ssl_certs:
-      - cert_name: mycert
-        domains:
-          - mydomain.example.com
-          - otherdomain.example.com
-      - cert_name: othersite
-        domains:
-          - othersite.example.com
+    letsencrypt_email: "me@example.com"
+    server_name: app.example.com
 
-Note that this role needs to be included _before_ the webserver (apache or
-nginx) role
+
+If you'd like more control over the cert, you can customize the variable `le_ssl_cert` as follows:
+
+    le_ssl_cert:
+      cert_name: "{{server_name}}"
+      preferred_challenges: "http"
+      plugin: standalone
+      domains: "{{ [server_name] + server_aliases }}"
+
+For example, to force a manual DNS challenge you can do the following:
+
+    le_ssl_cert:
+      cert_name: star_example
+      preferred_challenges: dns
+      plugin: manual
+      domains:
+        - example.com
+        - "*.example.com"
+
+(you will need to futz around the first time and manually install the DNS record, but it should work on renewals)
+
+Note that this role needs to be included _before_ the webserver (apache or nginx) role
+
 
 ## logrotate
 
@@ -300,14 +314,6 @@ Installs memcache on the server.  By default, memcache will only listen on local
 
     # bind to all interfaces
     memcache_bind: "0.0.0.0"
-
-## monit
-
-## mysql
-
-## mysql2_gem
-
-## newrelic
 
 ## newrelic-infra
 This role will install the next-gen "Newrelic One" infrastructure agent which can perform a few different functions for newrelic.  The previous "newrelic" role is deprecated.
@@ -416,6 +422,11 @@ Installs redis on the server.
 
     # Change to * if you want this available everywhere instead of localhost
     redis_bind: 127.0.0.1
+
+As of Subspace 3.0, this uses the official redis apt repo instead of the debian/ubuntu ones.  If you previously had installed redis from the distro, you will need to manually uninstall, purge, and reinstall.  This should not delete any data but back it up just in case.
+
+    sudo apt-get purge redis-server
+    sudo apt-get install redis-server
 
 ## resque
 

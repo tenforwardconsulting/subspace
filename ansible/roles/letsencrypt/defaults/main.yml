@@ -1,12 +1,12 @@
 ---
   certbot_dir: "/opt/certbot"
-  apache_ssl_config: |
-    SSLCertificateFile /etc/letsencrypt/live/{{server_name}}/cert.pem
-    SSLCertificateKeyFile /etc/letsencrypt/live/{{server_name}}/privkey.pem
-    Include /etc/letsencrypt/options-ssl-apache.conf
-    SSLCertificateChainFile /etc/letsencrypt/live/{{server_name}}/chain.pem
+  le_ssl_cert:
+    cert_name: "{{server_name}}"
+    preferred_challenges: "http"
+    plugin: standalone
+    domains: "{{ [server_name] + server_aliases }}"
 
   nginx_ssl_config: |
-    ssl_certificate /etc/letsencrypt/live/{{server_name}}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/{{server_name}}/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/{{le_ssl_cert.cert_name}}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{le_ssl_cert.cert_name}}/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf;
