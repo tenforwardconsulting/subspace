@@ -12,7 +12,7 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
-## 3.0.0.rc2
+## 3.0.0
   * Install redis from vendor repos (BREAKING, see README)
   * Removed outdated awscli role
   * Added `subspace secrets rekey` to generate and rekey ansible-vault secrets
