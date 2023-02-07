@@ -3,7 +3,7 @@ Description=Start delayed_job_{{job_queue}}{{loop_index}} instance
 After=syslog.target network.target
 
 [Service]
-Type=simple
+Type=forking
 
 # Uncomment this if you are going to use this as a system service
 # if using as a user service then leave commented out, or you will get an error trying to start the service
@@ -18,7 +18,7 @@ WorkingDirectory=/u/apps/{{project_name}}/current
 ExecStart=/usr/local/bin/bundle exec {{delayed_job_command}} --identifier={{job_queue}}{{loop_index}} --queue={{job_queue}} start
 ExecStop=/usr/local/bin/bundle exec {{delayed_job_command}} --identifier={{job_queue}}{{loop_index}} --queue={{job_queue}} stop
 TimeoutSec=120
-PIDFile=/u/apps/{{project_name}}/shared/tmp/pids/delayed_job_{{job_queue}}{{loop_index}}.pid
+PIDFile=/u/apps/{{project_name}}/shared/tmp/pids/delayed_job.{{job_queue}}{{loop_index}}.pid
 
 # if we crash, restart
 RestartSec=1
