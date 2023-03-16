@@ -20,3 +20,8 @@
   - name: "Join the tailnet"
     become: true
     command: tailscale up --ssh --auth-key={{tailscale_auth_key}} --hostname={{project_name}}-{{hostname}} --accept-risk=lose-ssh {{tailscale_options}}
+
+  - name: "Join the tailnet and force reauth"
+    become: true
+    command: tailscale up --ssh --auth-key={{tailscale_auth_key}} --hostname={{project_name}}-{{hostname}} --accept-risk=lose-ssh {{tailscale_options}} --force-reauth
+    tags: [ 'never', 'tailscale_reauth' ]
