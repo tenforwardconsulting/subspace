@@ -13,7 +13,7 @@
 
   - name: Add New Relic apt repo
     apt_repository:
-      repo: deb [arch=amd64] https://download.newrelic.com/infrastructure_agent/linux/apt focal main
+      repo: deb https://download.newrelic.com/infrastructure_agent/linux/apt {{ansible_distribution_release}} main
       state: present
     become: true
 

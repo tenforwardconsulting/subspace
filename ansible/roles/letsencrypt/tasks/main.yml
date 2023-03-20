@@ -41,6 +41,14 @@
       delay: 1
       state: stopped
 
+  - name: "Copy manual auth script"
+    become: true
+    template:
+      src: /templates/subspace-letsencrypt-authenticator.sh
+      dest: /tmp/subspace-letsencrypt-authenticator.sh
+      owner: root
+      mode: '0700'
+
   - name: Generate SSL Certificate
     become: true
     command:
@@ -56,7 +64,8 @@
         - "--cert-name"
         - "{{ le_ssl_cert.cert_name }}"
         - "--{{ le_ssl_cert.plugin }}"
-        - "--manual-auth-hook=/bin/yes"
+        - "--manual-auth-hook=/tmp/subspace-letsencrypt-authenticator.sh"
+        - "--manual-public-ip-logging-ok"
         - "--agree-tos"
         - "--expand"
         - "--non-interactive"
