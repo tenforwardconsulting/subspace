@@ -1,27 +1,4 @@
 ---
   - name: "Deprecation notice"
     ansible.builtin.debug:
-      msg: The 'newrelic' role in subspace is deprecated. Please migration to Newrelic One and the 'newrelic-infra' role
-
-  - name: Add New Relic apt repo
-    apt_repository:
-      repo: deb http://apt.newrelic.com/debian/ newrelic non-free
-      state: present
-    become: true
-
-  - name: Add New Relic apt key
-    apt_key:
-      url: https://download.newrelic.com/548C16BF.gpg
-      state: present
-    become: true
-
-  - name: Install New Relic server agent
-    apt:
-      pkg: newrelic-sysmond
-      state: present
-      update_cache: true
-    become: true
-
-  - shell: "nrsysmond-config --set license_key={{newrelic_licence}}"
-    become: true
-    notify: start newrelic agent
+      msg: The 'newrelic' role in subspace is deprecated. Please migrate to Newrelic One and the 'newrelic-infra' role
