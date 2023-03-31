@@ -12,6 +12,10 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.1
+  * Add maintenance tag to tailscale commands
+  * Only run tailscale up if forcing reauth
+
 ## 3.0.0.rc2
   * Install redis from vendor repos (BREAKING, see README)
   * Removed outdated awscli role

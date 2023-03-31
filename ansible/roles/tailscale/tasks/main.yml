@@ -4,22 +4,24 @@
     apt_key:
       url: https://pkgs.tailscale.com/stable/ubuntu/{{ansible_distribution_release}}.gpg
       state: present
+    tags:
+      - maintenance
 
   - name: "Add Tailscale apt repos"
     become: true
     apt_repository:
       repo: "deb https://pkgs.tailscale.com/stable/ubuntu {{ansible_distribution_release}} main"
       state: present
+    tags:
+      - maintenance
 
-  - name: "Install tailscale from api"
+  - name: "Install tailscale from apt"
     apt:
       name: tailscale
       state: latest
       update_cache: yes
-
-  - name: "Join the tailnet"
-    become: true
-    command: tailscale up --ssh --auth-key={{tailscale_auth_key}} --hostname={{project_name}}-{{hostname}} --accept-risk=lose-ssh {{tailscale_options}}
+    tags:
+      - maintenance
 
   - name: "Join the tailnet and force reauth"
     become: true
