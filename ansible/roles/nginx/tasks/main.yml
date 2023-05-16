@@ -2,6 +2,12 @@
   apt: pkg=nginx state=latest
   become: true
 
+- name: Disable Server tokens
+  lineinfile:
+    path: /etc/nginx/nginx.conf
+    regexp: '# server_tokens off'
+    line: "\tserver_tokens off;"
+
 - name: Remove the default app
   file:
     path: /etc/nginx/sites-enabled/default
