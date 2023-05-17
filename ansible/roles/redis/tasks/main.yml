@@ -32,6 +32,13 @@
       line: 'bind {{redis_bind}}'
       state: present
 
+  - name: Disable protected-mode
+    become: true
+    lineinfile:
+      name: /etc/redis/redis.conf
+      regexp: '^protected-mode yes'
+      line: 'protected-mode no'
+
   - name: restart redis
     become: true
     systemd:
