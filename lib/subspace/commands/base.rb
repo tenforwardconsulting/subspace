@@ -59,7 +59,7 @@ module Subspace
       end
 
       def confirm_overwrite(file_path)
-        return true unless File.exists? file_path
+        return true unless File.exist? file_path
         answer = ask "#{file_path} already exists. Reply 'y' to overwrite: [no] "
         return answer.downcase.start_with? "y"
       end

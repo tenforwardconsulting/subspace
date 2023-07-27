@@ -44,7 +44,7 @@
   - name: "Copy manual auth script"
     become: true
     template:
-      src: /templates/subspace-letsencrypt-authenticator.sh
+      src: templates/subspace-letsencrypt-authenticator.sh
       dest: /tmp/subspace-letsencrypt-authenticator.sh
       owner: root
       mode: '0700'
