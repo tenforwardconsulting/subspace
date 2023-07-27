@@ -12,6 +12,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.4
+  * Remove punctuation from tailscale host name
+
 ## 3.0.1
   * Add maintenance tag to tailscale commands
   * Only run tailscale up if forcing reauth
