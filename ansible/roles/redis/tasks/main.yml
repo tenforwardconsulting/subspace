@@ -39,6 +39,12 @@
       regexp: '^protected-mode yes'
       line: 'protected-mode no'
 
+  - name: enable redis
+    become: true
+    systemd:
+      name: redis
+      enabled: yes
+
   - name: restart redis
     become: true
     systemd:
