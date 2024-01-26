@@ -123,6 +123,13 @@
     tags:
       - maintenance
       - upgrade
+    register: ansibleapt
+
+  - set_fact:
+      ansibleapt: "{{ ansibleapt.stdout }}"
+    tags:
+      - maintenance
+      - upgrade
 
   - name: apt-get autoremove
     apt:

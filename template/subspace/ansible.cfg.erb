@@ -3,6 +3,7 @@ forks     = 10
 roles_path = ./roles:<%= File.join(gem_path, 'ansible', 'roles') %>:/etc/ansible/roles
 vault_password_file = .vault_pass
 inventory = inventory.yml
+no_target_syslog = false
 # Uncomment to add timestamps to tasks to find slow ones.
 # callback_whitelist = profile_tasks
 
