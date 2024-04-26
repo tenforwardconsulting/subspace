@@ -35,7 +35,7 @@ Or install it yourself from the command line: `$ gem install subspace`
 `aws configure --profile profile_name`
 
 Subspace expects the `profile_name` to be `subspace-{project name}`.
-****
+
 ### Mitogen
 
 [!CAUTION]
