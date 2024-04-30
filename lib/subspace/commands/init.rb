@@ -62,6 +62,7 @@ class Subspace::Commands::Init < Subspace::Commands::Base
       subspace provision #{@env}
 
     !!MAKE SURE YOU PUT config/subspace/subspace.pem in 1Password!!
+    !!If you added an SSH Key Passphrase during that step, also save it in 1Password!!
 
   """
 

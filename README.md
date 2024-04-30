@@ -24,18 +24,6 @@ gem 'subspace'
 
 Or install it yourself from the command line: `$ gem install subspace`
 
-### Other Requirements
-
-- [JQ](https://formulae.brew.sh/formula/jq)
-- [Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
-- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions)
-
-#### Setup AWS Profile
-
-`aws configure --profile profile_name`
-
-Subspace expects the `profile_name` to be `subspace-{project name}`.
-
 ### Mitogen
 
 [!CAUTION]
@@ -57,12 +45,24 @@ Initialize the project for subspace. Creates `config/subspace` with all necessar
 
 Subspace 3 supports terraform.  You will need to create an IAM user manually with administrative access to the target AWS environment for terraform.
 
+#### Other Requirements
+
+- [JQ](https://formulae.brew.sh/formula/jq)
+- [Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
+- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions)
+
+#### Setup AWS Profile
+
+`aws configure --profile profile_name`
+
+Subspace expects the `profile_name` to be `subspace-{project name}`.
+
 #### `init` Options
 
 Check [`cli.rb init`](/lib/subspace/cli.rb#L35) for all available options when initializing a new subspace project.
 
 ##### `--env`
-The environment will default to `development` unless you pass in `--env [env name]`
+The environment will default to `dev` unless you pass in `--env [env name]`
 
 ### `subspace bootstrap <environment>`
 
