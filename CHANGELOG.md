@@ -12,6 +12,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.6
+  * fix redis server thing again
+
 ## 3.0.5
   * update rake task for secerts
   * update readme

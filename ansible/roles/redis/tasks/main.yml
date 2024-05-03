@@ -42,7 +42,7 @@
   - name: enable redis
     become: true
     systemd:
-      name: redis
+      name: redis-server
       enabled: yes
 
   - name: restart redis
