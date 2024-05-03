@@ -8,4 +8,5 @@ all:
       hostname: web1
   children:
     <%= @env %>:
-      <%= @env %>1:
+      hosts:
+        <%= @env %>1:

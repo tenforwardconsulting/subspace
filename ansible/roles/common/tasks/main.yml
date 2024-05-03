@@ -29,8 +29,6 @@
       src: motd
       dest: /etc/motd
     become: true
-    tags:
-      - maintenance
 
   - name: Set hostname
     command: hostname {{hostname}}
