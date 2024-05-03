@@ -57,11 +57,12 @@ class Subspace::Commands::Init < Subspace::Commands::Base
       - ensure the correct roles are present in #{@env}.yml
       - Check ansible configuration variables in group_vars/#{@env}
 
-    4. Provision the new servers with ansible:
+    5. Provision the new servers with ansible:
 
       subspace provision #{@env}
 
-    !!MAKE SURE YOU PUT config/subspace/subspace.pem SOMEWHERE!!
+    !!MAKE SURE YOU PUT config/subspace/subspace.pem in 1Password!!
+    !!If you added an SSH Key Passphrase during that step, also save it in 1Password!!
 
   """
 

@@ -13,14 +13,8 @@ you to [configure variables](https://docs.ansible.com/ansible/latest/user_guide/
 
 First, install ansible (>2.0)
 
-OSX:
-
-  brew install ansible
-
-Linux:
-
-  apt-get install ansible
-
+- OSX: `brew install ansible`
+- Linux: `apt-get install ansible`
 
 Add this line to your application's Gemfile:
 
@@ -28,11 +22,13 @@ Add this line to your application's Gemfile:
 gem 'subspace'
 ```
 
-Or install it yourself as:
-
-    $ gem install subspace
+Or install it yourself from the command line: `$ gem install subspace`
 
 ### Mitogen
+
+[!CAUTION]
+***Mitogen is currently broken! It doesn't support the latest ansible version.***
+
 Optionally, you can install a python/pip packaged called "Mitogen" which dramatically speeds up running ansible over ssh.  See [Here](https://github.com/mitogen-hq/mitogen/blob/master/docs/ansible_detailed.rst) for details.
 
     pip install mitogen
@@ -40,14 +36,33 @@ Optionally, you can install a python/pip packaged called "Mitogen" which dramati
 Subspace will try and detect if mitogen is present and use it can.  If mitogen causes problems (sometimes it can cause problems depending on the system versions, and particaularly when brand new versions of anible come up and it hasn't updated), you can disable it:
 
     DISABLE_MITOGEN=1 subspace provision env
+
 ## Usage
 
 ### `subspace init`
 
-Initialize the project for subspace. Creates `config/subspace` with all
-necessary files.
+Initialize the project for subspace. Creates `config/subspace` with all necessary files.
 
 Subspace 3 supports terraform.  You will need to create an IAM user manually with administrative access to the target AWS environment for terraform.
+
+#### Other Requirements
+
+- [JQ](https://formulae.brew.sh/formula/jq)
+- [Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
+- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions)
+
+#### Setup AWS Profile
+
+`aws configure --profile profile_name`
+
+Subspace expects the `profile_name` to be `subspace-{project name}`.
+
+#### `init` Options
+
+Check [`cli.rb init`](/lib/subspace/cli.rb#L35) for all available options when initializing a new subspace project.
+
+##### `--env`
+The environment will default to `dev` unless you pass in `--env [env name]`
 
 ### `subspace bootstrap <environment>`
 
@@ -93,13 +108,13 @@ MUST be turned off manually by running `subspace maintenance_mode <environment> 
 
 #### Tagged roles
 
-Role       | Tags                      | Comment
----------- | ----                      | -------
-alienvault | alienvault                | All tasks in the alienvault role have been tagged 'alienvault'
-common     | upgrade                   | runs apt-get update and apt-get upgrade
-common     | authorized\_keys          | updates the authorized\_keys file for the deploy user
-rails      | appyml                    |
-monit      | monit                     | All tasks in the monit role have been tagged 'monit'
+| Role       | Tags             | Comment                                                        |
+| ---------- | ---------------- | -------------------------------------------------------------- |
+| alienvault | alienvault       | All tasks in the alienvault role have been tagged 'alienvault' |
+| common     | upgrade          | runs apt-get update and apt-get upgrade                        |
+| common     | authorized\_keys | updates the authorized\_keys file for the deploy user          |
+| rails      | appyml           |
+| monit      | monit            | All tasks in the monit role have been tagged 'monit'           |
 
 ### `subspace secrets <environment> [--edit] [--create]`
 
