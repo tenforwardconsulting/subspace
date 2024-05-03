@@ -12,6 +12,13 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.5
+  * update rake task for secerts
+  * update readme
+  * remove unneeded deps for rails
+  * fix include deprecation
+  * Remove punctuation from tailscale host name
+
 ## 3.0.4
   * log ansible update output to var
 
