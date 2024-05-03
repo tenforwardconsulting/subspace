@@ -42,5 +42,5 @@
   - name: restart redis
     become: true
     systemd:
-      name: redis
+      name: redis-server
       state: restarted

@@ -94,7 +94,7 @@
       name: hstore
       state: present
 
-  - include: backups.yml
+  - import_tasks: backups.yml
     become: true
 
   - name: Grab Psql version
