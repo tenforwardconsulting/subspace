@@ -12,6 +12,10 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.7
+  * Fix tailscale_reauth role so it also ensures tailscale is installed
+  * Change nodesource to use the nodistro codename
+
 ## 3.0.6
   * fix redis server thing again
 
