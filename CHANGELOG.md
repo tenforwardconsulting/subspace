@@ -12,6 +12,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.8
+  * fix nodejs gpg key
+
 ## 3.0.7
   * Fix tailscale_reauth role so it also ensures tailscale is installed
   * Change nodesource to use the nodistro codename
