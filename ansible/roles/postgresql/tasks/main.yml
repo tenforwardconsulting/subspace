@@ -50,7 +50,7 @@
   - name: Install psycopg2 (python3)
     when: is_python3 is succeeded
     become: yes
-    command: "pip3 install psycopg2"
+    command: "pip3 install psycopg2 --break-system-packages"
 
   - name: Install psycopg2 (python2)
     when: is_python3 is failed

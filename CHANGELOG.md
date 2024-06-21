@@ -12,6 +12,10 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.9
+ * Use pretty name for ubuntu version string
+ * break system packages for psycopg2
+
 ## 3.0.8
   * fix nodejs gpg key
 
