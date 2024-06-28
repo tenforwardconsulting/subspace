@@ -17,11 +17,31 @@
       - maintenance
       - tailscale_reauth
 
+  - name: "Un-pin tailscale version"
+    dpkg_selections:
+      name: "tailscale"
+      selection: install
+    when: tailscale_version is undefined
+    tags:
+      - maintenance
+      - tailscale_reauth
+
   - name: "Install tailscale from apt"
     apt:
-      name: tailscale
-      state: latest
+      default_release: stable
+      name: "tailscale={{tailscale_version}}"
+      state: present
       update_cache: yes
+      allow_downgrade: true
+    tags:
+      - maintenance
+      - tailscale_reauth
+
+  - name: "Pin tailscale version"
+    dpkg_selections:
+      name: "tailscale"
+      selection: hold
+    when: tailscale_version is defined
     tags:
       - maintenance
       - tailscale_reauth
