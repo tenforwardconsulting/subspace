@@ -12,6 +12,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.10
+ * Pin tailscale to known good version
+
 ## 3.0.9
  * Use pretty name for ubuntu version string
  * break system packages for psycopg2
