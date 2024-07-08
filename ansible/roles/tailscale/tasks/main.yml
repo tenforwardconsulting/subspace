@@ -17,6 +17,14 @@
       - maintenance
       - tailscale_reauth
 
+  - name: "Prevent tailscale from being upgraded"
+    dpkg_selections:
+      name: tailscale
+      selection: hold
+    tags:
+      - maintenance
+      - tailscale_reauth
+
   - name: "Install tailscale from apt"
     apt:
       name: tailscale=1.66.4
