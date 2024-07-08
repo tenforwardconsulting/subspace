@@ -12,6 +12,10 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.11
+  * Change tailscale pinning behavior to allow install, and then pin to specific version
+  * Fix psycopg2 break_system_packages to work across ubuntu/python versions
+
 ## 3.0.10
  * Pin tailscale to known good version
 

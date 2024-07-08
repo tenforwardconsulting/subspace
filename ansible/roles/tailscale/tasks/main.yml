@@ -17,10 +17,10 @@
       - maintenance
       - tailscale_reauth
 
-  - name: "Prevent tailscale from being upgraded"
+  - name: "Allow tailscale to be installed"
     dpkg_selections:
       name: tailscale
-      selection: hold
+      selection: install
     tags:
       - maintenance
       - tailscale_reauth
@@ -31,6 +31,14 @@
       state: present
       allow_downgrade: true
       update_cache: yes
+    tags:
+      - maintenance
+      - tailscale_reauth
+
+  - name: "Prevent tailscale from being upgraded"
+    dpkg_selections:
+      name: tailscale
+      selection: hold
     tags:
       - maintenance
       - tailscale_reauth
