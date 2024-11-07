@@ -25,7 +25,7 @@ class Subspace::Commands::Init < Subspace::Commands::Base
   end
 
   def run
-    if File.exists? dest_dir
+    if File.exist? dest_dir
       answer = ask "Subspace appears to be initialized.  Reply 'yes' to continue anyway: [no] "
       abort unless answer.chomp == "yes"
     else

@@ -29,7 +29,7 @@ class Subspace::Commands::Secrets < Subspace::Commands::Base
   end
 
   def create_local
-    if File.exists? File.join(project_path, "config/application.yml")
+    if File.exist? File.join(project_path, "config/application.yml")
       answer = ask "config/application.yml already exists. Reply 'yes' to overwrite: [no] "
       abort unless answer == "yes"
     end
