@@ -18,6 +18,7 @@
       - tailscale_reauth
 
   - name: "Allow tailscale to be installed"
+    ignore_errors: yes
     dpkg_selections:
       name: tailscale
       selection: install
@@ -27,18 +28,10 @@
 
   - name: "Install tailscale from apt"
     apt:
-      name: tailscale=1.66.4
+      name: tailscale
       state: present
       allow_downgrade: true
       update_cache: yes
-    tags:
-      - maintenance
-      - tailscale_reauth
-
-  - name: "Prevent tailscale from being upgraded"
-    dpkg_selections:
-      name: tailscale
-      selection: hold
     tags:
       - maintenance
       - tailscale_reauth

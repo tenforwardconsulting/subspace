@@ -12,6 +12,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.13
+  * Allow tailscale to update itself again; bug that required known good version pinning in 3.0.10 has been resolved.
+
 ## 3.0.12
   * Bugfix: use `exist?`
 
