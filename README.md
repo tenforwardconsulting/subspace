@@ -480,6 +480,23 @@ This will install a monit script that keeps sidekiq running.  We spawn one sidek
 
 Sidekiq uses redis by default, and rails connects to a redis running on localhost by default.  However, this role does not depend on redis since in production it's likely redis will be running elsewhere.  If you're provisioning a standalone server, make sure to include the redis role.
 
+## tailscale
+
+This installs/updates the Tailscale package, and adds/authenticates servers to the 10FW Tailnet.
+
+**Prerequesites:**
+- Create an auth key within tailscale, appropriately tagged & granted ACL access for the given project.
+- Add `tailscale_auth_key` to the secrets vault for the environment you wish to provision.
+
+**Recommendations:**
+
+At the top of `config/subspace/{env}.yml`, add a separate block to allow the tailscale role to execute before all other roles. When the tailscale package is updated, the ssh connection will be broken, and it's best to get this out of the way first thing during a maintain or provision.
+
+**Force Reauthentication:**
+
+To force authentication with the tailnet, use the following tag when provisioning:
+
+    subspace provision {env} --tags=tailscale_reauth`
 
 ## Other Internal Roles
 
