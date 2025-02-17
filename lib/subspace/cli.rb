@@ -46,7 +46,7 @@ class Subspace::Cli
     end
 
     command :bootstrap do |c|
-      c.syntax = 'subspace boostrap [host]'
+      c.syntax = 'subspace bootstrap [host]'
       c.summary = 'Install ansible requirements (python) and authorized_keys file'
       c.description = 'Ansible has very few dependencies, but python is one that is not installed by
       default on many linux images.  The bootstrap command will install python on a host as well as
