@@ -21,7 +21,6 @@ terraform {
 
 provider aws {
   region = "us-west-2"
-  profile = "subspace-<%= project_name %>"
   default_tags {
     tags = {
       Environment = "<%= @env %>"
