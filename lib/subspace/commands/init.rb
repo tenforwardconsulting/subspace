@@ -51,7 +51,7 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
     3. Bootstrap the new server
 
-      subspace boostrap #{@env}1
+      subspace bootstrap #{@env}1
 
     4. Inspect new environment
       - ensure the correct roles are present in #{@env}.yml
