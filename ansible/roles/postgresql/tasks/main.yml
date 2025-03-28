@@ -117,7 +117,7 @@
       body_format: json
       body:
         client_stat:
-          key: psql_version
+          stat_type: psql_version
           value: "{{stats_psql_version.stdout}}"
           hostname: "{{hostname}}"
     when: send_stats == true and stats_url is defined and stats_api_key is defined

@@ -14,6 +14,7 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## 3.0.14
   * Update oxenwagen template: remove profile, add final_snapshot_identifier
+  * Change key to stat_type for client stats
 
 ## 3.0.13
   * Allow tailscale to update itself again; bug that required known good version pinning in 3.0.10 has been resolved.
