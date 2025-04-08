@@ -6,10 +6,9 @@
     become: true
 
   - name: create license key
-    copy:
+    template:
       dest: "/etc/newrelic-infra.yml"
-      content: |
-        license_key: {{newrelic_license}}
+      src: newrelic-infra.yml.j2
 
   - name: Add New Relic apt repo
     apt_repository:
