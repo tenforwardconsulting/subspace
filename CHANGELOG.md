@@ -12,6 +12,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.15
+  * Add 'abbrev' gem as runtime dependency to fix issue when doing `subspace ssh {hostname}`
+
 ## 3.0.14
   * Update oxenwagen template: remove profile, add final_snapshot_identifier
   * Change key to stat_type for client stats
