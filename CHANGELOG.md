@@ -12,6 +12,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.16
+  * Ignore errors on getting rails version
+
 ## 3.0.15
   * Add 'abbrev' gem as runtime dependency to fix issue when doing `subspace ssh {hostname}`
 

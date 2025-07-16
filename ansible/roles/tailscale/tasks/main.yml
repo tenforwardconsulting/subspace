@@ -29,7 +29,7 @@
   - name: "Install tailscale from apt"
     apt:
       name: tailscale
-      state: present
+      state: latest
       allow_downgrade: true
       update_cache: yes
     tags:

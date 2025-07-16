@@ -138,7 +138,7 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
   def set_latest_ami
     @latest_ami = `aws --profile subspace-#{project_name} ec2 describe-images \
-    --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64*' \
+    --filters 'Name=name,Values=ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64*' \
     --query 'Images[*].[ImageId,CreationDate]' --output text \
     | sort -k2 -r \
     | head -n1 | cut -f1`.chomp

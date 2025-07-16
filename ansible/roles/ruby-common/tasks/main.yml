@@ -89,6 +89,7 @@
   tags:
     - maintenance
     - stats
+  ignore_errors: yes
 
 - name: Send Ruby stats to URL
   uri:
@@ -107,3 +108,4 @@
   tags:
     - maintenance
     - stats
+  ignore_errors: yes
