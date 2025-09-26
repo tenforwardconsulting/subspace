@@ -12,6 +12,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.17
+  * Fix update count when sending stats
+
 ## 3.0.16
   * Ignore errors on getting rails version
 
