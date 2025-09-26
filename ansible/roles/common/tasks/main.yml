@@ -146,7 +146,7 @@
   - name: Get os_upgrades stats
     shell:
       cmd: |
-        sed -n "/$(date '+%Y-%m')/,+2p" updates.log | # Groups of lines from the current month
+        awk -v month="$(date '+%Y-%m')" '/^\[/ {flag = ($0 ~ month)} flag && !/^\[/' updates.log | # Groups of lines from the current month
         grep 'packages\|immediately' | # Only lines matching 'packages' or 'immediately'
         grep -P -o '(^\d+)' | #Extract the numbers at the beginning of the lines
         awk '{s+=$1} END {print s}' # Sum all the lines
