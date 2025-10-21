@@ -12,6 +12,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.18
+  * Fix conditional when checking for newrelic_logs so that it returns a boolean instead of an integer
+
 ## 3.0.17
   * Fix update count when sending stats
 

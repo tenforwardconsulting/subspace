@@ -25,7 +25,7 @@
     become: true
 
   - name: Configure application log forwarding if enabled
-    when: "{{ newrelic_logs|length }}"
+    when: newrelic_logs | length > 0
     become: true
     template:
       dest: "/etc/newrelic-infra/logging.d/subspace.yml"
