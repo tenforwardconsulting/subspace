@@ -10,4 +10,4 @@ This server brought to you by:
 If you need to make configuration changes to the server, please modify the
 config/subspace directory in the app or risk the changes disappearing.
 
-Last subspace run: {{ansible_date_time.iso8601}}
+Last subspace run: {{ansible_facts["date_time"].iso8601}}

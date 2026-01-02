@@ -3,7 +3,7 @@
     apt:
       name: ['git', 'libffi-dev', 'libgmp3-dev', 'libpq-dev',  'libxslt-dev', 'zlib1g-dev']
     become: true
-    when: ('Ubuntu' in ansible_distribution)
+    when: ('Ubuntu' in ansible_facts["distribution"])
     tags:
       - maintenance
 
@@ -14,7 +14,7 @@
     tags:
       - maintenance
       - imagemagick
-    when: ('Ubuntu' in ansible_distribution)
+    when: ('Ubuntu' in ansible_facts["distribution"])
 
   - name: Update ImageMagick policy to enable reading PDF files
     lineinfile:
@@ -26,7 +26,7 @@
     tags:
       - maintenance
       - imagemagick
-    when: ('Ubuntu' in ansible_distribution)
+    when: ('Ubuntu' in ansible_facts["distribution"])
 
   - name: Create /u/apps/{{project_name}}/shared/config
     file:
