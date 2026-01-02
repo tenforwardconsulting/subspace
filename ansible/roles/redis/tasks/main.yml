@@ -6,7 +6,7 @@
 
   - name: Add redis repository into sources list
     ansible.builtin.apt_repository:
-      repo: deb https://packages.redis.io/deb {{ ansible_distribution_release }} main
+      repo: deb https://packages.redis.io/deb {{ ansible_facts["distribution_release"] }} main
       state: present
     register: redis_apt_repo
 

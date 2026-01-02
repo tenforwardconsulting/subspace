@@ -2,7 +2,7 @@
 - name: Update APT cache
   apt: update_cache=yes
   become: true
-  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  when: ansible_facts["distribution"] == 'Debian' or ansible_facts["distribution"] == 'Ubuntu'
 
 - name: Retrieve the number of cores that are available for compilation
   command: nproc
@@ -14,7 +14,7 @@
   with_items:
     - autoconf
     - build-essential
-  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  when: ansible_facts["distribution"] == 'Debian' or ansible_facts["distribution"] == 'Ubuntu'
 
 - name: Install yum prerequisite packages that are necessary to compile applications and gems with native extensions
   yum: name="{{ item }}"
@@ -22,20 +22,20 @@
   with_items:
     - autoconf
     - "@Developer tools"
-  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'Amazon'
+  when: ansible_facts["distribution"] == 'CentOS' or ansible_facts["distribution"] == 'Red Hat Enterprise Linux' or ansible_facts["distribution"] == 'Amazon'
 
 - name: Install APT Ruby dependencies
   become: true
   apt: pkg={{ item }}
        state=present
   with_items: "{{ ruby_apt_dependencies }}"
-  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  when: ansible_facts["distribution"] == 'Debian' or ansible_facts["distribution"] == 'Ubuntu'
 
 - name: Install yum Ruby dependencies
   become: true
   yum: name={{ item }}
   with_items: "{{ ruby_yum_dependencies }}"
-  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'Amazon'
+  when: ansible_facts["distribution"] == 'CentOS' or ansible_facts["distribution"] == 'Red Hat Enterprise Linux' or ansible_facts["distribution"] == 'Amazon'
 
 - name: Download the Ruby source code
   get_url: url={{ ruby_download_location }}
