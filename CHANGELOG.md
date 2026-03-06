@@ -12,6 +12,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.21
+  * Add gem-patch-report role. Sends stats for each vulnerable gem fixed since the start of the month.
+
 ## 3.0.20
   * Update postgresql-client role to get the actual psql database version instead of the local client version
 

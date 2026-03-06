@@ -1,0 +1,2 @@
+---
+gem_patch_report_app_path: "/u/apps/{{project_name}}/current"
