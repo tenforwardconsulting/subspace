@@ -1,0 +1,114 @@
+#!/bin/bash
+
+APP_PATH="{{ gem_patch_report_app_path }}"
+DEPLOY_DIR=$(cd "$APP_PATH" && cd .. && pwd)
+REPO_DIR="$DEPLOY_DIR/repo"
+TEMP_DIR="/tmp/gem-patch-report-$$"
+REPORT_FILE="$TEMP_DIR/report.json"
+OLD_AUDIT_FILE="$TEMP_DIR/audit_old.json"
+CURRENT_AUDIT_FILE="$TEMP_DIR/audit_current.json"
+OLD_GEMFILE_LOCK="$APP_PATH/Gemfile.lock.old"
+
+# Create temp directory
+mkdir -p "$TEMP_DIR"
+
+# Check if current Gemfile.lock exists
+if [ ! -f "$APP_PATH/Gemfile.lock" ]; then
+    echo '[]' > /tmp/gem-patch-report.json
+    rm -rf "$TEMP_DIR"
+    exit 0
+fi
+
+# Update bundle-audit advisory database
+cd "$APP_PATH"
+bundle exec bundle-audit update 2>/dev/null || true
+
+# Get old Gemfile.lock from the beginning of the month
+FIRST_OF_MONTH=$(date +"%Y-%m-01")
+OLD_COMMIT=$(git -c safe.directory="$REPO_DIR" --git-dir="$REPO_DIR" log --all --before="$FIRST_OF_MONTH" -1 --format="%H" -- Gemfile.lock 2>/dev/null)
+
+if [ -z "$OLD_COMMIT" ]; then
+    # No commit before this month, nothing to compare
+    echo '[]' > /tmp/gem-patch-report.json
+    rm -rf "$TEMP_DIR"
+    exit 0
+fi
+
+git -c safe.directory="$REPO_DIR" --git-dir="$REPO_DIR" show "${OLD_COMMIT}:Gemfile.lock" > "$OLD_GEMFILE_LOCK"
+
+# Run bundle-audit on the old Gemfile.lock
+# bundle-audit exits non-zero when vulnerabilities are found, so ignore the exit code
+bundle exec bundle-audit check --gemfile-lock Gemfile.lock.old --format json > "$OLD_AUDIT_FILE" 2>/dev/null || true
+
+# Run bundle-audit on current Gemfile.lock
+bundle exec bundle-audit check --format json > "$CURRENT_AUDIT_FILE" 2>/dev/null || true
+
+# Set environment variables for Ruby script
+export OLD_AUDIT_FILE="$OLD_AUDIT_FILE"
+export CURRENT_AUDIT_FILE="$CURRENT_AUDIT_FILE"
+export CURRENT_GEMFILE_LOCK="$APP_PATH/Gemfile.lock"
+
+# Generate patch report using Ruby
+ruby << 'RUBY' > "$REPORT_FILE"
+require 'json'
+require 'set'
+
+begin
+  old_audit = JSON.parse(File.read(ENV['OLD_AUDIT_FILE']))
+  current_audit = JSON.parse(File.read(ENV['CURRENT_AUDIT_FILE']))
+
+  old_results = old_audit['results'] || []
+  current_results = current_audit['results'] || []
+
+  # Build a set of current vulnerability keys (gem name + advisory id)
+  current_vuln_keys = current_results
+    .select { |r| r['type'] == 'unpatched_gem' && r['gem'] && r['advisory'] }
+    .map { |r| "#{r['gem']['name']}:#{r['advisory']['id']}" }
+    .to_set
+
+  # Parse current Gemfile.lock to get current gem versions
+  current_versions = {}
+  gemfile_lock = File.read(ENV['CURRENT_GEMFILE_LOCK']) rescue ''
+  in_specs = false
+  gemfile_lock.each_line do |line|
+    if line.strip == 'specs:'
+      in_specs = true
+      next
+    end
+    if in_specs
+      if line =~ /^\s{4}(\S+)\s+\(([^)]+)\)/
+        current_versions[$1] = $2
+      elsif line !~ /^\s/
+        in_specs = false
+      end
+    end
+  end
+
+  # Only include gems that were vulnerable at start of month but are now patched
+  patched_gems = old_results
+    .select { |r| r['type'] == 'unpatched_gem' && r['gem'] && r['advisory'] }
+    .reject { |r| current_vuln_keys.include?("#{r['gem']['name']}:#{r['advisory']['id']}") }
+    .map { |r|
+      {
+        'name' => r['gem']['name'],
+        'version' => r['gem']['version'],
+        'current_version' => current_versions[r['gem']['name']] || 'unknown',
+        'advisory_id' => r['advisory']['id'],
+        'criticality' => r['advisory']['criticality']
+      }
+    }
+    .sort_by { |g| [g['name'], g['advisory_id']] }
+
+  puts JSON.pretty_generate(patched_gems)
+
+rescue JSON::ParserError => e
+  puts '[]'
+rescue => e
+  puts '[]'
+end
+RUBY
+
+# Copy report to known location and clean up
+cp "$REPORT_FILE" /tmp/gem-patch-report.json
+rm -rf "$TEMP_DIR"
+rm -f "$OLD_GEMFILE_LOCK"

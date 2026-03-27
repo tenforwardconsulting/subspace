@@ -1,0 +1,89 @@
+---
+- name: Check if gem patch reporting is enabled and required variables are set
+  debug:
+    msg: "Gem patch reporting is enabled"
+  when: send_stats == true and stats_url is defined and stats_api_key is defined
+  tags:
+    - maintenance
+    - stats
+    - gem-patch-report
+
+- name: Install bundler-audit gem globally
+  gem:
+    name: bundler-audit
+    state: present
+    user_install: false
+  become: true
+  when: send_stats == true and stats_url is defined and stats_api_key is defined
+  tags:
+    - maintenance
+    - stats
+    - gem-patch-report
+
+- name: Generate gem patch report script
+  template:
+    src: gem-patch-report.sh.j2
+    dest: /tmp/gem-patch-report.sh
+    mode: '0755'
+  when: send_stats == true and stats_url is defined and stats_api_key is defined
+  tags:
+    - maintenance
+    - stats
+    - gem-patch-report
+
+- name: Run gem patch report script
+  shell: /tmp/gem-patch-report.sh
+  register: gem_patch_report_result
+  become: true
+  when: send_stats == true and stats_url is defined and stats_api_key is defined
+  tags:
+    - maintenance
+    - stats
+    - gem-patch-report
+  ignore_errors: yes
+
+- name: Read gem patch report file
+  slurp:
+    src: /tmp/gem-patch-report.json
+  register: gem_patch_report_file
+  when: send_stats == true and stats_url is defined and stats_api_key is defined
+  tags:
+    - maintenance
+    - stats
+    - gem-patch-report
+  ignore_errors: yes
+
+- name: Send gem patch report to stats server
+  uri:
+    url: "{{ stats_url }}"
+    method: POST
+    headers:
+      X-API-Version: 1
+      X-Client-Api-key: "{{ stats_api_key }}"
+    body_format: json
+    body:
+      client_stat:
+        stat_type: gem_patch_report
+        value: "{{ (gem_patch_report_file.content | b64decode) | from_json }}"
+        hostname: "{{ hostname }}"
+  when: send_stats == true and stats_url is defined and stats_api_key is defined and gem_patch_report_file is defined and gem_patch_report_file is not failed
+  tags:
+    - maintenance
+    - stats
+    - gem-patch-report
+  ignore_errors: yes
+
+- name: Clean up temporary gem patch report files
+  file:
+    path: "{{ item }}"
+    state: absent
+  become: true
+  loop:
+    - /tmp/gem-patch-report.sh
+    - /tmp/gem-patch-report.json
+  when: send_stats == true and stats_url is defined and stats_api_key is defined
+  tags:
+    - maintenance
+    - stats
+    - gem-patch-report
+  ignore_errors: yes
