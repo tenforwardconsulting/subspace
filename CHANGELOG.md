@@ -12,6 +12,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.20
+  * Update postgresql-client role to get the actual psql database version instead of the local client version
+
 ## 3.0.19
   * Fix ansible fact deprecations
 

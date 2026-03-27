@@ -85,9 +85,11 @@
     - db
     - deps
 
-- name: Grab Psql version
-  shell: psql --version
+- name: Grab PostgreSQL database version
+  shell: psql -h "{{database_host}}" -U "{{database_user}}" -d "{{database_name}}" -t -c "SELECT version();" | awk '{print $2}'
   register: stats_psql_version
+  environment:
+    PGPASSWORD: "{{database_password}}"
   when: send_stats == true and stats_url is defined and stats_api_key is defined
   tags:
     - maintenance
