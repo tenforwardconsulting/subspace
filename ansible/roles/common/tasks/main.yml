@@ -103,7 +103,7 @@
     become: true
 
   - name: apt-get update
-    apt: update_cache=yes cache_valid_time=86400
+    apt: update_cache=yes cache_valid_time=3600
     become: true
     tags:
       - upgrade
@@ -123,6 +123,7 @@
       name: systemd
       state: latest
       update_cache: yes
+      cache_valid_time: 3600
 
   - name: /usr/lib/update-notifier/apt-check --human-readable
     command: /usr/lib/update-notifier/apt-check --human-readable

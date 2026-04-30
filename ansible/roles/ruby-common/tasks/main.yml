@@ -1,6 +1,6 @@
 ---
 - name: Update APT cache
-  apt: update_cache=yes
+  apt: update_cache=yes cache_valid_time=3600
   become: true
   when: ansible_facts["distribution"] == 'Debian' or ansible_facts["distribution"] == 'Ubuntu'
 

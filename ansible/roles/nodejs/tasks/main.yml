@@ -18,7 +18,7 @@
   register: node_repo
 
 - name: Update apt cache if repo was added.
-  apt: update_cache=yes
+  apt: update_cache=yes cache_valid_time=3600
   when: node_repo.changed
 
 - name: Ensure Node.js and npm are installed.

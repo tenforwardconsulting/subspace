@@ -12,6 +12,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.23
+  * Add cache_valid_time to apt update_cache calls across roles to avoid redundant apt updates during provision
+
 ## 3.0.22
   * Switch nginx from ppa:ondrej/nginx to official nginx.org repository.
 
