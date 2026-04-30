@@ -12,6 +12,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.0.22
+  * Switch nginx from ppa:ondrej/nginx to official nginx.org repository.
+
 ## 3.0.21
   * Add gem-patch-report role. Sends stats for each vulnerable gem fixed since the start of the month.
 
