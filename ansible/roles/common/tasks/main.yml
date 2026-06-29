@@ -62,46 +62,6 @@
     tags:
       - maintenance
 
-  - name: Remove ppa:ondrej/nginx apt repository
-    apt_repository:
-      repo: ppa:ondrej/nginx
-      state: absent
-    become: true
-
-  - name: Install nginx repo prerequisites
-    apt:
-      pkg:
-        - curl
-        - gnupg2
-        - ca-certificates
-        - lsb-release
-        - ubuntu-keyring
-      state: present
-    become: true
-
-  - name: Import official nginx signing key
-    shell: curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor > /usr/share/keyrings/nginx-archive-keyring.gpg
-    args:
-      creates: /usr/share/keyrings/nginx-archive-keyring.gpg
-    become: true
-
-  - name: Add official nginx.org stable apt repository
-    apt_repository:
-      repo: "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://nginx.org/packages/ubuntu {{ ansible_distribution_release }} nginx"
-      filename: nginx
-      state: present
-    become: true
-
-  - name: Pin nginx.org packages over distribution packages
-    copy:
-      content: |
-        Package: *
-        Pin: origin nginx.org
-        Pin: release o=nginx
-        Pin-Priority: 900
-      dest: /etc/apt/preferences.d/99nginx
-    become: true
-
   - name: apt-get update
     apt: update_cache=yes cache_valid_time=3600
     become: true
@@ -124,6 +84,17 @@
       state: latest
       update_cache: yes
       cache_valid_time: 3600
+
+  - name: Install custom apt repo prerequisites
+    apt:
+      pkg:
+        - curl
+        - gnupg2
+        - ca-certificates
+        - lsb-release
+        - ubuntu-keyring
+      state: present
+    become: true
 
   - name: /usr/lib/update-notifier/apt-check --human-readable
     command: /usr/lib/update-notifier/apt-check --human-readable

@@ -1,24 +1,34 @@
 ---
   - set_fact: postgresql_installed="true"
 
-  - name: Adding APT repository key
-    become: yes
-    apt_key:
-      id: ACCC4CF8
-      url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
-    tags:
-      - postgresql
-      - db
-      - repo
-
   - name: Add PostgreSQL official APT repository
-    become: yes
-    apt_repository:
-      repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ansible_facts[\"distribution_release\"]}}-pgdg main"
-    tags:
-      - postgresql
-      - db
-      - repo
+    ansible.builtin.deb822_repository:
+      name: postgresql
+      types: [deb]
+      uris: "http://apt.postgresql.org/pub/repos/apt/"
+      components: [binary]
+      signed_by: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+      state: present
+      enabled: true
+
+  # - name: Adding APT repository key
+  #   become: yes
+  #   apt_key:
+  #     id: ACCC4CF8
+  #     url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+  #   tags:
+  #     - postgresql
+  #     - db
+  #     - repo
+
+  # - name: Add PostgreSQL official APT repository
+  #   become: yes
+  #   apt_repository:
+  #     repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ansible_facts[\"distribution_release\"]}}-pgdg main"
+  #   tags:
+  #     - postgresql
+  #     - db
+  #     - repo
 
   - name: Install PostgreSQL
     become: yes
