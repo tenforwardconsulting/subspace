@@ -3,10 +3,18 @@
     name: nginx
     types: [deb]
     uris: "https://nginx.org/packages/ubuntu"
-    components: [binary]
+    components: [nginx]
+    suites: [ "{{ ansible_facts['distribution_release'] }}" ]
     signed_by: https://nginx.org/keys/nginx_signing.key
     state: present
     enabled: true
+  register: nginx_apt
+
+- name: Update package cache if nginx repo was added
+  become: yes
+  when: nginx_apt.changed
+  apt:
+    update_cache: yes
 
 - name: Pin nginx.org packages over distribution packages
   copy:

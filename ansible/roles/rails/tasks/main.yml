@@ -16,9 +16,17 @@
       - imagemagick
     when: ('Ubuntu' in ansible_facts["distribution"])
 
+  - name: Find ImageMagick config directory
+    stat:
+      path: /etc/ImageMagick-7/policy.xml
+    tags:
+      - maintenance
+      - imagemagick
+    register: imagemagick7
+
   - name: Update ImageMagick policy to enable reading PDF files
     lineinfile:
-      path: /etc/ImageMagick-6/policy.xml
+      path: /etc/ImageMagick-{{ imagemagick7.stat.exists | ternary('7', '6') }}/policy.xml
       regexp: '<policy domain="coder" rights="none" pattern="PDF" />'
       line: '  <policy domain="coder" rights="read" pattern="PDF" />'
       backrefs: yes
@@ -26,7 +34,7 @@
     tags:
       - maintenance
       - imagemagick
-    when: ('Ubuntu' in ansible_facts["distribution"])
+
 
   - name: Create /u/apps/{{project_name}}/shared/config
     file:

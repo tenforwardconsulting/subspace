@@ -4,10 +4,18 @@
       name: newrelic
       types: [deb]
       uris: "https://download.newrelic.com/infrastructure_agent/linux/apt/"
-      components: [binary]
+      components: [main]
+      suites: [ "{{ ansible_facts['distribution_release'] }}" ]
       signed_by: https://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg
       state: present
       enabled: true
+    register: newrelic_apt
+
+  - name: Update package cache if nginx repo was added
+    become: yes
+    when: newrelic_apt.changed
+    apt:
+      update_cache: yes
 
   - name: create license key
     copy:
