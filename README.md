@@ -414,6 +414,9 @@ This role will generate a reasonable `puma.rb` and configure it to be controlled
     puma_min_threads: 4    # Min threads/process
     puma_max_threads: 16   # Max threads/process
 
+    puma_max_memory: 1.5G  # Use cgroups via systemd to limit memory
+    puma_max_cpu: 80%      # Use cgroups via systemd to set a CPU quota
+
 ## rails
 
 Provisions for a rails app.  This one is probably pretty important.

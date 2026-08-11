@@ -12,6 +12,12 @@ After=network.target
 # On earlier versions of Puma or JRuby, change this to `Type=simple` and remove
 # the `WatchdogSec` line.
 Type=simple
+{% if puma_max_memory is defined %}
+MemoryMax={{puma_max_memory}}
+{% endif %}
+{% if puma_max_cpu is defined %}
+CPUQuota={{puma_max_cpu}}
+{% endif %}
 
 # If your Puma process locks up, systemd's watchdog will restart it within seconds.
 # WatchdogSec=10

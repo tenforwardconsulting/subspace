@@ -1,3 +1,8 @@
+- name: Remove old nginx repo if prseent (Pre subspace-3.1)
+  ansible.builtin.file:
+    path: /etc/apt/sources.d/nginx.list
+    state: absent
+
 - name: Add official Nginx repo
   ansible.builtin.deb822_repository:
     name: nginx

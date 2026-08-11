@@ -1,21 +1,17 @@
 ---
-  - name: Add an Apt signing key for redis repo
-    ansible.builtin.apt_key:
-      url: https://packages.redis.io/gpg
-      state: present
-
-  - name: Add redis repository into sources list
-    ansible.builtin.apt_repository:
-      repo: deb https://packages.redis.io/deb {{ ansible_facts["distribution_release"] }} main
-      state: present
-    register: redis_apt_repo
-
-  - name: Purge distro redis package
-    apt:
-      name: redis-server
+  - name: Remove old redis repo if present (Pre subspace 3.1)
+    ansible.builtin.file:
+      path: /etc/apt/sources.list.d/packages_redis_io_deb.list
       state: absent
-      purge: true
-    when: redis_apt_repo.changed
+
+  - name: Add official redis repo
+    ansible.builtin.deb822_repository:
+      name: redis
+      types: [deb]
+      uris: "https://packages.redis.io/deb"
+      components: [main]
+      suites: [ "{{ ansible_facts['distribution_release'] }}" ]
+      signed_by: https://packages.redis.io/gpg
 
   - name: Install Redis from official repo
     become: true
