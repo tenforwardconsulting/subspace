@@ -104,8 +104,6 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
   def init_terraform
     Subspace::Commands::Terraform.ensure_terraform
-    Subspace::Commands::Terraform.check_aws_credentials(project_name)
-
     FileUtils.mkdir_p File.join dest_dir, "terraform", @env
 
     set_latest_ami

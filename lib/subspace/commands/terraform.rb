@@ -2,28 +2,6 @@ require 'json'
 module Subspace
   module Commands
     class Terraform < Subspace::Commands::Base
-
-      def self.check_aws_credentials(project_name)
-        ENV["AWS_ACCESS_KEY_ID"] = nil
-        ENV["AWS_SECRET_ACCESS_KEY"] = nil
-
-        profile = "subspace-#{project_name}"
-
-        system("aws --profile #{profile} configure list &> /dev/null ")
-        if $? != 0
-          puts "No AWS Profile '#{profile}' configured.  Please enter your credentials."
-          system("aws --profile #{profile} configure")
-          system("aws --profile #{profile} configure list &> /dev/null ")
-          if $? != 0
-            puts "FATAL: could not configure aws.  Please try again"
-            exit
-          end
-        else
-          puts "Using AWS Profile #{profile}"
-        end
-        true
-      end
-
       def self.ensure_terraform
         if `terraform -v --json | jq -r .terraform_version` =~ /1\.\d+/
           puts "Terraform found."
@@ -42,8 +20,8 @@ module Subspace
       end
 
       def run
-        self.class.check_aws_credentials(project_name) or exit
         self.class.ensure_terraform or exit
+        check_aws_credentials or exit
         if @args.any?
           terraform_command(@args.shift, *@args)
         else
@@ -77,6 +55,34 @@ module Subspace
         end
         inventory.merge(@output)
         inventory.write
+      end
+
+      def check_aws_credentials
+        Dir.chdir "config/subspace/terraform/#{@env}" do
+          if File.read("./main.tf") =~ /^\s+cloud {$/
+            puts "Detected terraform cloud, skipping credential check"
+            return true
+          end
+        end
+
+        ENV["AWS_ACCESS_KEY_ID"] = nil
+        ENV["AWS_SECRET_ACCESS_KEY"] = nil
+
+        profile = "subspace-#{project_name}"
+
+        system("aws --profile #{profile} configure list &> /dev/null ")
+        if $? != 0
+          puts "No AWS Profile '#{profile}' configured.  Please enter your credentials."
+          system("aws --profile #{profile} configure")
+          system("aws --profile #{profile} configure list &> /dev/null ")
+          if $? != 0
+            puts "FATAL: could not configure aws.  Please try again"
+            exit
+          end
+        else
+          puts "Using AWS Profile #{profile}"
+        end
+        true
       end
     end
   end
