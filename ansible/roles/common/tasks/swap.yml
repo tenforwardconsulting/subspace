@@ -9,21 +9,45 @@
     path: /swapfile
   register: swap_file_check
 
+- name: Check if size changed
+  set_fact:
+    swap_size_changed: "{{ ( swap_file_check.stat.exists and (swap_space | human_to_bytes) != swap_file_check.stat.size ) | bool }}"
+
+- debug:
+    msg: "Swap file size changed! Current: {{swap_file_check.stat.size}}, requested: {{swap_space}} ({{ swap_space | human_to_bytes }})"
+  when: swap_size_changed
+
+- name: (Swap Size Changed) Turn off swap
+  become: true
+  command: swapoff -a
+  when: swap_size_changed
+
+- name: (Swap Size Changed) delete old swap file
+  become: true
+  file:
+    path: /swapfile
+    state: absent
+  when: swap_size_changed
+
+- set_fact:
+    create_new_swap: "{{ not swap_file_check.stat.exists or swap_size_changed }}"
+
 - name: create swap file
   become: true
   command: fallocate -l {{ swap_space }} /swapfile
-  when: not swap_file_check.stat.exists
+  when: create_new_swap
 
 - name: set permissions on swap file
   become: true
   file:
     path: /swapfile
     mode: 0600
+  when: create_new_swap
 
 - name: format swap file
   become: true
   command: mkswap /swapfile
-  when: not swap_file_check.stat.exists
+  when: create_new_swap
 
 - name: add to fstab
   become: true

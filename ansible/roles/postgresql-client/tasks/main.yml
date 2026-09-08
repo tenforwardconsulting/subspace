@@ -1,29 +1,23 @@
 ---
-# Official PostgreSQL [repository] for debian-based distributions
-# [repository]: http://www.postgresql.org/download/
-- name: Adding APT repository key
-  when: ansible_facts["os_family"] == 'Debian'
-  become: yes
-  apt_key:
-    id: ACCC4CF8
-    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
-  tags:
-    - postgresql
-    - db
-    - repo
-
 - name: Add PostgreSQL official APT repository
-  when: ansible_facts["os_family"] == 'Debian'
-  become: yes
-  apt_repository:
-    repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ansible_facts[\"distribution_release\"]}}-pgdg main"
-  tags:
-    - postgresql
-    - db
-    - repo
+  ansible.builtin.deb822_repository:
+    name: postgresql
+    types: [deb]
+    uris: "http://apt.postgresql.org/pub/repos/apt/"
+    suites: [ "{{ ansible_facts['distribution_release'] }}-pgdg" ]
+    components: [main]
+    signed_by: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+    enabled: true
+  register: pg_apt
 
-- name: Install PostgreSQL
-  when: ansible_facts["os_family"] == 'Debian'
+- name: Update package cache if PG repo was added
+  become: yes
+  when: pg_apt.changed
+  apt:
+    update_cache: yes
+
+- name: Install PostgreSQL Client
   become: yes
   apt:
     name: "postgresql-client-{{postgresql_version}}"
@@ -36,7 +30,6 @@
     - deps
 
 - name: Install libpq-dev
-  when: ansible_facts["os_family"] == 'Debian'
   become: yes
   apt:
     name: "libpq-dev"
@@ -48,12 +41,7 @@
     - db
     - deps
 
-- name: "Detect python3"
-  shell: "which python3"
-  register: is_python3
-
-- name: Ensure pip is installed (python3)
-  when: is_python3 is succeeded
+- name: Ensure pip is installed
   apt:
     name: python3-pip
     state: present
@@ -64,23 +52,11 @@
     - db
     - deps
 
-- name: Install psycopg2 (python3)
-  when: is_python3 is succeeded
+- name: Install psycopg2
   become: yes
   pip:
     name: psycopg2
     break_system_packages: true
-  tags:
-    - postgresql
-    - db
-    - deps
-
-- name: Install psycopg2 (python2)
-  when: is_python3 is failed
-  become: yes
-  apt:
-    name: python-psycopg2
-    state: latest
   tags:
     - postgresql
     - db

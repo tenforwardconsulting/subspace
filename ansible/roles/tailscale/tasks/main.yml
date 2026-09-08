@@ -1,21 +1,18 @@
 ---
-  - name: "Add Tailscale apt key"
-    become: true
-    apt_key:
-      url: https://pkgs.tailscale.com/stable/ubuntu/{{ansible_facts["distribution_release"]}}.gpg
-      state: present
-    tags:
-      - maintenance
-      - tailscale_reauth
+  - name: Remove old redis repo if present (Pre subspace 3.1)
+    ansible.builtin.file:
+      path: /etc/apt/sources.list.d/pkgs_tailscale_com_stable_ubuntu.list
+      state: absent
 
-  - name: "Add Tailscale apt repos"
-    become: true
-    apt_repository:
-      repo: "deb https://pkgs.tailscale.com/stable/ubuntu {{ansible_facts[\"distribution_release\"]}} main"
-      state: present
-    tags:
-      - maintenance
-      - tailscale_reauth
+  - name: Add official tailscale apt repo
+    ansible.builtin.deb822_repository:
+      name: tailscale
+      types: [deb]
+      uris: "https://pkgs.tailscale.com/stable/ubuntu"
+      components: [main]
+      suites: [ "{{ ansible_facts['distribution_release'] }}" ]
+      signed_by: https://pkgs.tailscale.com/stable/ubuntu/{{ansible_facts["distribution_release"]}}.gpg
+
 
   - name: "Allow tailscale to be installed"
     ignore_errors: yes

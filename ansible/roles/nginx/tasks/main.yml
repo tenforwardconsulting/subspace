@@ -1,12 +1,34 @@
-- name: Remove ondrej nginx packages before switching to official repo
-  apt:
-    pkg:
-      - nginx
-      - nginx-common
-      - nginx-core
-      - nginx-full
+- name: Remove old nginx repo if prseent (Pre subspace-3.1)
+  ansible.builtin.file:
+    path: /etc/apt/sources.d/nginx.list
     state: absent
-    purge: no
+
+- name: Add official Nginx repo
+  ansible.builtin.deb822_repository:
+    name: nginx
+    types: [deb]
+    uris: "https://nginx.org/packages/ubuntu"
+    components: [nginx]
+    suites: [ "{{ ansible_facts['distribution_release'] }}" ]
+    signed_by: https://nginx.org/keys/nginx_signing.key
+    state: present
+    enabled: true
+  register: nginx_apt
+
+- name: Update package cache if nginx repo was added
+  become: yes
+  when: nginx_apt.changed
+  apt:
+    update_cache: yes
+
+- name: Pin nginx.org packages over distribution packages
+  copy:
+    content: |
+      Package: *
+      Pin: origin nginx.org
+      Pin: release o=nginx
+      Pin-Priority: 900
+    dest: /etc/apt/preferences.d/99nginx
   become: true
 
 - name: Install nginx from official repo

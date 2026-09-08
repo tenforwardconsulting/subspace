@@ -1,30 +1,29 @@
 ---
   - set_fact: postgresql_installed="true"
 
-  - name: Adding APT repository key
-    become: yes
-    apt_key:
-      id: ACCC4CF8
-      url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
-    tags:
-      - postgresql
-      - db
-      - repo
-
   - name: Add PostgreSQL official APT repository
+    ansible.builtin.deb822_repository:
+      name: postgresql
+      types: [deb]
+      uris: "http://apt.postgresql.org/pub/repos/apt/"
+      suites: [ "{{ ansible_facts['distribution_release'] }}-pgdg" ]
+      components: [main]
+      signed_by: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+      state: present
+      enabled: true
+    register: pg_apt
+
+  - name: Update package cache if PG repo was added
     become: yes
-    apt_repository:
-      repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ansible_facts[\"distribution_release\"]}}-pgdg main"
-    tags:
-      - postgresql
-      - db
-      - repo
+    when: pg_apt.changed
+    apt:
+      update_cache: yes
 
   - name: Install PostgreSQL
     become: yes
     apt:
       name: "{{item}}"
-      state: present
+      state: latest
       update_cache: yes
       cache_valid_time: 3600
     with_items:
@@ -40,27 +39,18 @@
     shell: "which python3"
     register: is_python3
 
-  - name: Ensure pip is installed (python3)
-    when: is_python3 is succeeded
+  - name: Ensure pip is installed
     apt:
       name: python3-pip
       state: present
       update_cache: yes
       cache_valid_time: 3600
 
-  - name: Install psycopg2 (python3)
-    when: is_python3 is succeeded
+  - name: Install psycopg2
     become: yes
     pip:
       name: psycopg2
       break_system_packages: true
-
-  - name: Install psycopg2 (python2)
-    when: is_python3 is failed
-    become: yes
-    apt:
-      name: python-psycopg2
-      state: latest
 
   - name: Create postgresql user
     postgresql_user:

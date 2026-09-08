@@ -1,40 +1,19 @@
 ---
-
-- name: "Yarn | GPG"
-  become: yes
-  become_user: root
-  apt_key:
-    url: https://dl.yarnpkg.com/debian/pubkey.gpg
+- name: Add Yarn official APT repository
+  ansible.builtin.deb822_repository:
+    name: yarn
+    types: [deb]
+    uris: "http://dl.yarnpkg.com/debian/"
+    components: [main]
+    suites: [stable]
+    signed_by: https://dl.yarnpkg.com/debian/pubkey.gpg
     state: present
+    enabled: true
 
-- name: "Yarn | Ensure Debian sources list file exists"
-  become: yes
-  become_user: root
-  file:
-    path: /etc/apt/sources.list.d/yarn.list
-    owner: root
-    mode: 0644
-    state: touch
-
-- name: "Yarn | Ensure Debian package is in sources list"
-  become: yes
-  become_user: root
-  lineinfile:
-    dest: /etc/apt/sources.list.d/yarn.list
-    regexp: 'deb http://dl.yarnpkg.com/debian/ stable main'
-    line: 'deb http://dl.yarnpkg.com/debian/ stable main'
-    state: present
-
-- name: "Yarn | Update APT cache"
+- name: "Install yarn from official repo"
   become: yes
   become_user: root
   apt:
-    update_cache: yes
-    cache_valid_time: 3600
-
-- name: "Yarn | Install"
-  become: yes
-  become_user: root
-  package:
-    name: yarn
+    pkg: yarn
     state: latest
+    update_cache: yes

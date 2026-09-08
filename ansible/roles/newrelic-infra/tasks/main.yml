@@ -1,21 +1,27 @@
 ---
-  - name: Add New Relic apt key
-    apt_key:
-      url: https://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg
+  - name: Add NewRelic official APT repository
+    ansible.builtin.deb822_repository:
+      name: newrelic
+      types: [deb]
+      uris: "https://download.newrelic.com/infrastructure_agent/linux/apt/"
+      components: [main]
+      suites: [ "{{ ansible_facts['distribution_release'] }}" ]
+      signed_by: https://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg
       state: present
-    become: true
+      enabled: true
+    register: newrelic_apt
+
+  - name: Update package cache if nginx repo was added
+    become: yes
+    when: newrelic_apt.changed
+    apt:
+      update_cache: yes
 
   - name: create license key
     copy:
       dest: "/etc/newrelic-infra.yml"
       content: |
         license_key: {{newrelic_license}}
-
-  - name: Add New Relic apt repo
-    apt_repository:
-      repo: deb [arch=amd64] https://download.newrelic.com/infrastructure_agent/linux/apt focal main
-      state: present
-    become: true
 
   - name: Install New Relic server agent
     apt:

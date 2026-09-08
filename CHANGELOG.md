@@ -12,6 +12,12 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+
+## 3.1.0
+  * BREAKING: No longer manually removes the ppa:ondrej/ngnix repo from the machine.  This will break if you upgrade from pre-3.0.22 directly to 3.1
+  * BREAKING: Removed support for Python2 on remote hosts, Python3 is required
+  * Changes to newer ansible.buildtin.deb822_repository calls to fix deprecation warnings
+
 ## 3.0.24
   * Update certbot url
 
