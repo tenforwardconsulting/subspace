@@ -12,6 +12,8 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 3.1.1
+  * Always ignore Client-IP header in nginx-rails
 
 ## 3.1.0
   * BREAKING: No longer manually removes the ppa:ondrej/ngnix repo from the machine.  This will break if you upgrade from pre-3.0.22 directly to 3.1
