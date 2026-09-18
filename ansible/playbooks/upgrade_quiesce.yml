@@ -1,0 +1,28 @@
+---
+# Stops the app and every background worker.
+- name: Stop puma and the workers
+  hosts: "{{ upgrade_host }}"
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Stop puma
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+      loop:
+        - puma.socket
+        - puma.service
+      failed_when: false
+
+    - name: Find the worker services
+      shell: >-
+        systemctl list-unit-files --type=service --no-legend
+        'sidekiq*' 'resque*' 'delayed_job*' | awk '{print $1}'
+      changed_when: false
+      register: worker_units
+
+    - name: Stop the worker services
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+      loop: "{{ worker_units.stdout_lines }}"

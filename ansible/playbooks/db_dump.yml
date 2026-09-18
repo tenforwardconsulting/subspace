@@ -1,0 +1,23 @@
+---
+# Takes a pg_dump off a host and brings it down to the operator's machine.  This is the
+# artifact that survives every possible mistake in the rest of an upgrade.
+- name: Back up the database
+  hosts: "{{ upgrade_host }}"
+  gather_facts: false
+  tasks:
+    - name: Dump the database
+      become: true
+      become_user: postgres
+      command: pg_dump -Fc --no-owner --no-acl -f /tmp/{{ database_name }}.dump {{ database_name }}
+
+    - name: Fetch the dump
+      fetch:
+        src: /tmp/{{ database_name }}.dump
+        dest: "{{ db_dump_dest }}"
+        flat: true
+
+    - name: Remove the dump from the server
+      become: true
+      file:
+        path: /tmp/{{ database_name }}.dump
+        state: absent

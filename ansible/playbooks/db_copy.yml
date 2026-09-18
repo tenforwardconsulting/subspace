@@ -1,0 +1,119 @@
+---
+# Copies a postgres database from one host to another.  Driven by `subspace db_copy`,
+# which resolves db_copy_destination_ip from terraform; every credential comes from
+# group_vars and the vault.
+- name: Report the postgres version on both hosts
+  hosts: "{{ db_copy_source }}:{{ db_copy_destination }}"
+  gather_facts: false
+  become: true
+  become_user: postgres
+  tasks:
+    - name: Select version()
+      command: psql -tAc "SELECT version()"
+      changed_when: false
+      register: postgres_version
+
+    - name: Report the version
+      debug:
+        msg: "{{ inventory_hostname }}: {{ postgres_version.stdout }}"
+
+- name: Refuse to copy from a server that is still serving traffic
+  hosts: "{{ db_copy_source }}"
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Look for the maintenance page
+      stat:
+        path: /opt/subspace/maintenance.html
+      register: maintenance_page
+
+    - name: Check whether puma is running
+      command: systemctl is-active puma.service
+      changed_when: false
+      failed_when: false
+      register: puma
+
+    - name: Assert the source is quiesced
+      assert:
+        that:
+          - maintenance_page.stat.exists
+          - puma.stdout != "active"
+        fail_msg: >-
+          {{ inventory_hostname }} is not quiesced (maintenance page
+          {{ "present" if maintenance_page.stat.exists else "absent" }}, puma {{ puma.stdout }}).
+          Turn maintenance mode on and stop puma and the workers first.  If the page is
+          absent because this app has no public/maintenance.html, add one and deploy it --
+          subspace needs it to keep users out while the database moves.  Pass --force to
+          copy anyway.
+      when: not db_copy_force
+
+- name: Refuse to overwrite a database that already holds data
+  hosts: "{{ db_copy_destination }}"
+  gather_facts: false
+  become: true
+  become_user: postgres
+  tasks:
+    - name: Count the tables holding rows
+      command: >-
+        psql -tAd {{ database_name }} -c
+        "SELECT count(*) FROM pg_stat_user_tables WHERE n_live_tup > 0"
+      changed_when: false
+      register: populated_tables
+
+    - name: Assert the destination is empty
+      assert:
+        that: populated_tables.stdout | int == 0
+        fail_msg: >-
+          {{ database_name }} on {{ inventory_hostname }} already holds data in
+          {{ populated_tables.stdout }} tables.  Pass --force to overwrite it.
+      when: not db_copy_force
+
+- name: Stream the database across
+  hosts: "{{ db_copy_source }}"
+  gather_facts: false
+  vars:
+    destination: "{{ hostvars[db_copy_destination] }}"
+    ssh_options: -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null
+  tasks:
+    # Straight between the two instances over the private network, using the operator's
+    # forwarded agent so no server-to-server credential is ever created.
+    - name: Dump and restore directly between the instances
+      shell: >-
+        set -o pipefail &&
+        sudo -u postgres pg_dump -Fc --no-owner --no-acl {{ database_name }}
+        | ssh {{ ssh_options }} {{ destination.ansible_user }}@{{ db_copy_destination_ip }}
+        'sudo -u postgres pg_restore --clean --if-exists --no-owner --no-acl -d {{ destination.database_name }}'
+      args:
+        executable: /bin/bash
+      when: not db_copy_via_local
+
+    - name: Dump and restore through the operator's machine
+      delegate_to: localhost
+      shell: >-
+        set -o pipefail &&
+        ssh {{ ssh_options }} -i {{ ansible_ssh_private_key_file | default("subspace.pem") }}
+        {{ ansible_user }}@{{ ansible_host }}
+        'sudo -u postgres pg_dump -Fc --no-owner --no-acl {{ database_name }}'
+        | ssh {{ ssh_options }} -i {{ destination.ansible_ssh_private_key_file | default("subspace.pem") }}
+        {{ destination.ansible_user }}@{{ destination.ansible_host }}
+        'sudo -u postgres pg_restore --clean --if-exists --no-owner --no-acl -d {{ destination.database_name }}'
+      args:
+        executable: /bin/bash
+      when: db_copy_via_local
+
+- name: Report row counts on both sides
+  hosts: "{{ db_copy_source }}:{{ db_copy_destination }}"
+  gather_facts: false
+  become: true
+  become_user: postgres
+  tasks:
+    - name: Count rows in the largest tables
+      command: >-
+        psql -tAd {{ database_name }} -c
+        "SELECT relname, n_live_tup FROM pg_stat_user_tables ORDER BY n_live_tup DESC LIMIT 10"
+      changed_when: false
+      register: row_counts
+
+    - name: Report the row counts
+      debug:
+        msg: "{{ inventory_hostname }}: {{ row_counts.stdout_lines }}"

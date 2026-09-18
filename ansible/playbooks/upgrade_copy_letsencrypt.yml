@@ -1,0 +1,48 @@
+---
+# Moves the existing certificates to the new host so TLS works the instant the elastic IP
+# moves, and certbot just renews on its normal schedule.
+- name: Archive /etc/letsencrypt from the old host
+  hosts: "{{ upgrade_host }}"
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Create the archive
+      command: tar czf /tmp/letsencrypt.tar.gz -C /etc letsencrypt
+
+    - name: Fetch the archive
+      fetch:
+        src: /tmp/letsencrypt.tar.gz
+        dest: "{{ letsencrypt_archive }}"
+        flat: true
+
+    - name: Remove the archive from the old host
+      file:
+        path: /tmp/letsencrypt.tar.gz
+        state: absent
+
+- name: Unpack /etc/letsencrypt on the new host
+  hosts: "{{ letsencrypt_destination }}"
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Upload the archive
+      copy:
+        src: "{{ letsencrypt_archive }}"
+        dest: /tmp/letsencrypt.tar.gz
+        mode: "0600"
+
+    - name: Unpack it
+      unarchive:
+        src: /tmp/letsencrypt.tar.gz
+        dest: /etc
+        remote_src: true
+
+    - name: Remove the archive
+      file:
+        path: /tmp/letsencrypt.tar.gz
+        state: absent
+
+    - name: Reload nginx so it picks up the certificates
+      systemd:
+        name: nginx
+        state: reloaded

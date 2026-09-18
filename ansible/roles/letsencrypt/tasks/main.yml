@@ -5,6 +5,7 @@
       pkg: nginx
       state: present
     when: "'nginx' in role_names"
+    tags: letsencrypt
 
   - name: Attempt to install certbot from APT
     become: true
@@ -12,19 +13,23 @@
     apt:
       pkg: certbot
       state: present
+    tags: letsencrypt
 
   - name: "Detect if certbot was installed via APT"
     shell: dpkg-query -W 'certbot'
     ignore_errors: true
     register: apt_certbot
+    tags: letsencrypt
 
   - name: "Modern Letsencrypt Installation (py3, apt version)"
     include_tasks: modern.yml
     when: apt_certbot is succeeded
+    tags: letsencrypt
 
   - name: "Legacy Letsencrypt Installation (py2, from source)"
     include_tasks: legacy.yml
     when: apt_certbot is failed
+    tags: letsencrypt
 
 # Post install configuration
 
@@ -32,6 +37,7 @@
     debug: msg="Shutdown webserver"
     notify: stop webserver
     changed_when: true
+    tags: letsencrypt
 
   - meta: flush_handlers
 
@@ -40,6 +46,7 @@
       port: 80
       delay: 1
       state: stopped
+    tags: letsencrypt
 
   - name: Generate SSL Certificate
     become: true
@@ -60,23 +67,27 @@
         - "--agree-tos"
         - "--expand"
         - "--non-interactive"
+    tags: letsencrypt
 
   - name: Update nginx default options
     when: "'nginx' in role_names"
     get_url:
       url: https://raw.githubusercontent.com/certbot/certbot/main/certbot/src/certbot/_internal/plugins/nginx/tls_configs/options-ssl-nginx.conf
       dest: /etc/letsencrypt/options-ssl-nginx.conf
+    tags: letsencrypt
 
   - name: start webserver after standalone mode
     debug: msg="Startup webserver"
     notify: start webserver
     changed_when: true
+    tags: letsencrypt
 
   - name: Set path at top of crontab
     cron:
       name: PATH
       env: yes
       job: /usr/bin:/bin:/usr/sbin
+    tags: letsencrypt
 
   - name: Setup cron job to auto renew
     become: true
@@ -87,3 +98,4 @@
       hour: "0"
       minute: "33"
       state: present
+    tags: letsencrypt
