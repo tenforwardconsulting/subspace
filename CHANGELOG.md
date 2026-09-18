@@ -11,7 +11,11 @@ This project attempts to follow [semantic versioning](https://semver.org/).
   * Stops showing color if you `sudo su`
 
 ## Unreleased
-
+  * Add `subspace upgrade <env>` to replace an environment's servers with new ones built from a current AMI (workhorse only so far)
+  * Add `subspace db_copy --from <host> --to <host>`, streaming pg_dump/pg_restore between two servers over their private network
+  * BREAKING: workhorse environments now need terraform-subspace-workhorse v2.0.0, which replaces `instance_ami`/`instance_type`/`instance_volume_size`/`instance_hostname` with a keyed `instances` map.  `subspace upgrade <env> --check` prints the migration steps.
+  * `subspace init` vendors the terraform module with a `module.yml` manifest instead of a `SUBSPACE_MODULE_VERSION` file
+  * `subspace inventory capistrano` takes `--output PATH` and `--rails-env`, and always emits `set :rails_env`
 
 ## 3.1.0
   * BREAKING: No longer manually removes the ppa:ondrej/ngnix repo from the machine.  This will break if you upgrade from pre-3.0.22 directly to 3.1

@@ -116,6 +116,69 @@ MUST be turned off manually by running `subspace maintenance_mode <environment> 
 | rails      | appyml           |
 | monit      | monit            | All tasks in the monit role have been tagged 'monit'           |
 
+### `subspace upgrade <environment> <phase>`
+
+Replaces an environment's servers with new ones built from a current AMI.
+
+Split up into multiple steps so you can verify or do manual steps in between:
+
+    subspace upgrade <env> --status           # view current status of the upgrade. default with no --phase
+    subspace upgrade production --check       # is this environment upgradeable?
+    subspace upgrade production --init        # record the start of an upgrade
+    subspace upgrade production --prepare     # build/bootstrap/provision the new server
+    bundle exec cap production_upgrade deploy # then verify it by hand
+    subspace upgrade production --copy-db     # maintenance window opens: copy the db across
+                                              # then verify the new server on its own IP
+    subspace upgrade production --cutover     # move the elastic IP, window closes
+    subspace upgrade production --finalize    # destroy the old server, days later if you like
+
+Current status is in `config/subspace/terraform/<env>/upgrade.yml`. Each command will
+throw an error if this file has not recorded the previous phase.
+
+The maintenance window is split across two commands. `--copy-db` stops the old server,
+moves the data, and stops. The new server is reachable on its own public address,
+while users still see the maintenance page. Verify it properly there then
+run `--cutover`. If it doesn't look right, `--abort` puts the old server back.
+
+`--copy-db` checks that the old server really is returning its maintenance page before it
+copies anything, so your app needs a `public/maintenance.html` deployed.
+
+The elastic IP is never replaced, so the cutover moves no DNS and the Let's Encrypt
+certificate (copied across from the old server) stays valid for the same address.
+
+Back your database up yourself before you start, and verify the dump by restoring it
+locally - a dump nobody has restored isn't a backup.
+
+Recovery:
+
+    subspace upgrade production --abort     # before a cutover: destroy the new server
+
+`--abort` is the only way back, and it only exists before the elastic IP has moved. That
+covers the cases worth automating: the database copy failing, or the copied data not
+looking right when you verify it. It destroys the new server and, if the maintenance
+window is open, starts the old server back up and takes it out of maintenance mode.
+
+Once the IP has moved the new server holds the only current copy of the data, so there is
+no undo: fix forward, or sort it out by hand.
+
+Only workhorse environments are supported so far. `--check` refuses to run a workhorse
+upgrade against anything whose terraform state doesn't look like a workhorse, and it
+requires `terraform-subspace-workhorse` v2.0.0 or newer. Older environments get printed migration
+instructions; `subspace upgrade <env> --revendor` automates the file-copying part.
+
+### `subspace db_copy --from <host> --to <host>`
+
+Copies a postgres database between two servers, streaming `pg_dump | pg_restore`
+directly between them over their private network using your forwarded ssh agent, so no
+server-to-server credential is ever created and the bytes don't go through your uplink.
+Falls back to routing through your machine (`--via-local`) when the two hosts can't
+reach each other, and says which mode it picked and why.
+
+It refuses to copy from a host that is still serving traffic, or onto a database that
+already holds data, unless you pass `--force`. It prints both servers' `SELECT
+version()` before starting so a major postgres version jump is visible beforehand, and
+row counts for the largest tables afterwards as a completeness check.
+
 ### `subspace secrets <environment> [--edit] [--create]`
 
 The `secrets` command will manage encrypted secrets for different environments.  The default action is simply to show the secrets defined for an environment.  Pass --edit to edit them in the system editor (vim, etc).

@@ -17,6 +17,8 @@ require 'subspace/commands/secrets'
 require 'subspace/commands/terraform'
 require 'subspace/commands/maintain'
 require 'subspace/commands/maintenance_mode.rb'
+require 'subspace/commands/db_copy'
+require 'subspace/commands/upgrade'
 
 class Subspace::Cli
   include Commander::Methods
@@ -158,7 +160,65 @@ class Subspace::Cli
         keyscan    - Update ~/.known_hosts with new host key fingerprints
         EOS
       c.option "--env ENVIRONMENT", "Optional: Limit function to a specific environment (aka group)"
+      c.option "--rails-env ENVIRONMENT", "capistrano: the rails_env to set (default: --env)"
+      c.option "--output PATH", "capistrano: write to PATH instead of stdout"
       c.when_called Subspace::Commands::Inventory
+    end
+
+    command :db_copy do |c|
+      c.syntax = 'subspace db_copy --from [host] --to [host]'
+      c.summary = 'Copy a postgres database from one host to another'
+      c.description = <<~EOS
+        Streams pg_dump | pg_restore directly between two servers over their private network,
+        falling back to routing through this machine when they cannot reach each other.
+
+        Refuses to copy from a host that is still serving traffic, or onto a database that
+        already holds data, unless --force.
+        EOS
+      c.option '--from HOST', 'Source host, as named in inventory.yml'
+      c.option '--to HOST', 'Destination host, as named in inventory.yml'
+      c.option '--force', 'Copy anyway from a live source or onto a populated destination'
+      c.option '--via-local', 'Route the dump through this machine instead of between the servers'
+      c.when_called Subspace::Commands::DbCopy
+    end
+
+    command :upgrade do |c|
+      c.syntax = 'subspace upgrade [environment] [phase]'
+      c.summary = 'Replace an environment\'s servers with new ones built from a current AMI'
+      c.description = <<~EOS
+        Builds a new server beside the existing one, moves the environment onto it, and
+        destroys the old one.  Each phase stops at a point where it is safe to walk away,
+        because the deploy and the verification in between are yours to do.
+
+        Phases, in order:
+
+        --check               is this environment upgradeable?  (runs before every other phase)
+        --revendor            re-vendor the terraform module at the version upgrades need
+        --init                record the start of an upgrade
+        --prepare             build, bootstrap and provision the new server
+        --copy-db             open the maintenance window and copy the database across
+        --cutover             move the elastic IP and close the maintenance window
+        --finalize            dump the old database, then destroy the old server
+        --status              where is this upgrade, and what is next?
+        --abort               before a cutover: destroy the new server and forget the upgrade
+        --close-instance-ssh  repair an interrupted cutover that left the servers able to ssh
+        EOS
+      c.example 'check whether production can be upgraded', 'subspace upgrade production --check'
+      c.example 'build the replacement server', 'subspace upgrade production --prepare'
+      c.option '--check', 'Verify this environment is upgradeable and stop'
+      c.option '--revendor', 'Re-vendor the terraform module and print the migration steps'
+      c.option '--init', 'Record the start of an upgrade in upgrade.yml'
+      c.option '--status', 'Report the phase of the upgrade and the next step'
+      c.option '--prepare', 'Build, bootstrap and provision the new server'
+      c.option '--copy-db', 'Open the maintenance window and copy the database to the new server'
+      c.option '--cutover', 'Move the elastic IP to the new server and end the maintenance window'
+      c.option '--finalize', 'Destroy the old server'
+      c.option '--abort', 'Destroy the new server (only before a cutover)'
+      c.option '--close-instance-ssh', 'Close the temporary ssh path between the servers'
+      c.option '--ubuntu-release RELEASE', "Ubuntu release to build the new server from (default: #{Subspace::Ami::DEFAULT_RELEASE})"
+      c.option '--ami AMI', 'Use this AMI instead of looking one up'
+      c.option '--via-local', 'Route the database copy through this machine'
+      c.when_called Subspace::Commands::Upgrade
     end
 
     run!

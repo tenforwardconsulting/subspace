@@ -20,7 +20,7 @@ terraform {
 }
 
 module workhorse {
-  source = "github.com/tenforwardconsulting/terraform-subspace-workhorse?ref=v1.0.0"
+  source = "<%= @module_source || "github.com/tenforwardconsulting/terraform-subspace-workhorse?ref=v1.0.0" %>"
   project_name = "<%= project_name %>"
   project_environment = "<%= @env %>"
   aws_region = "us-west-2"
@@ -28,14 +28,37 @@ module workhorse {
   # zone_id = "ZOJ6811VRVYBT" # 10fw.net
   # subdomain = "<%= project_name.gsub("_", "-") %>"
 
-  # Ubuntu Server 22.04 LTS (HVM), SSD Volume Type
-  instance_ami = "ami-0f81e6e71078b75b6"
   instance_user = "ubuntu"
-  instance_type = "t3.medium"
-  instance_hostname = "${var.project_environment}-app1"
-  instance_volume_size = 20
+
+  # Each key is a permanent instance slot.  `subspace upgrade` adds a second slot,
+  # cuts the elastic IP over to it, then removes the first.  Never renumber a key.
+  instances = {
+    "1" = {
+      hostname      = "<%= @env %>-app1"
+      ami           = "<%= @latest_ami %>"
+      instance_type = "t3.medium"
+      volume_size   = 20
+    }
+  }
+  active_instance = "1"
 }
 
 output "workhorse" {
   value = module.workhorse
+}
+
+output "inventory" {
+  value = module.workhorse.inventory
+}
+
+output "instances" {
+  value = module.workhorse.instances
+}
+
+output "active_instance" {
+  value = module.workhorse.active_instance
+}
+
+output "allow_instance_ssh" {
+  value = module.workhorse.allow_instance_ssh
 }
