@@ -1,28 +1,23 @@
 ---
 # Undoes upgrade_quiesce.yml, so an aborted upgrade leaves the old server serving again.
-- name: Start puma and the workers
+- name: Start puma, the workers and cron
   hosts: "{{ upgrade_host }}"
   gather_facts: false
   become: true
   tasks:
-    - name: Find the worker services
-      shell: >-
-        systemctl list-unit-files --type=service --no-legend
-        'sidekiq*' 'resque*' 'delayed_job*' | awk '{print $1}'
+    - name: Read the units upgrade_quiesce.yml stopped
+      command: cat /opt/subspace/upgrade-stopped-units
       changed_when: false
-      register: worker_units
-
-    - name: Start the worker services
-      systemd:
-        name: "{{ item }}"
-        state: started
-      loop: "{{ worker_units.stdout_lines }}"
-
-    - name: Start puma
-      systemd:
-        name: "{{ item }}"
-        state: started
-      loop:
-        - puma.socket
-        - puma.service
       failed_when: false
+      register: stopped_units
+
+    - name: Start the stopped units
+      systemd:
+        name: "{{ item }}"
+        state: started
+      loop: "{{ stopped_units.stdout_lines }}"
+
+    - name: Forget the stopped units
+      file:
+        path: /opt/subspace/upgrade-stopped-units
+        state: absent
