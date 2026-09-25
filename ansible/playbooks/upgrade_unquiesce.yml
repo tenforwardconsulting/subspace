@@ -1,5 +1,4 @@
 ---
-# Undoes upgrade_quiesce.yml, so an aborted upgrade leaves the old server serving again.
 - name: Start puma, the workers and cron
   hosts: "{{ upgrade_host }}"
   gather_facts: false

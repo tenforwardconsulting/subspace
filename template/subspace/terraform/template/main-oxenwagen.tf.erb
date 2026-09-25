@@ -32,7 +32,7 @@ provider aws {
 variable database_password { type = string }
 
 module oxenwagen {
-  source = "<%= @module_source || "github.com/tenforwardconsulting/terraform-subspace-oxenwagen?ref=v2.4.1" %>"
+  source = "<%= @module_source %>"
   project_name = "<%= project_name %>"
   project_environment =  "<%= @env %>"
   aws_region = ## "us-west-2"

@@ -3,12 +3,11 @@ class Subspace::Commands::Inventory < Subspace::Commands::Base
   def self.server_lines(inventory, group)
     inventory.find_hosts!(group).map do |host|
       host = inventory.hosts[host.name]
-      db_role = false
       roles = host.group_list.map do |group_name|
         if group_name =~ /web/
           ["web", "app"]
         elsif group_name =~ /worker/
-          ["app", db_role ? nil : "db"]
+          ["app", "db"]
         end
       end.compact.uniq
       "server '#{host.vars["ansible_host"]}', user: 'deploy', roles: %w{#{roles.join(' ')}} # #{host.vars["hostname"]}"

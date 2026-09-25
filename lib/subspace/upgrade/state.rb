@@ -63,7 +63,8 @@ module Subspace
       end
 
       def save
-        File.write path, YAML.dump(@data)
+        File.write "#{path}.tmp", YAML.dump(@data)
+        File.rename "#{path}.tmp", path
       end
 
       def destroy

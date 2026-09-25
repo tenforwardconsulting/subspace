@@ -182,7 +182,7 @@ class Subspace::Cli
     end
 
     command :upgrade do |c|
-      c.syntax = 'subspace upgrade [environment] [phase]'
+      c.syntax = 'subspace upgrade [environment]'
       c.summary = 'Replace an environment\'s servers with new ones built from a current AMI'
       c.description = <<~EOS
         Builds a new server beside the existing one, moves the environment onto it, and

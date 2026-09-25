@@ -31,7 +31,7 @@ module Subspace
 
         say "Template:  #{state["template"]}"
         say "Phase:     #{state["phase"]}"
-        say "Slots:     #{state["from_slot"]} (#{state["from_ami"]}) => #{state["to_slot"]} (#{state["to_ami"]})"
+        say "Slots:     #{state["from_slot"]} (#{state["from_ami"]}) => #{state["to_slot"]} (#{state["to_ami"]})" if state["to_slot"]
         say "Backup:    #{state["backup_path"]} (#{state["backup_bytes"]} bytes)" if state["backup_path"]
         state["log"].to_a.each { |entry| say "  #{entry["at"]}  #{entry["phase"]}" }
 
@@ -74,7 +74,6 @@ module Subspace
                  .merge(slot_addresses("update")))
       end
 
-      # Copy the upstream module in again, keeping the old copy as a .bak
       def revendor
         mod = Subspace::Commands::Init::TERRAFORM_MODULES.fetch template
         if locally_modified_module?
@@ -97,7 +96,10 @@ module Subspace
 
         say "Cloning #{mod[:repo]} (#{mod[:ref]}) into #{module_dir}"
         unless system("git", "clone", "--depth", "1", "--branch", mod[:ref], mod[:repo], module_dir)
-          FileUtils.mv backup, module_dir if backup
+          if backup
+            FileUtils.rm_rf module_dir
+            FileUtils.mv backup, module_dir
+          end
           abort "Failed to clone #{mod[:repo]}.#{" Restored the previous module." if backup}"
         end
         FileUtils.rm_rf File.join(module_dir, ".git")
@@ -144,6 +146,10 @@ module Subspace
 
       # A manifest can lie about a locally edited module, so check the source itself
       def check_module_variables!
+        unless Dir.exist? module_source_dir
+          abort "#{module_source_dir} does not exist.  Run `terraform init` in config/subspace/terraform/#{env} first."
+        end
+
         variables = Dir[File.join(module_source_dir, "*.tf")].map { |file| File.read file }.join
         missing = self.class::REQUIRED_MODULE_VARIABLES.reject do |name|
           variables =~ /^variable\s+"?#{name}"?\s/
@@ -322,7 +328,13 @@ module Subspace
       # --------------------------------------------------------------- helpers
 
       def state
-        @state ||= State.read env
+        @state ||= begin
+          unless State.exist? env
+            abort "No upgrade in progress for #{env}.  Start one with `subspace upgrade #{env} --init`."
+          end
+
+          State.read env
+        end
       end
 
       def manifest
@@ -345,7 +357,6 @@ module Subspace
         File.join "config/subspace/terraform", env, "modules", template
       end
 
-      # Where the module's .tf files actually are: vendored, or downloaded by terraform init
       def module_source_dir
         return module_dir if Dir.exist? module_dir
 
@@ -378,7 +389,6 @@ module Subspace
         Gem::Version.new "0"
       end
 
-      # True if the vendored module's files differ from the upstream ref its manifest names
       def locally_modified_module?
         return false if manifest.nil? || !Dir.exist?(module_dir)
 

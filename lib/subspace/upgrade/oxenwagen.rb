@@ -6,11 +6,6 @@ module Subspace
     # Not built yet; see docs/server-upgrade-plan.md section 7.
     class Oxenwagen < Base
       TEMPLATE = "oxenwagen"
-      KEYED_RESOURCE = "aws_instance.web"
-      REQUIRED_MODULE_VARIABLES = %w[instances]
-      REQUIRED_ROOT_OUTPUTS = %w[inventory instances]
-      STATE_REQUIRES = ["aws_lb", "aws_db_instance", "aws_instance.web"]
-      STATE_FORBIDS = []
 
       %i[check status init launch provision copy_db cutover finalize abort_upgrade close_instance_ssh revendor].each do |phase|
         define_method phase do

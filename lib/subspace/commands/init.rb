@@ -125,7 +125,6 @@ class Subspace::Commands::Init < Subspace::Commands::Base
     copy "terraform/.gitignore"
   end
 
-  # Clone the terraform module into the project and strip its git metadata
   def vendor_terraform_module
     mod = TERRAFORM_MODULES[@template]
     if mod.nil?

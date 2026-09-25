@@ -1,7 +1,4 @@
 ---
-# Copies a postgres database from one host to another.  Driven by `subspace db_copy`,
-# which resolves db_copy_destination_ip from terraform; every credential comes from
-# group_vars and the vault.
 - name: Report the postgres version on both hosts
   hosts: "{{ db_copy_source }}:{{ db_copy_destination }}"
   gather_facts: false
@@ -76,7 +73,7 @@
   gather_facts: false
   vars:
     destination: "{{ hostvars[db_copy_destination] }}"
-    ssh_options: -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null
+    ssh_options: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
   tasks:
     - name: Check the source can ssh to the destination
       command: ssh {{ ssh_options }} {{ destination.ansible_user }}@{{ db_copy_destination_ip }} true

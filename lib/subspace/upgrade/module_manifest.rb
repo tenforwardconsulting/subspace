@@ -1,8 +1,6 @@
 require 'yaml'
 module Subspace
   module Upgrade
-    # Records which terraform module a vendored copy came from, so `subspace upgrade`
-    # never has to guess the topology it is operating on.
     module ModuleManifest
       FILENAME = "module.yml"
 

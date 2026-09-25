@@ -13,8 +13,8 @@ module Subspace
       STATE_FORBIDS = ["aws_lb", "aws_db_instance"]
 
       def launch
-        check!
         state.require_phase! "initialized"
+        check!
         assert_clean_git_tree!
 
         from_slot = config.active_instance
@@ -30,7 +30,7 @@ module Subspace
         state["to_hostname"] = to_hostname
         state["from_ami"] = TerraformConfig.unquote config.instances[from_slot]["ami"]
         state["to_ami"] = target_ami
-        state["ubuntu_release"] = ubuntu_release
+        state["ubuntu_release"] = options.ami ? options.ubuntu_release : ubuntu_release
         state.save
 
         config.add_instance to_slot,
@@ -50,8 +50,8 @@ module Subspace
 
       # Only touches the new server, so it can be re-run until it succeeds.
       def provision
-        check!
         state.require_phase! "launched", "prepared"
+        check!
 
         Subspace::Commands::Bootstrap.new [state["to_hostname"]], options
         copy_letsencrypt!
@@ -66,8 +66,8 @@ module Subspace
       # is.  The new server is then fully loaded and reachable on its own address, so it can
       # be verified against real data while users still see the maintenance page.
       def copy_db
-        check!
         state.require_phase! "prepared"
+        check!
         verify_deployed! state["to_hostname"]
 
         say "This opens #{env}'s maintenance window: #{state["from_hostname"]} stops serving now"
@@ -101,10 +101,9 @@ module Subspace
         say next_step_for "copied"
       end
 
-      # Moves the elastic IP.  Everything that touches data already happened in --copy-db.
       def cutover
-        check!
         state.require_phase! "copied"
+        check!
 
         unless serves_domain? to_public_ip
           abort "#{state["to_hostname"]} is not serving the site on its own address.  Nothing has moved yet."
@@ -132,8 +131,8 @@ module Subspace
       # still holds the data it always had -- nothing has written to it since --copy-db
       # stopped puma, the workers and cron.
       def abort_upgrade
-        check!
         state.require_phase! "launched", "prepared", "copied", "aborting"
+        check!
         say "This destroys #{state["to_hostname"]} (slot #{state["to_slot"]}) and leaves #{env} on #{state["from_hostname"]}."
         abort "Aborted." unless ask("Type the environment name to confirm: ").strip == env
 
@@ -157,8 +156,8 @@ module Subspace
       end
 
       def finalize
-        check!
         state.require_phase! "cutover"
+        check!
 
         say "This permanently destroys #{state["from_hostname"]} (slot #{state["from_slot"]}) and its database."
         say "After this there is no way back, only the dump this step takes and the backup you took"
@@ -365,7 +364,7 @@ module Subspace
         when "initialized" then "subspace upgrade #{env} --launch"
         when "launched"
           <<~EOS
-            #{state["to_hostname"]} is running (#{state["to_ami"]}, ubuntu #{state["ubuntu_release"]}) but not provisioned yet.
+            #{state["to_hostname"]} is running (#{state["to_ami"]}#{", ubuntu #{state["ubuntu_release"]}" if state["ubuntu_release"]}) but not provisioned yet.
 
               1. Commit the config diff
               2. subspace upgrade #{env} --provision   # safe to re-run until it succeeds
@@ -384,7 +383,7 @@ module Subspace
           EOS
 
           <<~EOS
-            #{state["to_hostname"]} is provisioned at #{inventory.hosts[state["to_hostname"]]&.vars&.dig("ansible_host")} (#{state["to_ami"]}, ubuntu #{state["ubuntu_release"]}).
+            #{state["to_hostname"]} is provisioned at #{inventory.hosts[state["to_hostname"]]&.vars&.dig("ansible_host")} (#{state["to_ami"]}#{", ubuntu #{state["ubuntu_release"]}" if state["ubuntu_release"]}).
 
               1. Join #{state["to_hostname"]} to the tailnet: create a reusable, tagged tailscale auth key
                  (1-day expiry), set tailscale_auth_key in the #{env} vault, then
@@ -402,7 +401,7 @@ module Subspace
             real data on its own address.  #{state["from_hostname"]} has puma, the workers and cron
             stopped and is showing the maintenance page, so nothing is writing to either database.
 
-              1. Verify #{state["to_hostname"]} against the real data: https://#{to_public_ip}/ (expect a
+              1. Verify #{state["to_hostname"]} against the real data: https://#{inventory.hosts[state["to_hostname"]]&.vars&.dig("ansible_host")}/ (expect a
                  certificate warning), or map your domain to it in /etc/hosts for a faithful test
               2. subspace upgrade #{env} --cutover   # move the elastic IP, end the window
                  subspace upgrade #{env} --abort     # or back out: destroy #{state["to_hostname"]},
@@ -434,7 +433,7 @@ module Subspace
           To migrate #{env} (one time, ~5 minutes, no downtime):
 
             1. Re-vendor the module:
-                 subspace upgrade #{env} --revendor       # clones #{MINIMUM_MODULE_REF}, keeps a .bak
+                 subspace upgrade #{env} --revendor       # clones #{Subspace::Commands::Init::TERRAFORM_MODULES.fetch(template)[:ref]}, keeps a .bak
             2. In #{config.path} replace
                  instance_ami = "ami-0abc..."
                  instance_type = "t3.medium"
