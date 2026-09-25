@@ -83,9 +83,14 @@ module Subspace
         verify_maintenance_page! state["from_hostname"]
         stop_application! state["from_hostname"]
 
+        # A retry may find the destination holding part of an earlier attempt's restore.
+        overwrite = !!state["db_copy_started"]
+        state["db_copy_started"] = true
+        state.save
+
         begin
           open_instance_ssh!
-          db_copy! state["from_hostname"], state["to_hostname"]
+          db_copy! state["from_hostname"], state["to_hostname"], overwrite: overwrite
           state.advance! "copied"
         ensure
           close_instance_ssh
@@ -223,8 +228,8 @@ module Subspace
         say "#{path} (#{state["backup_bytes"]} bytes, sha256 #{state["backup_sha256"]})"
       end
 
-      def db_copy!(source, destination)
-        Subspace::Commands::DbCopy.new [source, destination], options
+      def db_copy!(source, destination, overwrite:)
+        Subspace::Commands::DbCopy.new [source, destination], options, overwrite: overwrite
       end
 
       # --------------------------------------------------------- application
@@ -360,6 +365,15 @@ module Subspace
             #{state["from_hostname"]} is still serving all traffic.  Nothing is at risk yet.
           EOS
         when "prepared"
+          return <<~EOS if state["window_open"]
+            A previous --copy-db did not finish.  #{state["from_hostname"]} is stopped and showing the
+            maintenance page, and #{state["to_hostname"]} may hold part of the copy.
+
+              subspace upgrade #{env} --copy-db   # copy again, overwriting #{state["to_hostname"]}'s database
+              subspace upgrade #{env} --abort     # or back out: destroy #{state["to_hostname"]},
+                                                  # restart #{state["from_hostname"]}
+          EOS
+
           <<~EOS
             #{state["to_hostname"]} is provisioned at #{inventory.hosts[state["to_hostname"]]&.vars&.dig("ansible_host")} (#{state["to_ami"]}, ubuntu #{state["ubuntu_release"]}).
 

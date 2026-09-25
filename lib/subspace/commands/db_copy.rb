@@ -1,9 +1,10 @@
 require 'subspace/upgrade'
 class Subspace::Commands::DbCopy < Subspace::Commands::Base
-  def initialize(args, options)
+  def initialize(args, options, overwrite: false)
     @source = args[0] || options.from
     @destination = args[1] || options.to
     @options = options
+    @overwrite = overwrite
     run
   end
 
@@ -27,6 +28,7 @@ class Subspace::Commands::DbCopy < Subspace::Commands::Base
     extra_vars = ["db_copy_source=#{@source}",
                   "db_copy_destination=#{@destination}",
                   "db_copy_force=#{!!@options.force}",
+                  "db_copy_overwrite=#{@overwrite}",
                   "db_copy_destination_ip=#{destination_private_ip}"]
 
     # Agent forwarding is how the source host reaches the destination without a

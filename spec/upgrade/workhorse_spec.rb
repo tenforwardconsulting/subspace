@@ -165,6 +165,22 @@ describe Subspace::Upgrade::Workhorse do
       expect(reread_phase).to eq "copied"
     end
 
+    it "refuses to overwrite a populated destination on the first attempt" do
+      subject.copy_db
+
+      expect(subject).to have_received(:db_copy!).with("production-app1", "production-app2", overwrite: false)
+    end
+
+    context "when a previous attempt started copying" do
+      before { Subspace::Upgrade::State.read("production").tap { |state| state["db_copy_started"] = true }.save }
+
+      it "overwrites whatever that attempt left on the destination" do
+        subject.copy_db
+
+        expect(subject).to have_received(:db_copy!).with("production-app1", "production-app2", overwrite: true)
+      end
+    end
+
     context "when the copy itself fails" do
       before { allow(subject).to receive(:db_copy!).and_raise "pg_restore failed" }
 
