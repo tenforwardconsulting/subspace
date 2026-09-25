@@ -13,6 +13,7 @@ module Subspace
       def initialize(path)
         @path = path
         @source = File.read path
+        @applied_source = @source.dup
       end
 
       def module_name
@@ -66,6 +67,15 @@ module Subspace
 
       def save
         File.write path, @source
+      end
+
+      def mark_applied
+        @applied_source = @source.dup
+      end
+
+      def revert
+        @source = @applied_source.dup
+        save
       end
 
       private

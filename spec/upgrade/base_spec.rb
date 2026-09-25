@@ -77,9 +77,16 @@ describe Subspace::Upgrade::Workhorse do
       ]
     end
 
+    let(:close_changes) do
+      [
+        { "address" => %(module.workhorse.aws_instance.single["1"]), "change" => { "actions" => ["update"] } },
+        { "address" => %(module.workhorse.aws_instance.single["2"]), "change" => { "actions" => ["update"] } },
+        { "address" => "module.workhorse.aws_security_group.instance_ssh[0]", "change" => { "actions" => ["delete"] } }
+      ]
+    end
+
     before do
       allow(subject).to receive(:terraform).and_return terraform
-      allow(subject.config).to receive(:save)
       allow(subject).to receive(:ask).and_return "y"
       allow(terraform).to receive(:plan_changes).and_return changes
     end
@@ -95,13 +102,7 @@ describe Subspace::Upgrade::Workhorse do
     end
 
     context "when closing the window the copy opened" do
-      let(:changes) do
-        [
-          { "address" => %(module.workhorse.aws_instance.single["1"]), "change" => { "actions" => ["update"] } },
-          { "address" => %(module.workhorse.aws_instance.single["2"]), "change" => { "actions" => ["update"] } },
-          { "address" => "module.workhorse.aws_security_group.instance_ssh[0]", "change" => { "actions" => ["delete"] } }
-        ]
-      end
+      let(:changes) { close_changes }
 
       it "applies the saved plan", :aggregate_failures do
         expect { subject.close_instance_ssh }.not_to raise_error
@@ -117,10 +118,52 @@ describe Subspace::Upgrade::Workhorse do
         ]
       end
 
-      it "refuses and discards the plan", :aggregate_failures do
+      it "refuses, discards the plan and puts main.tf back", :aggregate_failures do
         expect { subject.send :open_instance_ssh! }.to raise_error SystemExit
         expect(terraform).to have_received :discard_plan
         expect(terraform).not_to have_received :apply_plan
+        expect(File.read(subject.config.path)).to eq main_tf
+      end
+    end
+
+    context "when the operator declines the plan" do
+      let(:changes) { close_changes }
+
+      before { allow(subject).to receive(:ask).and_return "n" }
+
+      it "discards the plan and puts main.tf back", :aggregate_failures do
+        expect { subject.close_instance_ssh }.to raise_error SystemExit
+        expect(terraform).to have_received :discard_plan
+        expect(terraform).not_to have_received :apply_plan
+        expect(File.read(subject.config.path)).to eq main_tf
+        expect(subject.config.allow_instance_ssh).to eq true
+      end
+    end
+
+    context "when terraform plan fails" do
+      let(:changes) { nil }
+
+      before { allow(terraform).to receive(:plan_changes) { abort "terraform plan failed" } }
+
+      it "puts main.tf back" do
+        expect { subject.close_instance_ssh }.to raise_error SystemExit
+        expect(File.read(subject.config.path)).to eq main_tf
+      end
+    end
+
+    context "when an earlier step in the same run was applied" do
+      let(:changes) { nil }
+
+      before { allow(terraform).to receive(:plan_changes).and_return close_changes, expected_changes }
+
+      it "puts main.tf back to what was last applied, not to what was first read", :aggregate_failures do
+        subject.close_instance_ssh
+        applied = File.read subject.config.path
+
+        allow(subject).to receive(:ask).and_return "n"
+        expect { subject.send :open_instance_ssh! }.to raise_error SystemExit
+        expect(File.read(subject.config.path)).to eq applied
+        expect(subject.config.allow_instance_ssh).to eq false
       end
     end
   end

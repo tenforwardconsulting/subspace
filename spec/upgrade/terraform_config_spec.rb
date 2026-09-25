@@ -122,6 +122,26 @@ describe Subspace::Upgrade::TerraformConfig do
     expect(File.read(@path)).to include %(project_name = "my_project")
   end
 
+  it "reverts to the file as read", :aggregate_failures do
+    subject.active_instance = "2"
+    subject.save
+    subject.revert
+
+    expect(File.read(@path)).to eq MAIN_TF
+    expect(subject.active_instance).to eq "1"
+  end
+
+  it "reverts to the last applied source", :aggregate_failures do
+    subject.active_instance = "2"
+    subject.mark_applied
+    subject.allow_instance_ssh = true
+    subject.save
+    subject.revert
+
+    expect(described_class.new(@path).active_instance).to eq "2"
+    expect(described_class.new(@path).allow_instance_ssh).to eq false
+  end
+
   it "raises a useful error on a v1 config with no instances map" do
     File.write @path, %(module workhorse {\n  instance_ami = "ami-0abc"\n}\n)
     expect { described_class.new(@path).instances }.to raise_error(/at least v2.0.0/)

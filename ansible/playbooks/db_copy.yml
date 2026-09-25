@@ -85,21 +85,6 @@
         'sudo -u postgres pg_restore --clean --if-exists --no-owner --no-acl -d {{ destination.database_name }}'
       args:
         executable: /bin/bash
-      when: not db_copy_via_local
-
-    - name: Dump and restore through the operator's machine
-      delegate_to: localhost
-      shell: >-
-        set -o pipefail &&
-        ssh {{ ssh_options }} -i {{ ansible_ssh_private_key_file | default("subspace.pem") }}
-        {{ ansible_user }}@{{ ansible_host }}
-        'sudo -u postgres pg_dump -Fc --no-owner --no-acl {{ database_name }}'
-        | ssh {{ ssh_options }} -i {{ destination.ansible_ssh_private_key_file | default("subspace.pem") }}
-        {{ destination.ansible_user }}@{{ destination.ansible_host }}
-        'sudo -u postgres pg_restore --clean --if-exists --no-owner --no-acl -d {{ destination.database_name }}'
-      args:
-        executable: /bin/bash
-      when: db_copy_via_local
 
 - name: Report row counts on both sides
   hosts: "{{ db_copy_source }}:{{ db_copy_destination }}"

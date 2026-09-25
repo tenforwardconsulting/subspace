@@ -70,7 +70,6 @@ module Subspace
         end
 
         config.allow_instance_ssh = false
-        config.save
         apply!({ address("aws_security_group.instance_ssh[0]") => ["delete"] }
                  .merge(slot_addresses("update")))
       end
@@ -269,29 +268,38 @@ module Subspace
         end
       end
 
-      # Apply, but only if the plan does exactly what this phase expects.  `expected` maps
-      # a resource address to the actions permitted for it.
+      # Save main.tf and apply, but only if the plan does exactly what this phase expects.
+      # `expected` maps a resource address to the actions permitted for it.  Anything short
+      # of an attempted apply puts main.tf back, so the next phase does not start from a
+      # dirty plan.  A failed apply does not, since terraform may have applied part of it.
       def apply!(expected)
-        changes = terraform.plan_changes
-        unexpected = changes.reject do |change|
-          permitted = expected[change["address"]]
-          permitted && (change["change"]["actions"] - permitted).empty?
-        end
+        config.save
+        begin
+          changes = terraform.plan_changes
+          unexpected = changes.reject do |change|
+            permitted = expected[change["address"]]
+            permitted && (change["change"]["actions"] - permitted).empty?
+          end
 
-        if unexpected.any?
-          say "Refusing to apply.  This plan does things this step did not ask for:"
-          unexpected.each { |change| say "  #{change["change"]["actions"].join(",")} #{change["address"]}" }
-          terraform.discard_plan
-          abort "Reconcile the drift and try again."
-        end
+          if unexpected.any?
+            say "Refusing to apply.  This plan does things this step did not ask for:"
+            unexpected.each { |change| say "  #{change["change"]["actions"].join(",")} #{change["address"]}" }
+            terraform.discard_plan
+            abort "Reconcile the drift and try again."
+          end
 
-        say "#{template} #{env}: terraform will"
-        changes.each { |change| say "  #{change["change"]["actions"].join(",")} #{change["address"]}" }
-        unless ask("Apply this plan? [no] ").downcase.start_with? "y"
-          terraform.discard_plan
-          abort "Aborted."
+          say "#{template} #{env}: terraform will"
+          changes.each { |change| say "  #{change["change"]["actions"].join(",")} #{change["address"]}" }
+          unless ask("Apply this plan? [no] ").downcase.start_with? "y"
+            terraform.discard_plan
+            abort "Aborted."
+          end
+        rescue SystemExit, Interrupt
+          config.revert
+          raise
         end
         terraform.apply_plan
+        config.mark_applied
       end
 
       # ------------------------------------------------------------- inventory

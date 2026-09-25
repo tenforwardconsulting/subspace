@@ -15,12 +15,19 @@ class Subspace::Commands::DbCopy < Subspace::Commands::Base
     inventory.find_hosts! @source
     inventory.find_hosts! @destination
 
+    unless instance_ssh_available?
+      abort <<~EOS
+        The instances in #{env} cannot ssh to each other.  Set allow_instance_ssh = true in
+        config/subspace/terraform/#{env}/main.tf and apply it first, or use
+        `subspace upgrade #{env} --copy-db`, which opens the path for the duration of the copy.
+      EOS
+    end
+
     say "Copying the #{env} database from #{@source} to #{@destination}."
     extra_vars = ["db_copy_source=#{@source}",
                   "db_copy_destination=#{@destination}",
                   "db_copy_force=#{!!@options.force}",
-                  "db_copy_via_local=#{via_local?}",
-                  "db_copy_destination_ip=#{via_local? ? "" : destination_private_ip}"]
+                  "db_copy_destination_ip=#{destination_private_ip}"]
 
     # Agent forwarding is how the source host reaches the destination without a
     # server-to-server key being created, and mitogen does not forward the agent.
@@ -47,26 +54,8 @@ class Subspace::Commands::DbCopy < Subspace::Commands::Base
     @terraform ||= Subspace::Upgrade::Terraform.new env
   end
 
-  def via_local?
-    return @via_local unless @via_local.nil?
-
-    @via_local = if @options.via_local
-      true
-    elsif !instance_ssh_available?
-      say "The instances cannot ssh to each other, so the dump goes through this machine."
-      say "That is slower for a large database.  `subspace upgrade #{env} --cutover` opens the"
-      say "path between them for the duration of the copy."
-      true
-    else
-      say "Streaming directly between the instances over the private network."
-      false
-    end
-  end
-
   def instance_ssh_available?
     terraform.output("allow_instance_ssh") == true
-  rescue JSON::ParserError
-    false
   end
 
   def destination_private_ip

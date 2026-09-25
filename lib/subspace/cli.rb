@@ -169,8 +169,8 @@ class Subspace::Cli
       c.syntax = 'subspace db_copy --from [host] --to [host]'
       c.summary = 'Copy a postgres database from one host to another'
       c.description = <<~EOS
-        Streams pg_dump | pg_restore directly between two servers over their private network,
-        falling back to routing through this machine when they cannot reach each other.
+        Streams pg_dump | pg_restore directly between two servers over their private network.
+        The servers must be able to ssh to each other (allow_instance_ssh = true).
 
         Refuses to copy from a host that is still serving traffic, or onto a database that
         already holds data, unless --force.
@@ -178,7 +178,6 @@ class Subspace::Cli
       c.option '--from HOST', 'Source host, as named in inventory.yml'
       c.option '--to HOST', 'Destination host, as named in inventory.yml'
       c.option '--force', 'Copy anyway from a live source or onto a populated destination'
-      c.option '--via-local', 'Route the dump through this machine instead of between the servers'
       c.when_called Subspace::Commands::DbCopy
     end
 
@@ -217,7 +216,6 @@ class Subspace::Cli
       c.option '--close-instance-ssh', 'Close the temporary ssh path between the servers'
       c.option '--ubuntu-release RELEASE', "Ubuntu release to build the new server from (default: #{Subspace::Ami::DEFAULT_RELEASE})"
       c.option '--ami AMI', 'Use this AMI instead of looking one up'
-      c.option '--via-local', 'Route the database copy through this machine'
       c.when_called Subspace::Commands::Upgrade
     end
 
