@@ -12,7 +12,7 @@ module Subspace
       STATE_REQUIRES = ["aws_lb", "aws_db_instance", "aws_instance.web"]
       STATE_FORBIDS = []
 
-      %i[check status init prepare copy_db cutover finalize abort_upgrade close_instance_ssh revendor].each do |phase|
+      %i[check status init launch provision copy_db cutover finalize abort_upgrade close_instance_ssh revendor].each do |phase|
         define_method phase do
           abort "`subspace upgrade` does not support oxenwagen environments yet.  Upgrade #{env} by hand."
         end

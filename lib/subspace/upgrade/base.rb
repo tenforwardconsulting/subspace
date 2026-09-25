@@ -60,7 +60,7 @@ module Subspace
         State.create(env, "template" => template,
           "started_at" => Time.now.utc.iso8601,
           "phase" => "initialized").save
-        say "Wrote #{State.path_for env}.  Next: subspace upgrade #{env} --prepare"
+        say "Wrote #{State.path_for env}.  Next: subspace upgrade #{env} --launch"
       end
 
       def close_instance_ssh

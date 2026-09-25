@@ -194,7 +194,8 @@ class Subspace::Cli
         --check               is this environment upgradeable?  (runs before every other phase)
         --revendor            re-vendor the terraform module at the version upgrades need
         --init                record the start of an upgrade
-        --prepare             build, bootstrap and provision the new server
+        --launch              build the new server and add it to the inventory
+        --provision           bootstrap and provision the new server (re-runnable)
         --copy-db             open the maintenance window and copy the database across
         --cutover             move the elastic IP and close the maintenance window
         --finalize            dump the old database, then destroy the old server
@@ -203,12 +204,13 @@ class Subspace::Cli
         --close-instance-ssh  repair an interrupted cutover that left the servers able to ssh
         EOS
       c.example 'check whether production can be upgraded', 'subspace upgrade production --check'
-      c.example 'build the replacement server', 'subspace upgrade production --prepare'
+      c.example 'build the replacement server', 'subspace upgrade production --launch'
       c.option '--check', 'Verify this environment is upgradeable and stop'
       c.option '--revendor', 'Re-vendor the terraform module and print the migration steps'
       c.option '--init', 'Record the start of an upgrade in upgrade.yml'
       c.option '--status', 'Report the phase of the upgrade and the next step'
-      c.option '--prepare', 'Build, bootstrap and provision the new server'
+      c.option '--launch', 'Build the new server and add it to the inventory'
+      c.option '--provision', 'Bootstrap and provision the new server'
       c.option '--copy-db', 'Open the maintenance window and copy the database to the new server'
       c.option '--cutover', 'Move the elastic IP to the new server and end the maintenance window'
       c.option '--finalize', 'Destroy the old server'
