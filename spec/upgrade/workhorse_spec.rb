@@ -95,6 +95,41 @@ describe Subspace::Upgrade::Workhorse do
     end
   end
 
+  describe "#provision" do
+    before do
+      Subspace::Upgrade::State.read("production").tap { |state| state["phase"] = "launched" }.save
+      allow(Subspace::Commands::Bootstrap).to receive(:new)
+      allow(subject).to receive(:copy_letsencrypt!)
+      allow(subject).to receive(:provision!)
+      allow(subject).to receive(:write_capistrano_stage!)
+    end
+
+    it "advances to prepared" do
+      subject.provision
+
+      expect(reread_phase).to eq "prepared"
+    end
+
+    context "when provisioning fails" do
+      before { allow(subject).to receive(:provision!) { abort "Provisioning failed." } }
+
+      it "stays launched, so it can be run again", :aggregate_failures do
+        expect { subject.provision }.to raise_error SystemExit
+        expect(reread_phase).to eq "launched"
+      end
+    end
+
+    context "when already prepared" do
+      before { Subspace::Upgrade::State.read("production").tap { |state| state["phase"] = "prepared" }.save }
+
+      it "provisions again" do
+        subject.provision
+
+        expect(subject).to have_received(:provision!).with("production-app2")
+      end
+    end
+  end
+
   describe "#cutover" do
     before do
       Subspace::Upgrade::State.read("production").tap { |state| state["phase"] = "copied" }.save

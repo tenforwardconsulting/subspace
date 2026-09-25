@@ -125,7 +125,8 @@ Split up into multiple steps so you can verify or do manual steps in between:
     subspace upgrade <env> --status           # view current status of the upgrade. default with no --phase
     subspace upgrade production --check       # is this environment upgradeable?
     subspace upgrade production --init        # record the start of an upgrade
-    subspace upgrade production --prepare     # build/bootstrap/provision the new server
+    subspace upgrade production --launch      # build the new server, then commit the config diff
+    subspace upgrade production --provision   # bootstrap/provision it, re-run until it succeeds
     bundle exec cap production_upgrade deploy # then verify it by hand
     subspace upgrade production --copy-db     # maintenance window opens: copy the db across
                                               # then verify the new server on its own IP
@@ -143,7 +144,7 @@ run `--cutover`. If it doesn't look right, `--abort` puts the old server back.
 `--copy-db` checks that the old server really is returning its maintenance page before it
 copies anything, so your app needs a `public/maintenance.html` deployed.
 
-The elastic IP is never replaced, so the cutover moves no DNS. `--prepare` copies the
+The elastic IP is never replaced, so the cutover moves no DNS. `--provision` copies the
 Let's Encrypt certificates from the old server before provisioning the new one, so it
 serves your domain over TLS on its own address. `--cutover` checks that before it moves
 the IP.

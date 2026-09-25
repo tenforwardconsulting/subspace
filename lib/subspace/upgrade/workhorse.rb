@@ -12,7 +12,7 @@ module Subspace
       STATE_REQUIRES = ["aws_instance.single"]
       STATE_FORBIDS = ["aws_lb", "aws_db_instance"]
 
-      def prepare
+      def launch
         check!
         state.require_phase! "initialized"
         assert_clean_git_tree!
@@ -44,9 +44,18 @@ module Subspace
         update_inventory!
         add_to_group! to_hostname, "upgrade"
 
-        Subspace::Commands::Bootstrap.new [to_hostname], options
+        state.advance! "launched"
+        say next_step_for "launched"
+      end
+
+      # Only touches the new server, so it can be re-run until it succeeds.
+      def provision
+        check!
+        state.require_phase! "launched", "prepared"
+
+        Subspace::Commands::Bootstrap.new [state["to_hostname"]], options
         copy_letsencrypt!
-        provision! to_hostname
+        provision! state["to_hostname"]
         write_capistrano_stage!
 
         state.advance! "prepared"
@@ -117,7 +126,7 @@ module Subspace
       # stopped it.
       def abort_upgrade
         check!
-        state.require_phase! "prepared", "copied"
+        state.require_phase! "launched", "prepared", "copied"
         say "This destroys #{state["to_hostname"]} (slot #{state["to_slot"]}) and leaves #{env} on #{state["from_hostname"]}."
         abort "Aborted." unless ask("Type the environment name to confirm: ").strip == env
 
@@ -141,7 +150,7 @@ module Subspace
 
         say "This permanently destroys #{state["from_hostname"]} (slot #{state["from_slot"]}) and its database."
         say "After this there is no way back, only the dump this step takes and the backup you took"
-        say "yourself at --prepare."
+        say "yourself at --launch."
         abort "Aborted." unless ask("Type #{state["from_hostname"]} to confirm: ").strip == state["from_hostname"]
 
         backup_database! state["from_hostname"]
@@ -340,7 +349,16 @@ module Subspace
 
       def next_step_for(phase)
         case phase
-        when "initialized" then "subspace upgrade #{env} --prepare"
+        when "initialized" then "subspace upgrade #{env} --launch"
+        when "launched"
+          <<~EOS
+            #{state["to_hostname"]} is running (#{state["to_ami"]}, ubuntu #{state["ubuntu_release"]}) but not provisioned yet.
+
+              1. Commit the config diff
+              2. subspace upgrade #{env} --provision   # safe to re-run until it succeeds
+
+            #{state["from_hostname"]} is still serving all traffic.  Nothing is at risk yet.
+          EOS
         when "prepared"
           <<~EOS
             #{state["to_hostname"]} is provisioned at #{inventory.hosts[state["to_hostname"]]&.vars&.dig("ansible_host")} (#{state["to_ami"]}, ubuntu #{state["ubuntu_release"]}).
