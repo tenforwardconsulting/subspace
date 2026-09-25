@@ -158,6 +158,55 @@ describe Subspace::Upgrade::Workhorse do
     end
   end
 
+  describe "#abort_upgrade" do
+    before do
+      Subspace::Upgrade::State.read("production").tap do |state|
+        state["phase"] = "copied"
+        state["window_open"] = true
+        state["to_slot"] = "2"
+      end.save
+      allow(subject).to receive(:ask).and_return "production"
+      allow(subject).to receive(:start_application!)
+      allow(subject).to receive(:remove_host!)
+      allow(subject).to receive(:apply!)
+    end
+
+    it "puts the old server back and destroys the new slot", :aggregate_failures do
+      subject.abort_upgrade
+
+      expect(subject).to have_received(:start_application!).with("production-app1")
+      expect(subject).to have_received(:maintenance_mode!).with(:off, "production-app1")
+      expect(subject).to have_received(:apply!)
+      expect(Subspace::Upgrade::State).not_to be_exist "production"
+    end
+
+    context "when the destroy is declined" do
+      before { allow(subject).to receive(:apply!) { abort "Aborted." } }
+
+      it "records that the old server is live again, so nothing can cut over", :aggregate_failures do
+        expect { subject.abort_upgrade }.to raise_error SystemExit
+        expect(reread_phase).to eq "aborting"
+        expect(Subspace::Upgrade::State.read("production")["window_open"]).to be false
+      end
+
+      it "still takes the new server out of the inventory" do
+        expect { subject.abort_upgrade }.to raise_error SystemExit
+        expect(subject).to have_received(:remove_host!).with("production-app2")
+      end
+
+      it "does not restart the old server when run again" do
+        expect { subject.abort_upgrade }.to raise_error SystemExit
+        described_class.new("production", options).tap do |retry_upgrade|
+          allow(retry_upgrade).to receive_messages(say: nil, ask: "production", check!: nil, remove_host!: nil, apply!: nil)
+          allow(retry_upgrade).to receive(:start_application!)
+          retry_upgrade.abort_upgrade
+
+          expect(retry_upgrade).not_to have_received :start_application!
+        end
+      end
+    end
+  end
+
   describe "#copy_db" do
     it "advances to copied" do
       subject.copy_db
