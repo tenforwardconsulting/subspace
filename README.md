@@ -143,8 +143,10 @@ run `--cutover`. If it doesn't look right, `--abort` puts the old server back.
 `--copy-db` checks that the old server really is returning its maintenance page before it
 copies anything, so your app needs a `public/maintenance.html` deployed.
 
-The elastic IP is never replaced, so the cutover moves no DNS and the Let's Encrypt
-certificate (copied across from the old server) stays valid for the same address.
+The elastic IP is never replaced, so the cutover moves no DNS. `--prepare` copies the
+Let's Encrypt certificates from the old server before provisioning the new one, so it
+serves your domain over TLS on its own address. `--cutover` checks that before it moves
+the IP.
 
 Back your database up yourself before you start, and verify the dump by restoring it
 locally - a dump nobody has restored isn't a backup.

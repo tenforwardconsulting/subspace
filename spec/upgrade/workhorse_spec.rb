@@ -56,7 +56,6 @@ describe Subspace::Upgrade::Workhorse do
     allow(subject).to receive(:maintenance_mode!)
     allow(subject).to receive(:verify_maintenance_page!)
     allow(subject).to receive(:stop_application!)
-    allow(subject).to receive(:copy_letsencrypt!)
     allow(subject).to receive(:open_instance_ssh!)
     allow(subject).to receive(:close_instance_ssh)
     allow(subject).to receive(:db_copy!)
@@ -71,7 +70,6 @@ describe Subspace::Upgrade::Workhorse do
     let(:archive) { File.expand_path "tmp/subspace/production-letsencrypt.tar.gz" }
 
     before do
-      allow(subject).to receive(:copy_letsencrypt!).and_call_original
       allow(subject).to receive(:playbook) do
         FileUtils.touch archive
         true
@@ -94,6 +92,34 @@ describe Subspace::Upgrade::Workhorse do
       subject.send :copy_letsencrypt!
 
       expect(File).not_to exist archive
+    end
+  end
+
+  describe "#cutover" do
+    before do
+      Subspace::Upgrade::State.read("production").tap { |state| state["phase"] = "copied" }.save
+      allow(subject).to receive(:to_public_ip).and_return "203.0.113.2"
+      allow(subject).to receive(:flip_active_instance!)
+      allow(subject).to receive(:serves_domain?).and_return true
+      allow(subject).to receive(:assert_not_in_maintenance_mode!)
+    end
+
+    it "checks the new server on its own address before moving the elastic IP", :aggregate_failures do
+      subject.cutover
+
+      expect(subject).to have_received(:serves_domain?).with("203.0.113.2").ordered
+      expect(subject).to have_received(:flip_active_instance!).ordered
+      expect(reread_phase).to eq "cutover"
+    end
+
+    context "when the new server does not serve the domain" do
+      before { allow(subject).to receive(:serves_domain?).with("203.0.113.2").and_return false }
+
+      it "does not move the elastic IP", :aggregate_failures do
+        expect { subject.cutover }.to raise_error SystemExit
+        expect(subject).not_to have_received :flip_active_instance!
+        expect(reread_phase).to eq "copied"
+      end
     end
   end
 
