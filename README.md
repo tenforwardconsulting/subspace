@@ -133,7 +133,7 @@ Split up into multiple steps so you can verify or do manual steps in between:
     subspace upgrade production --copy-db     # maintenance window opens: copy the db across
                                               # then verify the new server on its own IP
     subspace upgrade production --cutover     # move the elastic IP, window closes
-    subspace upgrade production --finalize    # destroy the old server, days later if you like
+    subspace upgrade production --finalize    # destroy the old server
 
 Current status is in `config/subspace/terraform/<env>/upgrade.yml`. Each command will
 throw an error if this file has not recorded the previous phase.

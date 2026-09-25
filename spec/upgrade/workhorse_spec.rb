@@ -77,16 +77,28 @@ describe Subspace::Upgrade::Workhorse do
       end
     end
 
-    it "limits the run to both hosts the playbook has a play for" do
+    it "limits each run to the one host it acts on" do
       subject.send :copy_letsencrypt!
 
       expect(subject).to have_received(:playbook).with(
-        "upgrade_copy_letsencrypt",
-        %w[production-app1 production-app2],
+        "upgrade_fetch_letsencrypt",
+        "production-app1",
         "upgrade_host=production-app1",
-        "letsencrypt_archive=#{archive}",
-        "letsencrypt_destination=production-app2"
+        "letsencrypt_archive=#{archive}"
       )
+      expect(subject).to have_received(:playbook).with(
+        "upgrade_push_letsencrypt",
+        "production-app2",
+        "upgrade_host=production-app2",
+        "letsencrypt_archive=#{archive}"
+      )
+    end
+
+    it "does not push when the fetch fails" do
+      allow(subject).to receive(:playbook).and_return(false)
+
+      expect { subject.send :copy_letsencrypt! }.to raise_error(SystemExit)
+      expect(subject).not_to have_received(:playbook).with("upgrade_push_letsencrypt", any_args)
     end
 
     it "does not leave the private keys on this machine" do
