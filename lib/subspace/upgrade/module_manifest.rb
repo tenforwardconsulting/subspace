@@ -9,7 +9,7 @@ module Subspace
 
       def self.write(module_dir, template:, repo:, ref:)
         File.write File.join(module_dir, FILENAME),
-                   YAML.dump("template" => template, "repo" => repo, "ref" => ref)
+          YAML.dump("template" => template, "repo" => repo, "ref" => ref)
       end
 
       def self.read(module_dir)

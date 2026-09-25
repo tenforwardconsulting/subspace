@@ -44,10 +44,10 @@ describe Subspace::Upgrade::Workhorse do
   before do
     File.write "config/subspace/terraform/production/main.tf", main_tf
     Subspace::Upgrade::State.create("production",
-                                    "template" => "workhorse",
-                                    "phase" => "prepared",
-                                    "from_hostname" => "production-app1",
-                                    "to_hostname" => "production-app2").save
+      "template" => "workhorse",
+      "phase" => "prepared",
+      "from_hostname" => "production-app1",
+      "to_hostname" => "production-app2").save
 
     allow(subject).to receive(:say)
     allow(subject).to receive(:ask).and_return "y"

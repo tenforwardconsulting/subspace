@@ -34,10 +34,10 @@ module Subspace
         state.save
 
         config.add_instance to_slot,
-                            "hostname" => %("#{to_hostname}"),
-                            "ami" => %("#{state["to_ami"]}"),
-                            "instance_type" => config.instances[from_slot]["instance_type"],
-                            "volume_size" => config.instances[from_slot]["volume_size"]
+          "hostname" => %("#{to_hostname}"),
+          "ami" => %("#{state["to_ami"]}"),
+          "instance_type" => config.instances[from_slot]["instance_type"],
+          "volume_size" => config.instances[from_slot]["volume_size"]
 
         apply! address(%(aws_instance.single["#{to_slot}"])) => ["create"]
 
@@ -239,8 +239,8 @@ module Subspace
         # Always limited: the new host shares the <env>_web group, so an unlimited call
         # would take down the server we are cutting over to.
         unless ansible_command("ansible-playbook", File.join(playbook_dir, "maintenance_mode.yml"),
-                               "--diff", "-e", "maintenance_hosts=#{hostname}",
-                               "--limit", hostname, "--tags=maintenance_#{on_or_off}")
+          "--diff", "-e", "maintenance_hosts=#{hostname}",
+          "--limit", hostname, "--tags=maintenance_#{on_or_off}")
           abort "Could not turn maintenance mode #{on_or_off} on #{hostname}."
         end
       end
@@ -277,10 +277,10 @@ module Subspace
         archive = File.expand_path File.join("tmp/subspace", "#{env}-letsencrypt.tar.gz")
         say "Copying /etc/letsencrypt from #{state["from_hostname"]} to #{state["to_hostname"]}"
         playbook_or_abort "upgrade_copy_letsencrypt",
-                          state["from_hostname"],
-                          "letsencrypt_archive=#{archive}",
-                          "letsencrypt_destination=#{state["to_hostname"]}",
-                          limit: [state["from_hostname"], state["to_hostname"]]
+          state["from_hostname"],
+          "letsencrypt_archive=#{archive}",
+          "letsencrypt_destination=#{state["to_hostname"]}",
+          limit: [state["from_hostname"], state["to_hostname"]]
       ensure
         FileUtils.rm_f archive if archive
       end
@@ -289,7 +289,7 @@ module Subspace
       def serves_domain?(address = nil)
         say "Checking that #{state["to_hostname"]} serves the site by its domain name#{" at #{address}" if address}"
         playbook "upgrade_verify_tls", state["to_hostname"], "upgrade_host=#{state["to_hostname"]}",
-                 *("verify_address=#{address}" if address)
+          *("verify_address=#{address}" if address)
       end
 
       def health_check!
@@ -324,9 +324,9 @@ module Subspace
 
       def write_capistrano_stage!
         Subspace::Commands::Inventory.write_capistrano_stage inventory,
-                                                             group: "upgrade",
-                                                             rails_env: env,
-                                                             path: capistrano_stage_path
+          group: "upgrade",
+          rails_env: env,
+          path: capistrano_stage_path
         say "Wrote #{capistrano_stage_path}"
       end
 

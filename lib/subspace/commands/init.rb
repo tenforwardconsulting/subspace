@@ -176,6 +176,6 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
   def set_latest_ami
     @latest_ami = Subspace::Ami.latest release: Subspace::Ami::DEFAULT_RELEASE,
-                                       profile: "subspace-#{project_name}"
+      profile: "subspace-#{project_name}"
   end
 end
