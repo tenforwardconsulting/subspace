@@ -131,7 +131,7 @@ module Subspace
       # stopped it.
       def abort_upgrade
         check!
-        state.require_phase! "launched", "prepared", "copied"
+        state.require_phase! "launched", "prepared", "copied", "aborting"
         say "This destroys #{state["to_hostname"]} (slot #{state["to_slot"]}) and leaves #{env} on #{state["from_hostname"]}."
         abort "Aborted." unless ask("Type the environment name to confirm: ").strip == env
 
@@ -140,11 +140,16 @@ module Subspace
           maintenance_mode! :off, state["from_hostname"]
         end
 
+        # The old server is taking writes again, so the new slot's copy is stale: record that
+        # before the destroy, which can be declined, so nothing can cut over to it.
+        state["window_open"] = false
+        state.advance! "aborting"
+        remove_host! state["to_hostname"]
+        FileUtils.rm_f capistrano_stage_path
+
         config.remove_instance state["to_slot"]
         apply! address(%(aws_instance.single["#{state["to_slot"]}"])) => ["delete"]
 
-        remove_host! state["to_hostname"]
-        FileUtils.rm_f capistrano_stage_path
         state.destroy
         say "Aborted the upgrade.  Commit the config diff."
       end
@@ -406,6 +411,12 @@ module Subspace
             running with the data it had at cutover -- leave it up as long as you like.
 
               subspace upgrade #{env} --finalize    # destroy #{state["from_hostname"]} for good
+          EOS
+        when "aborting"
+          <<~EOS
+            #{state["from_hostname"]} is back in service.  #{state["to_hostname"]} (slot #{state["to_slot"]}) has not been destroyed yet.
+
+              subspace upgrade #{env} --abort   # destroy #{state["to_hostname"]}
           EOS
         when "finalized" then "Nothing.  This upgrade is done -- commit the config diff and delete #{State.path_for env}."
         end
