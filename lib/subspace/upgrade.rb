@@ -26,13 +26,15 @@ module Subspace
     # Determine workhorse vs oxenwagen - fails hard if not 100% sure
     def self.strategy_for(env, options)
       env_dir = File.join "config/subspace/terraform", env
+      abort "There is no #{File.join env_dir, "main.tf"}.  Is '#{env}' the right environment?" unless File.exist? File.join(env_dir, "main.tf")
+
       recorded = State.exist?(env) ? State.read(env)["template"] : nil
       vendored = Dir[File.join(env_dir, "modules", "*")]
         .select { |dir| File.directory? dir }
         .map { |dir| ModuleManifest.read(dir)&.fetch("template", nil) }
         .compact
       main_tf = File.read File.join(env_dir, "main.tf")
-      sourced = main_tf[%r{terraform-subspace-(\w+)}, 1] || main_tf[%r{source\s*=\s*"\./modules/(\w+)"}, 1]
+      sourced = main_tf[%r{source\s*=\s*"[^"]*terraform-subspace-(\w+)}, 1] || main_tf[%r{source\s*=\s*"\./modules/(\w+)"}, 1]
 
       templates = ([recorded, sourced] + vendored).compact.uniq
       if templates.size > 1

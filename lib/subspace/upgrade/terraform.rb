@@ -2,8 +2,6 @@ require 'json'
 require 'open3'
 module Subspace
   module Upgrade
-    # Terraform invocations for an environment, including the saved-plan review that
-    # every destructive step in an upgrade goes through.
     class Terraform
       PLAN_FILE = "subspace-upgrade.tfplan"
 
@@ -42,7 +40,6 @@ module Subspace
         $?.exitstatus
       end
 
-      # Every change the plan proposes, excluding resources terraform leaves alone
       def plan_changes
         run("plan", "-input=false", "-out=#{PLAN_FILE}") or abort "terraform plan failed"
         JSON.parse(capture("show", "-json", PLAN_FILE))

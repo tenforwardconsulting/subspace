@@ -1,5 +1,4 @@
 ---
-# Confirms users are really seeing the maintenance page before the database moves.
 - name: Verify the maintenance page is being served
   hosts: "{{ upgrade_host }}"
   gather_facts: false

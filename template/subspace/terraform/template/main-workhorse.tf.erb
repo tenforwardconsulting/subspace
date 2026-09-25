@@ -20,7 +20,7 @@ terraform {
 }
 
 module workhorse {
-  source = "<%= @module_source || "github.com/tenforwardconsulting/terraform-subspace-workhorse?ref=v1.0.0" %>"
+  source = "<%= @module_source %>"
   project_name = "<%= project_name %>"
   project_environment = "<%= @env %>"
   aws_region = "us-west-2"

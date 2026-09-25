@@ -116,7 +116,7 @@ MUST be turned off manually by running `subspace maintenance_mode <environment> 
 | rails      | appyml           |
 | monit      | monit            | All tasks in the monit role have been tagged 'monit'           |
 
-### `subspace upgrade <environment> <phase>`
+### `subspace upgrade <environment>`
 
 Replaces an environment's servers with new ones built from a current AMI.
 
