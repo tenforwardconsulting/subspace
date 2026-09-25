@@ -386,12 +386,11 @@ module Subspace
           reference = File.join tmp, "reference"
           cloned = system("git", "clone", "--depth", "1", "--branch", manifest["ref"],
             manifest["repo"], reference, out: File::NULL, err: File::NULL)
-          return false unless cloned
+          abort "Could not clone #{manifest["repo"]} at #{manifest["ref"]} to check #{module_dir} for local changes." unless cloned
 
           FileUtils.rm_rf File.join(reference, ".git")
           !system("diff", "-r", "-q",
             "--exclude=#{ModuleManifest::FILENAME}",
-            "--exclude=#{ModuleManifest::LEGACY_FILENAME}",
             "--exclude=.terraform",
             "--exclude=.terraform.lock.hcl",
             reference, module_dir, out: File::NULL, err: File::NULL)
