@@ -21,32 +21,29 @@ module Subspace
       end
 
       def instances
-        body = map_body
-        entries = {}
-        cursor = 0
-        while (entry = body.match(/"([^"]+)"[ \t]*=[ \t]*\{/, cursor))
-          open = entry.end(0) - 1
-          close = matching_brace body, open
-          entries[entry[1]] = attributes_in body[(open + 1)...close]
-          cursor = close + 1
-        end
-        entries
+        entry_ranges.transform_values { |range| attributes_in @source[range] }
       end
 
       def hostname_for(key)
         self.class.unquote instances.fetch(key)["hostname"]
       end
 
+      # Edits splice a single slot's text so comments and anything else in the map survive.
       def add_instance(key, attributes)
         raise "Slot #{key} is already defined in #{path}" if instances.key? key
 
-        write_instances instances.merge(key => attributes)
+        indent = @source[/^([ \t]*)instances[ \t]*=/, 1]
+        width = attributes.keys.map(&:length).max
+        lines = [%(#{indent}  "#{key}" = {)]
+        attributes.each { |name, literal| lines << "#{indent}    #{name.ljust(width)} = #{literal}" }
+        lines << "#{indent}  }"
+        @source.insert @source.rindex("\n", map_range.end) + 1, "#{lines.join("\n")}\n"
       end
 
       def remove_instance(key)
-        raise "There is no slot #{key} in #{path}" unless instances.key? key
+        range = entry_ranges[key] or raise "There is no slot #{key} in #{path}"
 
-        write_instances instances.reject { |slot, _| slot == key }
+        @source[(@source.rindex("\n", range.begin) + 1)..@source.index("\n", range.end)] = ""
       end
 
       def active_instance
@@ -92,19 +89,6 @@ module Subspace
         end
       end
 
-      def write_instances(entries)
-        indent = @source[/^([ \t]*)instances[ \t]*=/, 1]
-        width = entries.values.flat_map(&:keys).map(&:length).max
-        lines = ["#{indent}instances = {"]
-        entries.sort_by { |key, _| key.to_i }.each do |key, attributes|
-          lines << %(#{indent}  "#{key}" = {)
-          attributes.each { |name, literal| lines << "#{indent}    #{name.ljust(width)} = #{literal}" }
-          lines << "#{indent}  }"
-        end
-        lines << "#{indent}}"
-        @source[map_range] = lines.join("\n")
-      end
-
       def map_range
         match = @source.match(/^[ \t]*instances[ \t]*=[ \t]*\{/)
         raise "#{path} has no `instances` map.  Is its terraform module at least v2.0.0?" if match.nil?
@@ -112,10 +96,16 @@ module Subspace
         (match.begin(0)..matching_brace(@source, match.end(0) - 1))
       end
 
-      def map_body
-        range = map_range
-        open = @source.index "{", range.begin
-        @source[(open + 1)...range.end]
+      def entry_ranges
+        map = map_range
+        entries = {}
+        cursor = @source.index("{", map.begin) + 1
+        while (entry = @source.match(/"([^"]+)"[ \t]*=[ \t]*\{/, cursor)) && entry.begin(0) < map.end
+          close = matching_brace @source, entry.end(0) - 1
+          entries[entry[1]] = entry.begin(0)..close
+          cursor = close + 1
+        end
+        entries
       end
 
       def matching_brace(source, open)
@@ -132,7 +122,7 @@ module Subspace
       end
 
       def attributes_in(body)
-        body.scan(/^[ \t]*(\w+)[ \t]*=[ \t]*(.+?)[ \t]*$/).to_h
+        body.scan(%r{^[ \t]*(\w+)[ \t]*=[ \t]*((?:"(?:[^"\\]|\\.)*"|[^"#\n])+?)[ \t]*(?:(?:#|//).*)?$}).to_h
       end
     end
   end

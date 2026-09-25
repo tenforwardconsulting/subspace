@@ -111,23 +111,12 @@ module Subspace
       # --------------------------------------------------------- compatibility
 
       def check!
-        check_terraform_cloud!
         check_module_version!
         check_module_variables!
         check_root_outputs!
         check_state_fingerprint!
         check_instance_ssh_closed!
         check_clean_plan!
-      end
-
-      def check_terraform_cloud!
-        return unless terraform.terraform_cloud?
-
-        abort <<~EOS
-          #{env} uses Terraform Cloud.  `subspace upgrade` reviews saved plan files locally,
-          which remote execution does not support, and its phase state assumes one operator's
-          working copy is authoritative.  Upgrade this environment by hand.
-        EOS
       end
 
       def check_module_version!

@@ -142,6 +142,48 @@ describe Subspace::Upgrade::TerraformConfig do
     expect(described_class.new(@path).allow_instance_ssh).to eq false
   end
 
+  context "with comments and a nested block in the instances map" do
+    let(:commented_tf) do
+      <<~HCL
+        module workhorse {
+          instances = {
+            # slot 1 is the original server
+            "1" = {
+              hostname      = "production-app1" # current
+              ami           = "ami-0abc" // noble
+              instance_type = "t3.medium"
+              volume_size   = 20
+              tags = {
+                note = "has a # in it"
+              }
+            }
+          }
+          active_instance = "1"
+        }
+      HCL
+    end
+
+    before { File.write @path, commented_tf }
+
+    it "reads values without their trailing comments", :aggregate_failures do
+      expect(subject.hostname_for("1")).to eq "production-app1"
+      expect(subject.instances["1"]["ami"]).to eq '"ami-0abc"'
+      expect(subject.instances["1"]["note"]).to eq '"has a # in it"'
+    end
+
+    it "keeps the rest of the map intact when adding and removing a slot", :aggregate_failures do
+      subject.add_instance "2", "hostname" => '"production-app2"', "ami" => '"ami-0def"'
+      subject.save
+      expect(File.read(@path)).to include commented_tf.lines[1..11].join
+      expect(described_class.new(@path).instances.keys).to eq %w[1 2]
+
+      config = described_class.new @path
+      config.remove_instance "2"
+      config.save
+      expect(File.read(@path)).to eq commented_tf
+    end
+  end
+
   it "raises a useful error on a v1 config with no instances map" do
     File.write @path, %(module workhorse {\n  instance_ami = "ami-0abc"\n}\n)
     expect { described_class.new(@path).instances }.to raise_error(/at least v2.0.0/)
