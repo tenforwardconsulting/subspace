@@ -128,7 +128,7 @@ module Subspace
       # Undo everything before the elastic IP moved: destroy the new slot and, if the
       # maintenance window is open, put the old server back into service.  The old server
       # still holds the data it always had -- nothing has written to it since --copy-db
-      # stopped it.
+      # stopped puma, the workers and cron.
       def abort_upgrade
         check!
         state.require_phase! "launched", "prepared", "copied", "aborting"
@@ -265,12 +265,12 @@ module Subspace
       end
 
       def stop_application!(hostname)
-        say "Stopping puma and the workers on #{hostname} (a maintenance page does not stop background jobs)"
+        say "Stopping puma, the workers and cron on #{hostname} (a maintenance page does not stop background jobs)"
         playbook_or_abort "upgrade_quiesce", hostname
       end
 
       def start_application!(hostname)
-        say "Starting puma and the workers back up on #{hostname}"
+        say "Starting puma, the workers and cron back up on #{hostname}"
         playbook_or_abort "upgrade_unquiesce", hostname
       end
 
@@ -371,8 +371,9 @@ module Subspace
           EOS
         when "prepared"
           return <<~EOS if state["window_open"]
-            A previous --copy-db did not finish.  #{state["from_hostname"]} is stopped and showing the
-            maintenance page, and #{state["to_hostname"]} may hold part of the copy.
+            A previous --copy-db did not finish.  #{state["from_hostname"]} may have puma, the workers
+            and cron stopped, it is showing the maintenance page, and #{state["to_hostname"]} may hold
+            part of the copy.
 
               subspace upgrade #{env} --copy-db   # copy again, overwriting #{state["to_hostname"]}'s database
               subspace upgrade #{env} --abort     # or back out: destroy #{state["to_hostname"]},
@@ -392,8 +393,8 @@ module Subspace
         when "copied"
           <<~EOS
             #{state["from_hostname"]}'s database is now on #{state["to_hostname"]}, which is running the
-            real data on its own address.  #{state["from_hostname"]} is stopped and showing the
-            maintenance page, so nothing is writing to either database.
+            real data on its own address.  #{state["from_hostname"]} has puma, the workers and cron
+            stopped and is showing the maintenance page, so nothing is writing to either database.
 
               1. Verify #{state["to_hostname"]} against the real data: https://#{to_public_ip}/ (expect a
                  certificate warning), or map your domain to it in /etc/hosts for a faithful test
@@ -403,7 +404,7 @@ module Subspace
 
             The window is open, so users are seeing the maintenance page until you do one or
             the other.  Both are still safe: nothing has written to #{state["from_hostname"]} since
-            it stopped.
+            its app stopped.
           EOS
         when "cutover"
           <<~EOS

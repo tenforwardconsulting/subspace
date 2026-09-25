@@ -136,8 +136,8 @@ Split up into multiple steps so you can verify or do manual steps in between:
 Current status is in `config/subspace/terraform/<env>/upgrade.yml`. Each command will
 throw an error if this file has not recorded the previous phase.
 
-The maintenance window is split across two commands. `--copy-db` stops the old server,
-moves the data, and stops. The new server is reachable on its own public address,
+The maintenance window is split across two commands. `--copy-db` stops puma, the
+workers and cron on the old server, moves the data, and stops. The new server is reachable on its own public address,
 while users still see the maintenance page. Verify it properly there then
 run `--cutover`. If it doesn't look right, `--abort` puts the old server back.
 

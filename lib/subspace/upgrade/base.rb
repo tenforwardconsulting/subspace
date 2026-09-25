@@ -37,8 +37,8 @@ module Subspace
 
         if state["window_open"]
           say ""
-          say "The maintenance window is OPEN: #{state["from_hostname"]} is stopped and showing the"
-          say "maintenance page.  `--cutover` or `--abort` closes it."
+          say "The maintenance window is OPEN: #{state["from_hostname"]} has puma, the workers and cron"
+          say "stopped and is showing the maintenance page.  `--cutover` or `--abort` closes it."
         end
 
         if config.allow_instance_ssh
