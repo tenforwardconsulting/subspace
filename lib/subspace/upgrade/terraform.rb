@@ -34,10 +34,6 @@ module Subspace
         JSON.parse capture("output", "-json", name)
       end
 
-      def terraform_cloud?
-        File.read(File.join(@dir, "main.tf")) =~ /^\s+cloud \{$/
-      end
-
       # 0 = no changes, 2 = changes pending, anything else = terraform failed
       def plan_exit_status
         Dir.chdir @dir do
