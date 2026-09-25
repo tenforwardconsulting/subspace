@@ -1,0 +1,24 @@
+---
+# Seeds the new host with the existing certificates before it is provisioned, so the
+# letsencrypt role finds a cert that is not due for renewal and nginx starts with TLS.
+# Split from upgrade_push_letsencrypt.yml so each run is limited to its one host.
+- name: Archive /etc/letsencrypt from the old host
+  hosts: "{{ upgrade_host }}"
+  gather_facts: false
+  become: true
+  tasks:
+    - when: ssl_enabled | default(false)
+      block:
+        - name: Create the archive
+          command: tar czf /tmp/letsencrypt.tar.gz -C /etc letsencrypt
+
+        - name: Fetch the archive
+          fetch:
+            src: /tmp/letsencrypt.tar.gz
+            dest: "{{ letsencrypt_archive }}"
+            flat: true
+
+        - name: Remove the archive from the old host
+          file:
+            path: /tmp/letsencrypt.tar.gz
+            state: absent

@@ -1,0 +1,23 @@
+---
+- name: Verify the maintenance page is being served
+  hosts: "{{ upgrade_host }}"
+  gather_facts: false
+  tasks:
+    - name: Request the site as a user would
+      uri:
+        url: https://127.0.0.1/
+        headers:
+          Host: "{{ server_name }}"
+        validate_certs: false
+        status_code: 503
+      register: maintenance_response
+      failed_when: false
+
+    - name: Assert nginx is serving the maintenance page
+      assert:
+        that: maintenance_response.status == 503
+        fail_msg: >-
+          https://{{ server_name }}/ on {{ inventory_hostname }} returned
+          {{ maintenance_response.status }}, not the 503 maintenance page.  Users are still
+          being served the application.  If the app has no public/maintenance.html, add one
+          and deploy it -- nginx-maintenance has nothing to install without it.

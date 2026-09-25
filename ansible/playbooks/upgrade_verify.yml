@@ -1,0 +1,39 @@
+---
+# Asserts a host is actually ready to take traffic.  Run before a cutover, and again
+# afterwards to catch a maintenance page that came along with a copied file.
+- name: Verify a host is serving the application
+  hosts: "{{ upgrade_host }}"
+  gather_facts: false
+  tasks:
+    - name: Look for a deployed release
+      stat:
+        path: /u/apps/{{ project_name }}/current/Gemfile
+      register: current_release
+
+    - name: Assert the application has been deployed
+      assert:
+        that: current_release.stat.exists
+        fail_msg: >-
+          Nothing is deployed at /u/apps/{{ project_name }}/current on {{ inventory_hostname }}.
+          Deploy to it before cutting over.
+
+    - name: Check that puma is running
+      become: true
+      command: systemctl is-active puma.service
+      changed_when: false
+      register: puma
+
+    - name: Look for a maintenance page
+      become: true
+      stat:
+        path: /opt/subspace/maintenance.html
+      register: maintenance_page
+
+    - name: Assert the host is serving and not in maintenance mode
+      assert:
+        that:
+          - puma.stdout == "active"
+          - not maintenance_page.stat.exists
+        fail_msg: >-
+          {{ inventory_hostname }} is not serving (puma {{ puma.stdout }}, maintenance page
+          {{ "present" if maintenance_page.stat.exists else "absent" }}).

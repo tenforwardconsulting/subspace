@@ -1,0 +1,132 @@
+---
+- name: Report the postgres version on both hosts
+  hosts: "{{ db_copy_source }}:{{ db_copy_destination }}"
+  gather_facts: false
+  become: true
+  become_user: postgres
+  tasks:
+    - name: Select version()
+      command: psql -tAc "SELECT version()"
+      changed_when: false
+      register: postgres_version
+
+    - name: Report the version
+      debug:
+        msg: "{{ inventory_hostname }}: {{ postgres_version.stdout }}"
+
+- name: Refuse to copy from a server that is still serving traffic
+  hosts: "{{ db_copy_source }}"
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Look for the maintenance page
+      stat:
+        path: /opt/subspace/maintenance.html
+      register: maintenance_page
+
+    - name: Check whether puma is running
+      command: systemctl is-active puma.service
+      changed_when: false
+      failed_when: false
+      register: puma
+
+    - name: Assert the source is quiesced
+      assert:
+        that:
+          - maintenance_page.stat.exists
+          - puma.stdout != "active"
+        fail_msg: >-
+          {{ inventory_hostname }} is not quiesced (maintenance page
+          {{ "present" if maintenance_page.stat.exists else "absent" }}, puma {{ puma.stdout }}).
+          Turn maintenance mode on and stop puma and the workers first.  If the page is
+          absent because this app has no public/maintenance.html, add one and deploy it --
+          subspace needs it to keep users out while the database moves.  Pass --force to
+          copy anyway.
+      when: not db_copy_force | bool
+
+- name: Refuse to overwrite a database that already holds data
+  hosts: "{{ db_copy_destination }}"
+  gather_facts: false
+  become: true
+  become_user: postgres
+  tasks:
+    # A deploy that ran migrations leaves rows in the rails bookkeeping tables.
+    - name: Count the tables holding rows
+      command: >-
+        psql -tAd {{ database_name }} -c
+        "SELECT count(*) FROM pg_stat_user_tables
+        WHERE relname NOT IN ('schema_migrations', 'ar_internal_metadata')
+        AND (xpath('/row/found/text()', query_to_xml(format('SELECT EXISTS (SELECT FROM %I.%I) AS found', schemaname, relname), false, true, '')))[1]::text::boolean"
+      changed_when: false
+      register: populated_tables
+
+    - name: Assert the destination is empty
+      assert:
+        that: populated_tables.stdout | int == 0
+        fail_msg: >-
+          {{ database_name }} on {{ inventory_hostname }} already holds data in
+          {{ populated_tables.stdout }} tables.  Pass --force to overwrite it.
+      when: not (db_copy_force | bool or db_copy_overwrite | bool)
+
+- name: Stream the database across
+  hosts: "{{ db_copy_source }}"
+  gather_facts: false
+  vars:
+    destination: "{{ hostvars[db_copy_destination] }}"
+    ssh_options: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+  tasks:
+    - name: Check the source can ssh to the destination
+      command: ssh {{ ssh_options }} {{ destination.ansible_user }}@{{ db_copy_destination_ip }} true
+      changed_when: false
+      tags: db_copy_check
+
+    # Straight between the two instances over the private network, using the operator's
+    # forwarded agent so no server-to-server credential is ever created.
+    - name: Dump and restore directly between the instances
+      shell: >-
+        set -o pipefail &&
+        sudo -u postgres pg_dump -Fc --no-owner --no-acl {{ database_name }}
+        | ssh {{ ssh_options }} {{ destination.ansible_user }}@{{ db_copy_destination_ip }}
+        'sudo -u postgres pg_restore --clean --if-exists --no-owner --no-acl -d {{ destination.database_name }}'
+      args:
+        executable: /bin/bash
+
+- name: Count rows on the source
+  hosts: "{{ db_copy_source }}"
+  gather_facts: false
+  become: true
+  become_user: postgres
+  tasks:
+    - name: Pick the users table, or the largest table
+      command: >-
+        psql -tAd {{ database_name }} -c
+        "SELECT coalesce(to_regclass('users'),
+        (SELECT relid::regclass FROM pg_stat_user_tables ORDER BY pg_total_relation_size(relid) DESC LIMIT 1))"
+      changed_when: false
+      register: count_table
+
+    - name: Count the rows
+      command: psql -tAd {{ database_name }} -c "SELECT count(*) FROM {{ count_table.stdout }}"
+      changed_when: false
+      register: source_rows
+
+- name: Compare the row count on the destination
+  hosts: "{{ db_copy_destination }}"
+  gather_facts: false
+  become: true
+  become_user: postgres
+  vars:
+    source: "{{ hostvars[db_copy_source] }}"
+  tasks:
+    - name: Count the rows
+      command: psql -tAd {{ database_name }} -c "SELECT count(*) FROM {{ source.count_table.stdout }}"
+      changed_when: false
+      register: destination_rows
+
+    - name: Assert the row counts match
+      assert:
+        that: destination_rows.stdout == source.source_rows.stdout
+        fail_msg: >-
+          {{ source.count_table.stdout }} has {{ source.source_rows.stdout }} rows on
+          {{ db_copy_source }} but {{ destination_rows.stdout }} on {{ inventory_hostname }}.
+        success_msg: "{{ source.count_table.stdout }}: {{ destination_rows.stdout }} rows on both sides."
