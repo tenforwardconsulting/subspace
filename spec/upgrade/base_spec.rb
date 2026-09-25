@@ -126,6 +126,35 @@ describe Subspace::Upgrade::Workhorse do
       end
     end
 
+    context "when the plan replaces a slot the step only asked to update" do
+      let(:changes) do
+        expected_changes.map do |change|
+          next change unless change["address"] == %(module.workhorse.aws_instance.single["1"])
+
+          change.merge "change" => { "actions" => %w[delete create] }
+        end
+      end
+
+      it "refuses and discards the plan", :aggregate_failures do
+        expect { subject.send :open_instance_ssh! }.to raise_error SystemExit
+        expect(terraform).to have_received :discard_plan
+        expect(terraform).not_to have_received :apply_plan
+      end
+    end
+
+    context "when the plan replaces a resource the step permits every action on" do
+      let(:changes) do
+        [{ "address" => "module.workhorse.aws_eip_association.eip_assoc", "change" => { "actions" => %w[delete create] } }]
+      end
+
+      before { allow(subject).to receive(:update_inventory!) }
+
+      it "applies the saved plan" do
+        subject.send :flip_active_instance!, "2"
+        expect(terraform).to have_received :apply_plan
+      end
+    end
+
     context "when the operator declines the plan" do
       let(:changes) { close_changes }
 

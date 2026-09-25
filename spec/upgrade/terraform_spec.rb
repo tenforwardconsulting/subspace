@@ -21,4 +21,17 @@ describe Subspace::Upgrade::Terraform do
       .to raise_error(SystemExit)
       .and output(/terraform output -json instances failed:\nError: No outputs found/).to_stderr
   end
+
+  it "drops resources the plan leaves alone" do
+    plan = {
+      "resource_changes" => [
+        { "address" => "aws_eip.single", "change" => { "actions" => ["no-op"] } },
+        { "address" => "aws_instance.single[\"2\"]", "change" => { "actions" => ["create"] } }
+      ]
+    }
+    allow(subject).to receive(:run).and_return true
+    allow(subject).to receive(:capture).with("show", "-json", described_class::PLAN_FILE).and_return plan.to_json
+
+    expect(subject.plan_changes.map { |change| change["address"] }).to eq ["aws_instance.single[\"2\"]"]
+  end
 end
