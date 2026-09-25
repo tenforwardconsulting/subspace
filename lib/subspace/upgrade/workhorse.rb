@@ -46,7 +46,8 @@ module Subspace
         add_to_group! to_hostname, "upgrade"
 
         Subspace::Commands::Bootstrap.new [to_hostname], options
-        provision_without_letsencrypt! to_hostname
+        copy_letsencrypt!
+        provision! to_hostname
         write_capistrano_stage!
 
         state.advance! "prepared"
@@ -73,7 +74,6 @@ module Subspace
         maintenance_mode! :on, state["from_hostname"]
         verify_maintenance_page! state["from_hostname"]
         stop_application! state["from_hostname"]
-        copy_letsencrypt!
 
         begin
           open_instance_ssh!
@@ -90,6 +90,10 @@ module Subspace
       def cutover
         check!
         state.require_phase! "copied"
+
+        unless serves_domain? to_public_ip
+          abort "#{state["to_hostname"]} is not serving the site on its own address.  Nothing has moved yet."
+        end
 
         say "This points #{env}'s elastic IP at #{state["to_hostname"]} and ends the maintenance window."
         say "After this there is no --abort: #{state["to_hostname"]} holds the only current data."
@@ -219,12 +223,10 @@ module Subspace
 
       # --------------------------------------------------------- application
 
-      def provision_without_letsencrypt!(hostname)
-        # HTTP-01 validation cannot pass while the domain still resolves to the old
-        # server; /etc/letsencrypt is copied across at cutover instead.
-        say "Provisioning #{hostname} (skipping letsencrypt until the IP moves)"
+      def provision!(hostname)
+        say "Provisioning #{hostname}"
         set_subspace_version
-        unless ansible_playbook("#{env}.yml", "--limit", hostname, "--skip-tags", "letsencrypt")
+        unless ansible_playbook("#{env}.yml", "--limit", hostname)
           abort "Provisioning #{hostname} failed."
         end
       end
@@ -261,6 +263,18 @@ module Subspace
         playbook_or_abort "upgrade_verify_maintenance", hostname
       end
 
+      def assert_not_in_maintenance_mode!(hostname)
+        return if playbook "upgrade_verify", hostname, "upgrade_host=#{hostname}"
+
+        abort "#{hostname} is serving traffic but did not pass its post-cutover check."
+      end
+
+      def to_public_ip
+        terraform.output("instances").fetch(state["to_slot"]).fetch("public_ip")
+      end
+
+      # HTTP-01 validation cannot pass while the domain still resolves to the old server, so
+      # the new one gets the old one's certificates before it is provisioned.
       def copy_letsencrypt!
         FileUtils.mkdir_p "tmp/subspace"
         archive = File.expand_path File.join("tmp/subspace", "#{env}-letsencrypt.tar.gz")
@@ -274,32 +288,18 @@ module Subspace
         FileUtils.rm_f archive if archive
       end
 
-      def assert_not_in_maintenance_mode!(hostname)
-        return if playbook "upgrade_verify", hostname, "upgrade_host=#{hostname}"
-
-        abort "#{hostname} is serving traffic but did not pass its post-cutover check."
+      # Without an address this goes through DNS, which is what users do.
+      def serves_domain?(address = nil)
+        say "Checking that #{state["to_hostname"]} serves the site by its domain name#{" at #{address}" if address}"
+        playbook "upgrade_verify_tls", state["to_hostname"], "upgrade_host=#{state["to_hostname"]}",
+                 *("verify_address=#{address}" if address)
       end
 
-      def to_public_ip
-        terraform.output("instances").fetch(state["to_slot"]).fetch("public_ip")
-      end
-
-      # The elastic IP is what moved, so that is what gets checked.  -k because the
-      # certificate is issued for the domain name, not for the address.
       def health_check!
-        address = to_public_ip
-        say "Waiting for https://#{address}/ to return 200"
-        20.times do
-          code = `curl -sk -o /dev/null -w '%{http_code}' --max-time 10 https://#{address}/`.chomp
-          if code == "200"
-            say "#{address} returned 200."
-            return
-          end
-          say "  #{code}, retrying..."
-          sleep 5
-        end
+        return if serves_domain?
+
         abort <<~EOS
-          https://#{address}/ never returned 200.  The elastic IP has already moved, so
+          The site is not being served through the elastic IP, which has already moved, so
           #{state["to_hostname"]} is live and holds the only current copy of the data.  Fix it
           there -- do not move the IP back without dealing with the data by hand first.
         EOS
@@ -351,7 +351,8 @@ module Subspace
             #{state["to_hostname"]} is provisioned at #{inventory.hosts[state["to_hostname"]]&.vars&.dig("ansible_host")} (#{state["to_ami"]}, ubuntu #{state["ubuntu_release"]}).
 
               1. bundle exec cap #{env}_upgrade deploy
-              2. Verify the app: ssh in, check the logs, hit the server directly
+              2. Verify the app: ssh in, check the logs, and browse https://<address>/ (expect a
+                 certificate warning), or map your domain to it in /etc/hosts for a faithful test
               3. subspace upgrade #{env} --copy-db
 
             #{state["from_hostname"]} is still serving all traffic.  Nothing is at risk yet.
@@ -362,8 +363,8 @@ module Subspace
             real data on its own address.  #{state["from_hostname"]} is stopped and showing the
             maintenance page, so nothing is writing to either database.
 
-              1. Verify #{state["to_hostname"]} against the real data: https://#{to_public_ip}/  (-k, the
-                 certificate is for the domain, not the address)
+              1. Verify #{state["to_hostname"]} against the real data: https://#{to_public_ip}/ (expect a
+                 certificate warning), or map your domain to it in /etc/hosts for a faithful test
               2. subspace upgrade #{env} --cutover   # move the elastic IP, end the window
                  subspace upgrade #{env} --abort     # or back out: destroy #{state["to_hostname"]},
                                                      # restart #{state["from_hostname"]}

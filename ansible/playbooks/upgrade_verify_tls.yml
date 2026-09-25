@@ -1,0 +1,29 @@
+---
+# Requests the site by its real name, so the certificate is checked against the domain.
+# With verify_address the name is pinned to that address instead of going through DNS.
+- name: Verify the site is served by its domain name
+  hosts: "{{ upgrade_host }}"
+  gather_facts: false
+  vars:
+    scheme: "{{ 'https' if ssl_enabled | default(false) else 'http' }}"
+    verify_port: "{{ '443' if ssl_enabled | default(false) else '80' }}"
+    resolve: "{{ ['--resolve', server_name ~ ':' ~ verify_port ~ ':' ~ verify_address] if verify_address is defined else [] }}"
+  tasks:
+    - name: Request {{ scheme }}://{{ server_name }}/
+      delegate_to: localhost
+      command:
+        argv: "{{ ['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}', '--max-time', '10'] + resolve + [scheme ~ '://' ~ server_name ~ '/'] }}"
+      register: response
+      changed_when: false
+      failed_when: false
+      until: response.stdout == "200"
+      retries: 20
+      delay: 5
+
+    - name: Assert the site returned 200
+      assert:
+        that: response.stdout == "200"
+        fail_msg: >-
+          {{ scheme }}://{{ server_name }}/ {{ ('at ' ~ verify_address) if verify_address is defined else '' }}
+          returned {{ response.stdout }} (curl exit {{ response.rc }}).  000 with exit 60
+          means the certificate did not validate.
