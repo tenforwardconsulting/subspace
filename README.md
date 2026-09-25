@@ -125,9 +125,11 @@ Split up into multiple steps so you can verify or do manual steps in between:
     subspace upgrade <env> --status           # view current status of the upgrade. default with no --phase
     subspace upgrade production --check       # is this environment upgradeable?
     subspace upgrade production --init        # record the start of an upgrade
-    subspace upgrade production --launch      # build the new server, then commit the config diff
+    subspace upgrade production --launch      # build the new server in terraform
     subspace upgrade production --provision   # bootstrap/provision it, re-run until it succeeds
-    bundle exec cap production_upgrade deploy # then verify it by hand
+                                              # connect to tailscale after a fresh tailscale_auth_key is in the vault
+    subspace provision production --tags=tailscale_reauth --limit <new host>
+    bundle exec cap production_upgrade deploy # deploy then verify it by hand
     subspace upgrade production --copy-db     # maintenance window opens: copy the db across
                                               # then verify the new server on its own IP
     subspace upgrade production --cutover     # move the elastic IP, window closes
@@ -143,6 +145,10 @@ run `--cutover`. If it doesn't look right, `--abort` puts the old server back.
 
 `--copy-db` checks that the old server really is returning its maintenance page before it
 copies anything, so your app needs a `public/maintenance.html` deployed.
+
+The copy runs straight from the old server to the new one using your forwarded ssh agent,
+so `--copy-db` adds `subspace.pem` to it for the duration and checks that path works before
+the window opens.
 
 The elastic IP is never replaced, so the cutover moves no DNS. `--provision` copies the
 Let's Encrypt certificates from the old server before provisioning the new one, so it

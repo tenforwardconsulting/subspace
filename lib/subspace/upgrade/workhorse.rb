@@ -74,22 +74,24 @@ module Subspace
         say "and stays down until `--cutover` or `--abort`.  The elastic IP does not move yet."
         abort "Aborted." unless ask("Continue? [no] ").downcase.start_with? "y"
 
-        # Recorded before the window opens, not after the phase completes, so an interrupted
-        # --copy-db still tells --abort that the old server needs starting again.
-        state["window_open"] = true
-        state.save
-
-        maintenance_mode! :on, state["from_hostname"]
-        verify_maintenance_page! state["from_hostname"]
-        stop_application! state["from_hostname"]
-
-        # A retry may find the destination holding part of an earlier attempt's restore.
-        overwrite = !!state["db_copy_started"]
-        state["db_copy_started"] = true
-        state.save
-
         begin
           open_instance_ssh!
+          check_db_copy! state["from_hostname"], state["to_hostname"]
+
+          # Recorded before the window opens, not after the phase completes, so an interrupted
+          # --copy-db still tells --abort that the old server needs starting again.
+          state["window_open"] = true
+          state.save
+
+          maintenance_mode! :on, state["from_hostname"]
+          verify_maintenance_page! state["from_hostname"]
+          stop_application! state["from_hostname"]
+
+          # A retry may find the destination holding part of an earlier attempt's restore.
+          overwrite = !!state["db_copy_started"]
+          state["db_copy_started"] = true
+          state.save
+
           db_copy! state["from_hostname"], state["to_hostname"], overwrite: overwrite
           state.advance! "copied"
         ensure
@@ -235,6 +237,10 @@ module Subspace
 
       def db_copy!(source, destination, overwrite:)
         Subspace::Commands::DbCopy.new [source, destination], options, overwrite: overwrite
+      end
+
+      def check_db_copy!(source, destination)
+        Subspace::Commands::DbCopy.new [source, destination], options, check_only: true
       end
 
       # --------------------------------------------------------- application
@@ -383,10 +389,13 @@ module Subspace
           <<~EOS
             #{state["to_hostname"]} is provisioned at #{inventory.hosts[state["to_hostname"]]&.vars&.dig("ansible_host")} (#{state["to_ami"]}, ubuntu #{state["ubuntu_release"]}).
 
-              1. bundle exec cap #{env}_upgrade deploy
-              2. Verify the app: ssh in, check the logs, and browse https://<address>/ (expect a
+              1. Join #{state["to_hostname"]} to the tailnet: create a reusable, tagged tailscale auth key
+                 (1-day expiry), set tailscale_auth_key in the #{env} vault, then
+                 subspace provision #{env} --tags=tailscale_reauth --limit #{state["to_hostname"]}
+              2. bundle exec cap #{env}_upgrade deploy
+              3. Verify the app: ssh in, check the logs, and browse https://<address>/ (expect a
                  certificate warning), or map your domain to it in /etc/hosts for a faithful test
-              3. subspace upgrade #{env} --copy-db
+              4. subspace upgrade #{env} --copy-db
 
             #{state["from_hostname"]} is still serving all traffic.  Nothing is at risk yet.
           EOS

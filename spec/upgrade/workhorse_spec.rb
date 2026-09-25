@@ -58,6 +58,7 @@ describe Subspace::Upgrade::Workhorse do
     allow(subject).to receive(:stop_application!)
     allow(subject).to receive(:open_instance_ssh!)
     allow(subject).to receive(:close_instance_ssh)
+    allow(subject).to receive(:check_db_copy!)
     allow(subject).to receive(:db_copy!)
     allow(subject).to receive(:next_step_for)
   end
@@ -218,6 +219,17 @@ describe Subspace::Upgrade::Workhorse do
       subject.copy_db
 
       expect(subject).to have_received(:db_copy!).with("production-app1", "production-app2", overwrite: false)
+    end
+
+    context "when the source cannot ssh to the destination" do
+      before { allow(subject).to receive(:check_db_copy!).and_raise SystemExit }
+
+      it "fails before opening the window", :aggregate_failures do
+        expect { subject.copy_db }.to raise_error SystemExit
+        expect(subject).not_to have_received :maintenance_mode!
+        expect(Subspace::Upgrade::State.read("production")["window_open"]).to be_nil
+        expect(subject).to have_received :close_instance_ssh
+      end
     end
 
     context "when a previous attempt started copying" do

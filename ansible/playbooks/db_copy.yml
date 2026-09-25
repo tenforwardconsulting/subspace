@@ -78,6 +78,11 @@
     destination: "{{ hostvars[db_copy_destination] }}"
     ssh_options: -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null
   tasks:
+    - name: Check the source can ssh to the destination
+      command: ssh {{ ssh_options }} {{ destination.ansible_user }}@{{ db_copy_destination_ip }} true
+      changed_when: false
+      tags: db_copy_check
+
     # Straight between the two instances over the private network, using the operator's
     # forwarded agent so no server-to-server credential is ever created.
     - name: Dump and restore directly between the instances
