@@ -78,9 +78,9 @@ describe Subspace::Upgrade::TerraformConfig do
 
   it "adds a slot, copying literals verbatim" do
     subject.add_instance "2", "hostname" => '"production-app2"',
-                              "ami" => '"ami-0def"',
-                              "instance_type" => '"t3.medium"',
-                              "volume_size" => "20"
+      "ami" => '"ami-0def"',
+      "instance_type" => '"t3.medium"',
+      "volume_size" => "20"
     subject.save
 
     reread = described_class.new @path
@@ -96,9 +96,9 @@ describe Subspace::Upgrade::TerraformConfig do
 
   it "removes a slot" do
     subject.add_instance "2", "hostname" => '"production-app2"',
-                              "ami" => '"ami-0def"',
-                              "instance_type" => '"t3.medium"',
-                              "volume_size" => "20"
+      "ami" => '"ami-0def"',
+      "instance_type" => '"t3.medium"',
+      "volume_size" => "20"
     subject.save
 
     config = described_class.new @path
@@ -114,9 +114,9 @@ describe Subspace::Upgrade::TerraformConfig do
 
   it "leaves the rest of the file alone" do
     subject.add_instance "2", "hostname" => '"production-app2"',
-                              "ami" => '"ami-0def"',
-                              "instance_type" => '"t3.medium"',
-                              "volume_size" => "20"
+      "ami" => '"ami-0def"',
+      "instance_type" => '"t3.medium"',
+      "volume_size" => "20"
     subject.save
     expect(File.read(@path)).to include %(source = "./modules/workhorse")
     expect(File.read(@path)).to include %(project_name = "my_project")

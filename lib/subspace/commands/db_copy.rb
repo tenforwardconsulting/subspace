@@ -33,8 +33,8 @@ class Subspace::Commands::DbCopy < Subspace::Commands::Base
     # server-to-server key being created, and mitogen does not forward the agent.
     with_mitogen_disabled do
       unless ansible_playbook(File.join(playbook_dir, "db_copy.yml"),
-                              *extra_vars.flat_map { |var| ["-e", var] },
-                              "-e", "ansible_ssh_extra_args=-o ForwardAgent=yes")
+        *extra_vars.flat_map { |var| ["-e", var] },
+        "-e", "ansible_ssh_extra_args=-o ForwardAgent=yes")
         abort "db_copy from #{@source} to #{@destination} failed."
       end
     end

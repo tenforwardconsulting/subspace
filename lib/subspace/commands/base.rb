@@ -47,7 +47,6 @@ module Subspace
         template = ERB.new File.read(File.join(template_dir, "#{src}.erb")), trim_mode: '-'
         result = template.result(render_binding || binding)
 
-
         File.write File.join(dest_dir, dest), result
       end
 
