@@ -301,11 +301,8 @@ module Subspace
         FileUtils.mkdir_p "tmp/subspace"
         archive = File.expand_path File.join("tmp/subspace", "#{env}-letsencrypt.tar.gz")
         say "Copying /etc/letsencrypt from #{state["from_hostname"]} to #{state["to_hostname"]}"
-        playbook_or_abort "upgrade_copy_letsencrypt",
-          state["from_hostname"],
-          "letsencrypt_archive=#{archive}",
-          "letsencrypt_destination=#{state["to_hostname"]}",
-          limit: [state["from_hostname"], state["to_hostname"]]
+        playbook_or_abort "upgrade_fetch_letsencrypt", state["from_hostname"], "letsencrypt_archive=#{archive}"
+        playbook_or_abort "upgrade_push_letsencrypt", state["to_hostname"], "letsencrypt_archive=#{archive}"
       ensure
         FileUtils.rm_f archive if archive
       end
@@ -357,8 +354,8 @@ module Subspace
 
       # ------------------------------------------------------------- output
 
-      def playbook_or_abort(name, hostname, *extra_vars, limit: nil)
-        return if playbook name, limit || hostname, "upgrade_host=#{hostname}", *extra_vars
+      def playbook_or_abort(name, hostname, *extra_vars)
+        return if playbook name, hostname, "upgrade_host=#{hostname}", *extra_vars
 
         abort "#{name} failed on #{hostname}."
       end

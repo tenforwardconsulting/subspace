@@ -1,0 +1,24 @@
+---
+- name: Unpack /etc/letsencrypt on the new host
+  hosts: "{{ upgrade_host }}"
+  gather_facts: false
+  become: true
+  tasks:
+    - when: ssl_enabled | default(false)
+      block:
+        - name: Upload the archive
+          copy:
+            src: "{{ letsencrypt_archive }}"
+            dest: /tmp/letsencrypt.tar.gz
+            mode: "0600"
+
+        - name: Unpack it
+          unarchive:
+            src: /tmp/letsencrypt.tar.gz
+            dest: /etc
+            remote_src: true
+
+        - name: Remove the archive
+          file:
+            path: /tmp/letsencrypt.tar.gz
+            state: absent

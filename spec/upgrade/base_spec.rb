@@ -231,7 +231,7 @@ describe Subspace::Upgrade::Workhorse do
 
     context "with several hosts" do
       it "joins them into one limit" do
-        subject.send :playbook, "upgrade_copy_letsencrypt", %w[production-app1 production-app2], "a=b"
+        subject.send :playbook, "upgrade_verify", %w[production-app1 production-app2], "a=b"
 
         expect(subject).to have_received(:ansible_playbook).with(
           anything,
