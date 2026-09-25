@@ -38,7 +38,6 @@ module Subspace
                             "ami" => %("#{state["to_ami"]}"),
                             "instance_type" => config.instances[from_slot]["instance_type"],
                             "volume_size" => config.instances[from_slot]["volume_size"]
-        config.save
 
         apply! address(%(aws_instance.single["#{to_slot}"])) => ["create"]
 
@@ -128,7 +127,6 @@ module Subspace
         end
 
         config.remove_instance state["to_slot"]
-        config.save
         apply! address(%(aws_instance.single["#{state["to_slot"]}"])) => ["delete"]
 
         remove_host! state["to_hostname"]
@@ -149,7 +147,6 @@ module Subspace
         backup_database! state["from_hostname"]
 
         config.remove_instance state["from_slot"]
-        config.save
         apply! address(%(aws_instance.single["#{state["from_slot"]}"])) => ["delete"]
 
         remove_host! state["from_hostname"]
@@ -309,14 +306,12 @@ module Subspace
 
       def open_instance_ssh!
         config.allow_instance_ssh = true
-        config.save
         apply!({ address("aws_security_group.instance_ssh[0]") => ["create"] }
                  .merge(slot_addresses("update")))
       end
 
       def flip_active_instance!(slot)
         config.active_instance = slot
-        config.save
         apply! address("aws_eip_association.eip_assoc") => %w[create update delete]
         update_inventory!
       end

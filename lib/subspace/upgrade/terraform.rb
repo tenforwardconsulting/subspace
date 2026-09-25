@@ -1,4 +1,5 @@
 require 'json'
+require 'open3'
 module Subspace
   module Upgrade
     # Terraform invocations for an environment, including the saved-plan review that
@@ -20,7 +21,9 @@ module Subspace
       end
 
       def capture(*args)
-        Dir.chdir(@dir) { `terraform #{args.join(" ")}` }
+        stdout, stderr, status = Open3.capture3("terraform", *args, chdir: @dir)
+        abort "terraform #{args.join(' ')} failed:\n#{stderr}" unless status.success?
+        stdout
       end
 
       def state_list

@@ -173,8 +173,8 @@ instructions; `subspace upgrade <env> --revendor` automates the file-copying par
 Copies a postgres database between two servers, streaming `pg_dump | pg_restore`
 directly between them over their private network using your forwarded ssh agent, so no
 server-to-server credential is ever created and the bytes don't go through your uplink.
-Falls back to routing through your machine (`--via-local`) when the two hosts can't
-reach each other, and says which mode it picked and why.
+The two hosts must be able to reach each other, i.e. `allow_instance_ssh = true` has been
+applied; `subspace upgrade <env> --copy-db` opens that path for the duration of the copy.
 
 It refuses to copy from a host that is still serving traffic, or onto a database that
 already holds data, unless you pass `--force`. It prints both servers' `SELECT
