@@ -16,7 +16,6 @@ This project attempts to follow [semantic versioning](https://semver.org/).
   * BREAKING: workhorse environments now need terraform-subspace-workhorse v2.0.0, which replaces `instance_ami`/`instance_type`/`instance_volume_size`/`instance_hostname` with a keyed `instances` map.  `subspace upgrade <env> --check` prints the migration steps.
   * `subspace init` builds new servers from Ubuntu 26.04 (resolute) instead of 24.04 (noble)
   * `subspace init` vendors the terraform module into the project with a `module.yml` manifest instead of referencing it by git URL
-  * `subspace inventory capistrano` takes `--output PATH` and `--rails-env`, and always emits `set :rails_env`
 
 ## 3.1.2
   * Adds Newrelic infra config to enable server process metrics collection
