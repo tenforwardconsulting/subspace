@@ -28,7 +28,6 @@ module Subspace
         self.class.unquote instances.fetch(key)["hostname"]
       end
 
-      # Edits splice a single slot's text so comments and anything else in the map survive.
       def add_instance(key, attributes)
         raise "Slot #{key} is already defined in #{path}" if instances.key? key
 
@@ -95,7 +94,7 @@ module Subspace
 
       def map_range
         match = @source.match(/^[ \t]*instances[ \t]*=[ \t]*\{/)
-        raise "#{path} has no `instances` map.  Is its terraform module at least v2.0.0?" if match.nil?
+        raise "#{path} has no `instances` map.  Is its terraform module at least #{Base::MINIMUM_MODULE_REF}?" if match.nil?
 
         (match.begin(0)..matching_brace(@source, match.end(0) - 1))
       end

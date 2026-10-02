@@ -1,7 +1,8 @@
 require 'fileutils'
 require 'erb'
 require 'securerandom'
-require 'subspace/upgrade'
+require 'subspace/ami'
+require 'subspace/upgrade/module_manifest'
 class Subspace::Commands::Init < Subspace::Commands::Base
   TERRAFORM_MODULES = {
     "workhorse" => {

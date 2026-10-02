@@ -5,6 +5,20 @@ module Subspace
     class Base < Subspace::Commands::Base
       MINIMUM_MODULE_REF = "v2.0.0"
 
+      PHASES = {
+        check: :check,
+        status: :status,
+        revendor: :revendor,
+        init: :init,
+        launch: :launch,
+        provision: :provision,
+        copy_db: :copy_db,
+        cutover: :cutover,
+        finalize: :finalize,
+        abort: :abort_upgrade,
+        close_instance_ssh: :close_instance_ssh,
+      }
+
       attr_reader :env, :options
 
       def initialize(env, options)
@@ -258,8 +272,6 @@ module Subspace
         "module.#{config.module_name}.#{resource}"
       end
 
-      # Toggling allow_instance_ssh rebuilds the same security-group list on every slot,
-      # so the plan holds one in-place update per slot, not just the one being added.
       def slot_addresses(*actions)
         config.instances.keys.to_h do |key|
           [address(%(#{self.class::KEYED_RESOURCE}["#{key}"])), actions]

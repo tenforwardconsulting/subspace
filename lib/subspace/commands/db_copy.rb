@@ -1,4 +1,5 @@
-require 'subspace/upgrade'
+require 'subspace/commands/base'
+require 'subspace/upgrade/terraform'
 class Subspace::Commands::DbCopy < Subspace::Commands::Base
   def initialize(args, options, overwrite: false, check_only: false)
     @source = args[0] || options.from

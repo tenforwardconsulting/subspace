@@ -3,28 +3,30 @@ require 'subspace/upgrade'
 require 'tmpdir'
 
 describe Subspace::Upgrade::TerraformConfig do
-  MAIN_TF = <<~HCL
-    module workhorse {
-      source = "./modules/workhorse"
-      project_name = "my_project"
-      instance_user = "ubuntu"
+  let(:main_tf) do
+    <<~HCL
+      module workhorse {
+        source = "./modules/workhorse"
+        project_name = "my_project"
+        instance_user = "ubuntu"
 
-      instances = {
-        "1" = {
-          hostname      = "production-app1"
-          ami           = "ami-0abc"
-          instance_type = "t3.medium"
-          volume_size   = 20
+        instances = {
+          "1" = {
+            hostname      = "production-app1"
+            ami           = "ami-0abc"
+            instance_type = "t3.medium"
+            volume_size   = 20
+          }
         }
+        active_instance = "1"
       }
-      active_instance = "1"
-    }
-  HCL
+    HCL
+  end
 
   around do |example|
     Dir.mktmpdir do |dir|
       @path = File.join dir, "main.tf"
-      File.write @path, MAIN_TF
+      File.write @path, main_tf
       example.run
     end
   end
@@ -60,7 +62,7 @@ describe Subspace::Upgrade::TerraformConfig do
   it "rewrites the module source" do
     subject.module_source = "./modules/other"
     subject.save
-    expect(File.read(@path)).to eq MAIN_TF.sub("./modules/workhorse", "./modules/other")
+    expect(File.read(@path)).to eq main_tf.sub("./modules/workhorse", "./modules/other")
   end
 
   it "adds allow_instance_ssh when the config does not mention it" do
@@ -133,7 +135,7 @@ describe Subspace::Upgrade::TerraformConfig do
     subject.save
     subject.revert
 
-    expect(File.read(@path)).to eq MAIN_TF
+    expect(File.read(@path)).to eq main_tf
     expect(subject.active_instance).to eq "1"
   end
 
