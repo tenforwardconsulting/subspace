@@ -160,8 +160,6 @@ class Subspace::Cli
         keyscan    - Update ~/.known_hosts with new host key fingerprints
         EOS
       c.option "--env ENVIRONMENT", "Optional: Limit function to a specific environment (aka group)"
-      c.option "--rails-env ENVIRONMENT", "capistrano: the rails_env to set (default: --env)"
-      c.option "--output PATH", "capistrano: write to PATH instead of stdout"
       c.when_called Subspace::Commands::Inventory
     end
 
