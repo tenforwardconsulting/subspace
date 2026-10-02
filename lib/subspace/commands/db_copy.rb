@@ -27,7 +27,7 @@ class Subspace::Commands::DbCopy < Subspace::Commands::Base
     end
 
     if @check_only
-      say "Checking that #{@source} can ssh to #{@destination}."
+      say "Checking that #{@destination} can take the copy and #{@source} can ssh to it."
     else
       say "Copying the #{env} database from #{@source} to #{@destination}."
     end

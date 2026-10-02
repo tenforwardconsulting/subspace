@@ -53,6 +53,7 @@ describe Subspace::Upgrade::Workhorse do
     allow(subject).to receive(:ask).and_return "y"
     allow(subject).to receive(:check!)
     allow(subject).to receive(:verify_deployed!)
+    allow(subject).to receive(:record_site_response!)
     allow(subject).to receive(:maintenance_mode!)
     allow(subject).to receive(:verify_maintenance_page!)
     allow(subject).to receive(:stop_application!)
@@ -425,6 +426,33 @@ describe Subspace::Upgrade::Workhorse do
         expect(File).not_to exist "config/deploy/production_upgrade.rb"
       end
     end
+
+    describe "#promote_capistrano_stage!" do
+      let(:promoted) do
+        <<~RUBY
+          # Tailscale IP:
+          server '203.0.113.2', user: 'deploy', roles: %w{web app db}, ssh_options: { forward_agent: true }
+          # server '3.137.61.218', user: 'deploy', roles: %w{web app db}
+          set :rails_env, "production"
+          set :branch, "production"
+        RUBY
+      end
+
+      before { subject.send :write_capistrano_stage! }
+
+      it "points the base stage at the new host and drops the upgrade stage", :aggregate_failures do
+        subject.send :promote_capistrano_stage!
+
+        expect(File.read("config/deploy/production.rb")).to eq promoted
+        expect(File).not_to exist "config/deploy/production_upgrade.rb"
+      end
+
+      it "can be run again by an unfinished cutover" do
+        2.times { subject.send :promote_capistrano_stage! }
+
+        expect(File.read("config/deploy/production.rb")).to eq promoted
+      end
+    end
   end
 
   describe "#cutover" do
@@ -432,6 +460,7 @@ describe Subspace::Upgrade::Workhorse do
       Subspace::Upgrade::State.read("production").tap { |state| state["phase"] = "copied" }.save
       allow(subject).to receive(:to_public_ip).and_return "203.0.113.2"
       allow(subject).to receive(:flip_active_instance!)
+      allow(subject).to receive(:promote_capistrano_stage!)
       allow(subject).to receive(:serves_domain?).and_return true
       allow(subject).to receive(:assert_not_in_maintenance_mode!)
     end
@@ -441,6 +470,7 @@ describe Subspace::Upgrade::Workhorse do
 
       expect(subject).to have_received(:serves_domain?).with("203.0.113.2").ordered
       expect(subject).to have_received(:flip_active_instance!).ordered
+      expect(subject).to have_received(:promote_capistrano_stage!).ordered
       expect(reread_phase).to eq "cutover"
     end
 
@@ -527,6 +557,7 @@ describe Subspace::Upgrade::Workhorse do
     it "puts the old server back and destroys the new slot", :aggregate_failures do
       subject.abort_upgrade
 
+      expect(subject).to have_received(:check!).with(clean_plan: false)
       expect(subject).to have_received(:start_application!).with("production-app1")
       expect(subject).to have_received(:maintenance_mode!).with(:off, "production-app1")
       expect(subject).to have_received(:apply!)
@@ -718,6 +749,52 @@ describe Subspace::Upgrade::Workhorse do
     end
   end
 
+  describe "#record_site_response!" do
+    let(:path) { File.expand_path "tmp/subspace/production-site-response" }
+
+    before do
+      allow(subject).to receive(:record_site_response!).and_call_original
+      allow(subject).to receive(:playbook) do |*, site_response_file:, **|
+        File.write site_response_file, "302 https://example.com/users/sign_in\n"
+        true
+      end
+    end
+
+    it "records how the old server answers, for the new one to match", :aggregate_failures do
+      subject.send :record_site_response!
+
+      expect(subject).to have_received(:playbook)
+        .with("upgrade_verify_tls", "production-app1", upgrade_host: "production-app1", site_response_file: path)
+      expect(Subspace::Upgrade::State.read("production")["site_response"]).to eq "302 https://example.com/users/sign_in"
+      expect(File).not_to exist path
+    end
+
+    context "when a previous attempt recorded it" do
+      before { Subspace::Upgrade::State.read("production").tap { |state| state["site_response"] = "200" }.save }
+
+      it "keeps it, since the old server may be showing the maintenance page now", :aggregate_failures do
+        subject.send :record_site_response!
+
+        expect(subject).not_to have_received :playbook
+        expect(Subspace::Upgrade::State.read("production")["site_response"]).to eq "200"
+      end
+    end
+  end
+
+  describe "#serves_domain?" do
+    before do
+      Subspace::Upgrade::State.read("production").tap { |state| state["site_response"] = "200" }.save
+      allow(subject).to receive(:playbook).and_return true
+    end
+
+    it "holds the new server to the recorded response" do
+      subject.send :serves_domain?, "203.0.113.2"
+
+      expect(subject).to have_received(:playbook).with("upgrade_verify_tls", "production-app2",
+        upgrade_host: "production-app2", verify_address: "203.0.113.2", expected_response: "200")
+    end
+  end
+
   describe "#copy_db" do
     it "advances to copied" do
       subject.copy_db
@@ -725,10 +802,19 @@ describe Subspace::Upgrade::Workhorse do
       expect(reread_phase).to eq "copied"
     end
 
-    it "refuses to overwrite a populated destination on the first attempt" do
+    it "refuses to overwrite a populated destination on the first attempt", :aggregate_failures do
       subject.copy_db
 
+      expect(subject).to have_received(:check_db_copy!).with("production-app1", "production-app2", overwrite: false)
       expect(subject).to have_received(:db_copy!).with("production-app1", "production-app2", overwrite: false)
+    end
+
+    it "records the site's response and checks the destination before opening the window", :aggregate_failures do
+      subject.copy_db
+
+      expect(subject).to have_received(:record_site_response!).ordered
+      expect(subject).to have_received(:check_db_copy!).ordered
+      expect(subject).to have_received(:maintenance_mode!).with(:on, "production-app1").ordered
     end
 
     context "when the source cannot ssh to the destination" do
@@ -745,9 +831,10 @@ describe Subspace::Upgrade::Workhorse do
     context "when a previous attempt started copying" do
       before { Subspace::Upgrade::State.read("production").tap { |state| state["db_copy_started"] = true }.save }
 
-      it "overwrites whatever that attempt left on the destination" do
+      it "overwrites whatever that attempt left on the destination", :aggregate_failures do
         subject.copy_db
 
+        expect(subject).to have_received(:check_db_copy!).with("production-app1", "production-app2", overwrite: true)
         expect(subject).to have_received(:db_copy!).with("production-app1", "production-app2", overwrite: true)
       end
     end

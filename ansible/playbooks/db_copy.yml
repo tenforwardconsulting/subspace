@@ -2,6 +2,7 @@
 - name: Report the postgres version on both hosts
   hosts: "{{ db_copy_source }}:{{ db_copy_destination }}"
   gather_facts: false
+  tags: db_copy_check
   become: true
   become_user: postgres
   tasks:
@@ -47,6 +48,7 @@
 - name: Refuse to overwrite a database that already holds data
   hosts: "{{ db_copy_destination }}"
   gather_facts: false
+  tags: db_copy_check
   become: true
   become_user: postgres
   tasks:

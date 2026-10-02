@@ -10,14 +10,14 @@
     - when: ssl_enabled | default(false)
       block:
         - name: Create the archive
-          command: tar czf /tmp/letsencrypt.tar.gz -C /etc letsencrypt
+          shell: umask 077 && tar czf /tmp/letsencrypt.tar.gz -C /etc letsencrypt
 
         - name: Fetch the archive
           fetch:
             src: /tmp/letsencrypt.tar.gz
             dest: "{{ letsencrypt_archive }}"
             flat: true
-
+      always:
         - name: Remove the archive from the old host
           file:
             path: /tmp/letsencrypt.tar.gz
