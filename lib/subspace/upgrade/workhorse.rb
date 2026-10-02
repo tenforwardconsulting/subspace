@@ -221,7 +221,7 @@ module Subspace
         FileUtils.mkdir_p "tmp/subspace"
         path = File.join "tmp/subspace", "#{env}-#{hostname}-#{Time.now.utc.strftime "%Y%m%dT%H%M%SZ"}.dump"
         say "Backing #{hostname}'s database up to #{path} before anything else happens."
-        playbook_or_abort "db_dump", hostname, "db_dump_dest=#{File.expand_path path}"
+        playbook_or_abort "db_dump", hostname, db_dump_dest: File.expand_path(path)
 
         unless File.exist?(path) && File.size(path) > 0
           abort "#{path} is missing or empty.  Refusing to continue without a database backup."
@@ -253,7 +253,7 @@ module Subspace
       end
 
       def verify_deployed!(hostname)
-        unless playbook("upgrade_verify", hostname, "upgrade_host=#{hostname}")
+        unless playbook("upgrade_verify", hostname, upgrade_host: hostname)
           abort "#{hostname} is not ready to take traffic.  Deploy to it and verify it first."
         end
       end
@@ -285,7 +285,7 @@ module Subspace
       end
 
       def assert_not_in_maintenance_mode!(hostname)
-        return if playbook "upgrade_verify", hostname, "upgrade_host=#{hostname}"
+        return if playbook "upgrade_verify", hostname, upgrade_host: hostname
 
         abort "#{hostname} is serving traffic but did not pass its post-cutover check."
       end
@@ -300,8 +300,8 @@ module Subspace
         FileUtils.mkdir_p "tmp/subspace"
         archive = File.expand_path File.join("tmp/subspace", "#{env}-letsencrypt.tar.gz")
         say "Copying /etc/letsencrypt from #{state["from_hostname"]} to #{state["to_hostname"]}"
-        playbook_or_abort "upgrade_fetch_letsencrypt", state["from_hostname"], "letsencrypt_archive=#{archive}"
-        playbook_or_abort "upgrade_push_letsencrypt", state["to_hostname"], "letsencrypt_archive=#{archive}"
+        playbook_or_abort "upgrade_fetch_letsencrypt", state["from_hostname"], letsencrypt_archive: archive
+        playbook_or_abort "upgrade_push_letsencrypt", state["to_hostname"], letsencrypt_archive: archive
       ensure
         FileUtils.rm_f archive if archive
       end
@@ -309,8 +309,8 @@ module Subspace
       # Without an address this goes through DNS, which is what users do.
       def serves_domain?(address = nil)
         say "Checking that #{state["to_hostname"]} serves the site by its domain name#{" at #{address}" if address}"
-        playbook "upgrade_verify_tls", state["to_hostname"], "upgrade_host=#{state["to_hostname"]}",
-          *("verify_address=#{address}" if address)
+        playbook "upgrade_verify_tls", state["to_hostname"],
+          **{ upgrade_host: state["to_hostname"], verify_address: address }.compact
       end
 
       def health_check!
@@ -334,7 +334,8 @@ module Subspace
       def flip_active_instance!(slot)
         config.active_instance = slot
         apply! address("aws_eip_association.eip_assoc") => %w[create update delete]
-        update_inventory!
+        terraform.refresh
+        update_addresses!
       end
 
       # ---------------------------------------------------------- capistrano
@@ -353,8 +354,8 @@ module Subspace
 
       # ------------------------------------------------------------- output
 
-      def playbook_or_abort(name, hostname, *extra_vars)
-        return if playbook name, hostname, "upgrade_host=#{hostname}", *extra_vars
+      def playbook_or_abort(name, hostname, **extra_vars)
+        return if playbook name, hostname, upgrade_host: hostname, **extra_vars
 
         abort "#{name} failed on #{hostname}."
       end

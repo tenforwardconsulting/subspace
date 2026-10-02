@@ -85,9 +85,9 @@
     - name: Dump and restore directly between the instances
       shell: >-
         set -o pipefail &&
-        sudo -u postgres pg_dump -Fc --no-owner --no-acl {{ database_name }}
+        sudo -u postgres pg_dump -Fc --no-acl {{ database_name }}
         | ssh {{ ssh_options }} {{ destination.ansible_user }}@{{ db_copy_destination_ip }}
-        'sudo -u postgres pg_restore --clean --if-exists --no-owner --no-acl -d {{ destination.database_name }}'
+        'sudo -u postgres pg_restore --clean --if-exists --no-acl -d {{ destination.database_name }}'
       args:
         executable: /bin/bash
 

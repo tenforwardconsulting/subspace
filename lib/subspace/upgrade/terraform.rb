@@ -47,6 +47,10 @@ module Subspace
           .reject { |change| change["change"]["actions"] == ["no-op"] }
       end
 
+      def refresh
+        run("apply", "-refresh-only", "-auto-approve", "-input=false") or abort "terraform refresh failed"
+      end
+
       def apply_plan
         run("apply", "-input=false", PLAN_FILE) or abort "terraform apply failed"
         discard_plan

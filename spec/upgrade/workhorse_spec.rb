@@ -83,14 +83,14 @@ describe Subspace::Upgrade::Workhorse do
       expect(subject).to have_received(:playbook).with(
         "upgrade_fetch_letsencrypt",
         "production-app1",
-        "upgrade_host=production-app1",
-        "letsencrypt_archive=#{archive}"
+        upgrade_host: "production-app1",
+        letsencrypt_archive: archive
       )
       expect(subject).to have_received(:playbook).with(
         "upgrade_push_letsencrypt",
         "production-app2",
-        "upgrade_host=production-app2",
-        "letsencrypt_archive=#{archive}"
+        upgrade_host: "production-app2",
+        letsencrypt_archive: archive
       )
     end
 
@@ -168,6 +168,42 @@ describe Subspace::Upgrade::Workhorse do
         expect(subject).not_to have_received :flip_active_instance!
         expect(reread_phase).to eq "copied"
       end
+    end
+  end
+
+  describe "#flip_active_instance!" do
+    let(:terraform) { instance_double Subspace::Upgrade::Terraform, refresh: true }
+
+    before do
+      File.write "config/subspace/inventory.yml", <<~YML
+        all:
+          hosts:
+            production-app1:
+              ansible_host: 203.0.113.100
+            production-app2:
+              ansible_host: 203.0.113.2
+          children:
+            production:
+              hosts:
+                production-app1:
+                production-app2:
+      YML
+      allow(subject).to receive(:apply!)
+      allow(subject).to receive(:terraform).and_return terraform
+      allow(terraform).to receive(:output).with("instances").and_return(
+        "1" => { "hostname" => "production-app1", "public_ip" => "203.0.113.1" },
+        "2" => { "hostname" => "production-app2", "public_ip" => "203.0.113.100" }
+      )
+    end
+
+    it "points both hosts at their addresses after the elastic IP moves", :aggregate_failures do
+      subject.send :flip_active_instance!, "2"
+
+      hosts = Subspace::Inventory.read("config/subspace/inventory.yml").hosts
+      expect(terraform).to have_received(:refresh).ordered
+      expect(terraform).to have_received(:output).ordered
+      expect(hosts["production-app1"].vars["ansible_host"]).to eq "203.0.113.1"
+      expect(hosts["production-app2"].vars["ansible_host"]).to eq "203.0.113.100"
     end
   end
 

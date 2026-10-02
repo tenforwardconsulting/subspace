@@ -147,7 +147,10 @@ describe Subspace::Upgrade::Workhorse do
         [{ "address" => "module.workhorse.aws_eip_association.eip_assoc", "change" => { "actions" => %w[delete create] } }]
       end
 
-      before { allow(subject).to receive(:update_inventory!) }
+      before do
+        allow(terraform).to receive(:refresh)
+        allow(subject).to receive(:update_addresses!)
+      end
 
       it "applies the saved plan" do
         subject.send :flip_active_instance!, "2"
@@ -249,23 +252,23 @@ describe Subspace::Upgrade::Workhorse do
     before { allow(subject).to receive(:ansible_playbook) }
 
     it "limits the run to the host it asserts against" do
-      subject.send :playbook, "upgrade_verify", "production-app2", "upgrade_host=production-app2"
+      subject.send :playbook, "upgrade_verify", "production-app2", upgrade_host: "production-app2"
 
       expect(subject).to have_received(:ansible_playbook).with(
         %r{ansible/playbooks/upgrade_verify\.yml\z},
         "--limit", "production-app2",
-        "-e", "upgrade_host=production-app2"
+        "-e", '{"upgrade_host":"production-app2"}'
       )
     end
 
     context "with several hosts" do
       it "joins them into one limit" do
-        subject.send :playbook, "upgrade_verify", %w[production-app1 production-app2], "a=b"
+        subject.send :playbook, "upgrade_verify", %w[production-app1 production-app2], a: "b"
 
         expect(subject).to have_received(:ansible_playbook).with(
           anything,
           "--limit", "production-app1,production-app2",
-          "-e", "a=b"
+          "-e", '{"a":"b"}'
         )
       end
     end
