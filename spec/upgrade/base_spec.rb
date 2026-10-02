@@ -148,6 +148,7 @@ describe Subspace::Upgrade::Workhorse do
       end
 
       before do
+        Subspace::Upgrade::State.create("production", "phase" => "copied").save
         allow(terraform).to receive(:refresh)
         allow(subject).to receive(:update_addresses!)
       end
@@ -155,6 +156,31 @@ describe Subspace::Upgrade::Workhorse do
       it "applies the saved plan" do
         subject.send :flip_active_instance!, "2"
         expect(terraform).to have_received :apply_plan
+      end
+    end
+
+    context "when the step records the phase terraform is applying" do
+      let(:changes) do
+        [{ "address" => "module.workhorse.aws_eip_association.eip_assoc", "change" => { "actions" => ["update"] } }]
+      end
+
+      before do
+        Subspace::Upgrade::State.create("production", "phase" => "copied").save
+        allow(terraform).to receive(:apply_plan) { abort "terraform apply failed" }
+      end
+
+      it "records it before terraform applies anything" do
+        expect { subject.send :flip_active_instance!, "2" }.to raise_error SystemExit
+        expect(Subspace::Upgrade::State.read("production").phase).to eq "cutting_over"
+      end
+
+      context "when the plan is declined" do
+        before { allow(subject).to receive(:ask).and_return "n" }
+
+        it "does not record it" do
+          expect { subject.send :flip_active_instance!, "2" }.to raise_error SystemExit
+          expect(Subspace::Upgrade::State.read("production").phase).to eq "copied"
+        end
       end
     end
 

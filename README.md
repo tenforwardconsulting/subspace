@@ -136,7 +136,9 @@ Split up into multiple steps so you can verify or do manual steps in between:
     subspace upgrade production --finalize    # destroy the old server
 
 Current status is in `config/subspace/terraform/<env>/upgrade.yml`. Each command will
-throw an error if this file has not recorded the previous phase.
+throw an error if this file has not recorded the previous phase. If `--launch`, `--cutover`
+or `--finalize` is interrupted once terraform has started applying, re-run the same command
+to finish it.
 
 The maintenance window is split across two commands. `--copy-db` stops puma, the
 workers and cron on the old server, moves the data, and stops. The new server is reachable on its own public address,

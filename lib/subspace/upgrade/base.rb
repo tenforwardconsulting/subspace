@@ -38,7 +38,7 @@ module Subspace
         if state["window_open"]
           say ""
           say "The maintenance window is OPEN: #{state["from_hostname"]} has puma, the workers and cron"
-          say "stopped and is showing the maintenance page.  `--cutover` or `--abort` closes it."
+          say "stopped and is showing the maintenance page."
         end
 
         if config.allow_instance_ssh
@@ -112,13 +112,13 @@ module Subspace
 
       # --------------------------------------------------------- compatibility
 
-      def check!
+      def check!(clean_plan: true)
         check_module_version!
         check_module_variables!
         check_root_outputs!
         check_state_fingerprint!
         check_instance_ssh_closed!
-        check_clean_plan!
+        check_clean_plan! if clean_plan
       end
 
       def check_module_version!
@@ -266,8 +266,9 @@ module Subspace
       # Save main.tf and apply, but only if the plan does exactly what this phase expects.
       # `expected` maps a resource address to the actions permitted for it.  Anything short
       # of an attempted apply puts main.tf back, so the next phase does not start from a
-      # dirty plan.  A failed apply does not, since terraform may have applied part of it.
-      def apply!(expected)
+      # dirty plan.  A failed apply does not, since terraform may have applied part of it,
+      # and `starting` is recorded as the phase so the step can be re-run to finish it.
+      def apply!(expected, starting: nil)
         config.save
         begin
           changes = terraform.plan_changes
@@ -293,6 +294,7 @@ module Subspace
           config.revert
           raise
         end
+        state.advance! starting if starting
         terraform.apply_plan
         config.mark_applied
       end
