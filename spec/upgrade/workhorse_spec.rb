@@ -147,6 +147,154 @@ describe Subspace::Upgrade::Workhorse do
       expect(reread_phase).to eq "launched"
     end
 
+    it "adds the new slot with the old slot's size and the target ami" do
+      subject.launch
+
+      expect(subject.config.instances["2"]).to eq(
+        "hostname" => %("production-app2"),
+        "ami" => %("ami-0new"),
+        "instance_type" => %("t3.medium"),
+        "volume_size" => "20"
+      )
+    end
+
+    it "records both slots before terraform runs", :aggregate_failures do
+      subject.launch
+
+      state = Subspace::Upgrade::State.read "production"
+      expect(state["from_slot"]).to eq "1"
+      expect(state["to_slot"]).to eq "2"
+      expect(state["from_hostname"]).to eq "production-app1"
+      expect(state["to_hostname"]).to eq "production-app2"
+      expect(state["from_ami"]).to eq "ami-0abc"
+      expect(state["to_ami"]).to eq "ami-0new"
+      expect(state["ubuntu_release"]).to eq "noble"
+    end
+
+    context "when the slot keys have gaps" do
+      let(:main_tf) do
+        <<~HCL
+          module workhorse {
+            source = "./modules/workhorse"
+
+            instances = {
+              "3" = {
+                hostname      = "production-app1"
+                ami           = "ami-0abc"
+                instance_type = "t3.medium"
+                volume_size   = 20
+              }
+            }
+            active_instance = "3"
+            allow_instance_ssh = false
+          }
+        HCL
+      end
+
+      it "takes the slot after the highest key, and names the host from the active one", :aggregate_failures do
+        subject.launch
+
+        state = Subspace::Upgrade::State.read "production"
+        expect(state["to_slot"]).to eq "4"
+        expect(state["to_hostname"]).to eq "production-app2"
+      end
+    end
+
+    context "when the next hostname is already taken" do
+      let(:main_tf) do
+        <<~HCL
+          module workhorse {
+            source = "./modules/workhorse"
+
+            instances = {
+              "1" = {
+                hostname      = "production-app1"
+                ami           = "ami-0abc"
+                instance_type = "t3.medium"
+                volume_size   = 20
+              }
+              "2" = {
+                hostname      = "production-app2"
+                ami           = "ami-0def"
+                instance_type = "t3.medium"
+                volume_size   = 20
+              }
+            }
+            active_instance = "1"
+            allow_instance_ssh = false
+          }
+        HCL
+      end
+
+      it "refuses before recording anything", :aggregate_failures do
+        expect { subject.launch }.to raise_error SystemExit, /Could not derive a free hostname/
+        expect(Subspace::Upgrade::State.read("production")["to_slot"]).to be_nil
+        expect(subject).not_to have_received :apply!
+      end
+    end
+
+    context "when the active hostname does not end in a number" do
+      let(:main_tf) do
+        <<~HCL
+          module workhorse {
+            source = "./modules/workhorse"
+
+            instances = {
+              "1" = {
+                hostname      = "production-app"
+                ami           = "ami-0abc"
+                instance_type = "t3.medium"
+                volume_size   = 20
+              }
+            }
+            active_instance = "1"
+            allow_instance_ssh = false
+          }
+        HCL
+      end
+
+      it "refuses" do
+        expect { subject.launch }.to raise_error SystemExit, /Could not derive a free hostname/
+      end
+    end
+
+    context "without --ami" do
+      let(:options) { double ami: nil, ubuntu_release: "noble" }
+
+      before do
+        allow(subject).to receive(:project_name).and_return "test_project"
+        allow(Subspace::Ami).to receive(:latest).and_return "ami-0latest"
+      end
+
+      it "launches the latest ami for the release", :aggregate_failures do
+        subject.launch
+
+        expect(Subspace::Ami).to have_received(:latest).with(release: "noble", profile: "subspace-test_project")
+        expect(Subspace::Upgrade::State.read("production")["to_ami"]).to eq "ami-0latest"
+      end
+
+      context "or --ubuntu-release" do
+        let(:options) { double ami: nil, ubuntu_release: nil }
+
+        it "records the default release" do
+          subject.launch
+
+          expect(Subspace::Upgrade::State.read("production")["ubuntu_release"]).to eq Subspace::Ami::DEFAULT_RELEASE
+        end
+      end
+    end
+
+    context "with --ami and no --ubuntu-release" do
+      let(:options) { double ami: "ami-0new", ubuntu_release: nil }
+
+      it "does not claim a release it cannot know", :aggregate_failures do
+        subject.launch
+
+        expect(Subspace::Upgrade::State.read("production")["ubuntu_release"]).to be_nil
+        expect(Subspace::Upgrade::State.read("production")["to_ami"]).to eq "ami-0new"
+      end
+    end
+
     context "when a previous launch did not finish" do
       let(:main_tf) do
         <<~HCL
@@ -462,6 +610,35 @@ describe Subspace::Upgrade::Workhorse do
       expect(reread_phase).to eq "finalized"
     end
 
+    it "drops the old slot and takes the new host out of the upgrade group", :aggregate_failures do
+      subject.finalize
+
+      expect(subject.config.instances.keys).to eq ["2"]
+      expect(subject).to have_received(:remove_host!).with("production-app1")
+      expect(subject).to have_received(:remove_from_group!).with("production-app2", "upgrade")
+    end
+
+    context "when the confirmation is not the old hostname" do
+      before { allow(subject).to receive(:ask).and_return "y" }
+
+      it "refuses before backing up or destroying anything", :aggregate_failures do
+        expect { subject.finalize }.to raise_error SystemExit
+        expect(subject).not_to have_received :backup_database!
+        expect(subject).not_to have_received :apply!
+        expect(reread_phase).to eq "cutover"
+      end
+    end
+
+    context "when the backup fails" do
+      before { allow(subject).to receive(:backup_database!) { abort "empty" } }
+
+      it "does not destroy the old slot", :aggregate_failures do
+        expect { subject.finalize }.to raise_error SystemExit
+        expect(subject).not_to have_received :apply!
+        expect(reread_phase).to eq "cutover"
+      end
+    end
+
     context "when a previous finalize did not finish" do
       let(:main_tf) do
         <<~HCL
@@ -498,6 +675,45 @@ describe Subspace::Upgrade::Workhorse do
           .with({ %(module.workhorse.aws_instance.single["1"]) => ["delete"] }, starting: "finalizing")
         expect(subject).to have_received(:remove_host!).with("production-app1")
         expect(reread_phase).to eq "finalized"
+      end
+    end
+  end
+
+  describe "#backup_database!" do
+    let(:dump) { "pg_dump output" }
+
+    before do
+      allow(subject).to receive(:playbook) do |*, db_dump_dest:, **|
+        File.write db_dump_dest, dump
+        true
+      end
+    end
+
+    it "dumps the old server's database locally and records it", :aggregate_failures do
+      subject.send :backup_database!, "production-app1"
+
+      state = Subspace::Upgrade::State.read "production"
+      expect(subject).to have_received(:playbook)
+        .with("db_dump", "production-app1", upgrade_host: "production-app1", db_dump_dest: File.expand_path(state["backup_path"]))
+      expect(state["backup_path"]).to match %r{\Atmp/subspace/production-production-app1-\d{8}T\d{6}Z\.dump\z}
+      expect(state["backup_bytes"]).to eq dump.bytesize
+      expect(state["backup_sha256"]).to eq Digest::SHA256.hexdigest(dump)
+    end
+
+    context "when the dump is empty" do
+      let(:dump) { "" }
+
+      it "refuses to continue", :aggregate_failures do
+        expect { subject.send :backup_database!, "production-app1" }.to raise_error SystemExit, /missing or empty/
+        expect(Subspace::Upgrade::State.read("production")["backup_path"]).to be_nil
+      end
+    end
+
+    context "when the dump playbook fails" do
+      before { allow(subject).to receive(:playbook).and_return false }
+
+      it "refuses to continue" do
+        expect { subject.send :backup_database!, "production-app1" }.to raise_error SystemExit, /db_dump failed/
       end
     end
   end

@@ -262,6 +262,200 @@ describe Subspace::Upgrade::Workhorse do
     end
   end
 
+  describe "#check_module_version!" do
+    let(:module_dir) { "config/subspace/terraform/production/modules/workhorse" }
+
+    def write_manifest(template: "workhorse", ref: "v2.0.0")
+      FileUtils.mkdir_p module_dir
+      Subspace::Upgrade::ModuleManifest.write module_dir, template:, repo: "https://example.com/workhorse.git", ref:
+    end
+
+    context "when the vendored module is at the minimum ref" do
+      before { write_manifest }
+
+      it "returns without aborting" do
+        expect { subject.send :check_module_version! }.not_to raise_error
+      end
+    end
+
+    context "when the vendored module is older" do
+      before { write_manifest ref: "v1.0.0" }
+
+      it "aborts with the migration instructions" do
+        expect { subject.send :check_module_version! }.to raise_error SystemExit, /v1\.0\.0 \(needs >= v2\.0\.0\).*To migrate production/m
+      end
+    end
+
+    context "when the vendored module is pinned to a branch" do
+      before { write_manifest ref: "main" }
+
+      it "treats it as too old" do
+        expect { subject.send :check_module_version! }.to raise_error SystemExit, /needs >= v2\.0\.0/
+      end
+    end
+
+    context "when the vendored module is for another template" do
+      before { write_manifest template: "oxenwagen" }
+
+      it "aborts" do
+        expect { subject.send :check_module_version! }.to raise_error SystemExit, /is a oxenwagen module, not workhorse/
+      end
+    end
+
+    context "when the vendored module has no manifest" do
+      it "aborts with the migration instructions" do
+        expect { subject.send :check_module_version! }.to raise_error SystemExit, /no module\.yml.*To migrate production/m
+      end
+    end
+
+    context "when main.tf references the module by git URL" do
+      let(:module_block) do
+        <<~HCL
+          module workhorse {
+            source = "github.com/tenforwardconsulting/terraform-subspace-workhorse?ref=#{ref}"
+          }
+        HCL
+      end
+
+      context "at the minimum ref" do
+        let(:ref) { "v2.0.0" }
+
+        it "reads the ref from the source" do
+          expect { subject.send :check_module_version! }.not_to raise_error
+        end
+      end
+
+      context "at an older ref" do
+        let(:ref) { "v1.0.0" }
+
+        it "aborts" do
+          expect { subject.send :check_module_version! }.to raise_error SystemExit, /v1\.0\.0 \(needs >= v2\.0\.0\)/
+        end
+      end
+    end
+  end
+
+  describe "#check_module_variables!" do
+    let(:variables) { %w[instances active_instance allow_instance_ssh] }
+
+    before do
+      FileUtils.mkdir_p module_dir
+      File.write File.join(module_dir, "variables.tf"), variables.map { |name| %(variable "#{name}" {}\n) }.join
+    end
+
+    context "with a vendored module that declares every variable" do
+      let(:module_dir) { "config/subspace/terraform/production/modules/workhorse" }
+
+      it "returns without aborting" do
+        expect { subject.send :check_module_variables! }.not_to raise_error
+      end
+
+      context "but is missing one" do
+        let(:variables) { %w[instances active_instance] }
+
+        before do
+          Subspace::Upgrade::ModuleManifest.write module_dir, template: "workhorse", repo: "https://example.com/workhorse.git", ref: "v2.0.0"
+        end
+
+        it "aborts naming it" do
+          expect { subject.send :check_module_variables! }.to raise_error SystemExit, /does not declare allow_instance_ssh/
+        end
+      end
+    end
+
+    context "with a module terraform init downloaded" do
+      let(:module_dir) { "config/subspace/terraform/production/.terraform/modules/workhorse" }
+
+      it "reads that one" do
+        expect { subject.send :check_module_variables! }.not_to raise_error
+      end
+    end
+
+    context "with no module on disk" do
+      let(:module_dir) { "tmp/elsewhere" }
+
+      it "aborts asking for terraform init" do
+        expect { subject.send :check_module_variables! }.to raise_error SystemExit, /Run `terraform init`/
+      end
+    end
+  end
+
+  describe "#check_state_fingerprint!" do
+    let(:terraform) { instance_double Subspace::Upgrade::Terraform, state_list: addresses }
+
+    before { allow(subject).to receive(:terraform).and_return terraform }
+
+    context "with keyed instance slots" do
+      let(:addresses) { [%(module.workhorse.aws_instance.single["1"]), "module.workhorse.aws_eip.single"] }
+
+      it "returns without aborting" do
+        expect { subject.send :check_state_fingerprint! }.not_to raise_error
+      end
+    end
+
+    context "with an unkeyed instance" do
+      let(:addresses) { ["module.workhorse.aws_instance.single", "module.workhorse.aws_eip.single"] }
+
+      it "aborts with the migration instructions" do
+        expect { subject.send :check_state_fingerprint! }.to raise_error SystemExit, /unkeyed aws_instance\.single.*To migrate production/m
+      end
+    end
+
+    context "with a resource another template uses" do
+      let(:addresses) { [%(module.workhorse.aws_instance.single["1"]), "module.workhorse.aws_lb.web"] }
+
+      it "aborts naming it" do
+        expect { subject.send :check_state_fingerprint! }.to raise_error SystemExit, /present but forbidden: aws_lb/
+      end
+    end
+
+    context "without an instance" do
+      let(:addresses) { ["module.workhorse.aws_eip.single"] }
+
+      it "aborts naming it" do
+        expect { subject.send :check_state_fingerprint! }.to raise_error SystemExit, /expected but missing:  aws_instance\.single/
+      end
+    end
+
+    context "with no state" do
+      let(:addresses) { [] }
+
+      it "aborts" do
+        expect { subject.send :check_state_fingerprint! }.to raise_error SystemExit, /Has it been applied\?/
+      end
+    end
+  end
+
+  describe "#check_clean_plan!" do
+    let(:terraform) { instance_double Subspace::Upgrade::Terraform, plan_exit_status: status }
+
+    before { allow(subject).to receive(:terraform).and_return terraform }
+
+    context "when the plan is empty" do
+      let(:status) { 0 }
+
+      it "returns without aborting" do
+        expect { subject.send :check_clean_plan! }.not_to raise_error
+      end
+    end
+
+    context "when the plan has changes" do
+      let(:status) { 2 }
+
+      it "aborts" do
+        expect { subject.send :check_clean_plan! }.to raise_error SystemExit, /is not empty/
+      end
+    end
+
+    context "when terraform plan fails" do
+      let(:status) { 1 }
+
+      it "aborts with the exit status" do
+        expect { subject.send :check_clean_plan! }.to raise_error SystemExit, /failed \(exit 1\)/
+      end
+    end
+  end
+
   describe "#assert_clean_git_tree!" do
     before do
       system "git init -q && git add . && git -c user.name=t -c user.email=t@t commit -qm init", exception: true
