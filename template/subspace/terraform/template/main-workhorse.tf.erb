@@ -44,7 +44,8 @@ module workhorse {
 }
 
 output "workhorse" {
-  value = module.workhorse
+  value     = module.workhorse
+  sensitive = true
 }
 
 output "inventory" {
