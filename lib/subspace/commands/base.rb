@@ -1,3 +1,4 @@
+require 'commander'
 require 'subspace/commands/ansible'
 module Subspace
   module Commands

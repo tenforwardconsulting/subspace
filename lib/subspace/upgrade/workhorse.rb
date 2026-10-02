@@ -31,7 +31,6 @@ module Subspace
         say next_step_for "launched"
       end
 
-      # Only touches the new server, so it can be re-run until it succeeds.
       def provision
         state.require_phase! "launched", "prepared"
         check!
@@ -70,7 +69,6 @@ module Subspace
           verify_maintenance_page! state["from_hostname"]
           stop_application! state["from_hostname"]
 
-          # A retry may find the destination holding part of an earlier attempt's restore.
           overwrite = !!state["db_copy_started"]
           state["db_copy_started"] = true
           state.save
@@ -113,10 +111,6 @@ module Subspace
         say next_step_for "cutover"
       end
 
-      # Undo everything before the elastic IP moved: destroy the new slot and, if the
-      # maintenance window is open, put the old server back into service.  The old server
-      # still holds the data it always had -- nothing has written to it since --copy-db
-      # stopped puma, the workers and cron.
       def abort_upgrade
         state.require_phase! "launching", "launched", "prepared", "copied", "aborting"
         check! clean_plan: state.phase != "launching"
@@ -128,8 +122,6 @@ module Subspace
           maintenance_mode! :off, state["from_hostname"]
         end
 
-        # The old server is taking writes again, so the new slot's copy is stale: record that
-        # before the destroy, which can be declined, so nothing can cut over to it.
         state["window_open"] = false
         state.advance! "aborting"
         remove_host! state["to_hostname"]

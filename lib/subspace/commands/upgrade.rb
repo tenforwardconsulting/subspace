@@ -1,18 +1,6 @@
 require 'subspace/upgrade'
 class Subspace::Commands::Upgrade < Subspace::Commands::Base
-  PHASES = {
-    check: :check,
-    status: :status,
-    revendor: :revendor,
-    init: :init,
-    launch: :launch,
-    provision: :provision,
-    copy_db: :copy_db,
-    cutover: :cutover,
-    finalize: :finalize,
-    abort: :abort_upgrade,
-    close_instance_ssh: :close_instance_ssh,
-  }
+  PHASES = Subspace::Upgrade::Base::PHASES
 
   def initialize(args, options)
     @env = args.shift

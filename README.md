@@ -122,8 +122,9 @@ Replaces an environment's servers with new ones built from a current AMI.
 
 Split up into multiple steps so you can verify or do manual steps in between:
 
-    subspace upgrade <env> --status           # view current status of the upgrade. default with no --phase
+    subspace upgrade <env> --status           # view current status of the upgrade. default when no step is given
     subspace upgrade production --check       # is this environment upgradeable?
+    subspace upgrade production --revendor    # only if --check says the terraform module is too old
     subspace upgrade production --init        # record the start of an upgrade
     subspace upgrade production --launch      # build the new server in terraform
     subspace upgrade production --provision   # bootstrap/provision it, re-run until it succeeds
@@ -162,7 +163,8 @@ locally - a dump nobody has restored isn't a backup.
 
 Recovery:
 
-    subspace upgrade production --abort     # before a cutover: destroy the new server
+    subspace upgrade production --abort               # before a cutover: destroy the new server
+    subspace upgrade production --close-instance-ssh  # close the temporary ssh path between the servers
 
 `--abort` is the only way back, and it only exists before the elastic IP has moved. That
 covers the cases worth automating: the database copy failing, or the copied data not

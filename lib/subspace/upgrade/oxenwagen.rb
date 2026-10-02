@@ -7,7 +7,7 @@ module Subspace
     class Oxenwagen < Base
       TEMPLATE = "oxenwagen"
 
-      %i[check status init launch provision copy_db cutover finalize abort_upgrade close_instance_ssh revendor].each do |phase|
+      PHASES.each_value do |phase|
         define_method phase do
           abort "`subspace upgrade` does not support oxenwagen environments yet.  Upgrade #{env} by hand."
         end
