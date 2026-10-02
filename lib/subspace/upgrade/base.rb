@@ -305,6 +305,14 @@ module Subspace
         @inventory = nil
       end
 
+      def update_addresses!
+        terraform.output("instances").each_value do |instance|
+          inventory.hosts.fetch(instance["hostname"]).vars["ansible_host"] = instance["public_ip"]
+        end
+        inventory.write
+        @inventory = nil
+      end
+
       def add_to_group!(hostname, group)
         host = inventory.hosts.fetch hostname
         host.group_list |= [group]
@@ -375,10 +383,10 @@ module Subspace
 
       # Ansible exits 0 on a hosts: pattern that matches nothing, so every gate built on
       # one would pass having asserted nothing.  --limit exits 1 instead.
-      def playbook(name, hosts, *extra_vars)
+      def playbook(name, hosts, **extra_vars)
         ansible_playbook File.join(playbook_dir, "#{name}.yml"),
           "--limit", Array(hosts).join(","),
-          *extra_vars.flat_map { |var| ["-e", var] }
+          "-e", extra_vars.to_json
       end
 
       # A module pinned to a branch rather than a tag has no version to compare, so treat

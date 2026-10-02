@@ -30,11 +30,13 @@ class Subspace::Commands::DbCopy < Subspace::Commands::Base
     else
       say "Copying the #{env} database from #{@source} to #{@destination}."
     end
-    extra_vars = ["db_copy_source=#{@source}",
-                  "db_copy_destination=#{@destination}",
-                  "db_copy_force=#{!!@options.force}",
-                  "db_copy_overwrite=#{@overwrite}",
-                  "db_copy_destination_ip=#{destination_private_ip}"]
+    extra_vars = { db_copy_source: @source,
+                   db_copy_destination: @destination,
+                   db_copy_force: !!@options.force,
+                   db_copy_overwrite: @overwrite,
+                   db_copy_destination_ip: destination_private_ip,
+                   ansible_ssh_extra_args: "-o ForwardAgent=yes",
+                   ansible_control_path: "/tmp/subspace-dbcopy-%%h-%%p-%%r" }
 
     # Agent forwarding is how the source host reaches the destination without a
     # server-to-server key being created, and mitogen does not forward the agent.  The
@@ -44,9 +46,7 @@ class Subspace::Commands::DbCopy < Subspace::Commands::Base
       with_key_in_agent do
         unless ansible_playbook(File.join(playbook_dir, "db_copy.yml"),
           *(@check_only ? ["--tags", "db_copy_check"] : []),
-          *extra_vars.flat_map { |var| ["-e", var] },
-          "-e", "ansible_ssh_extra_args=-o ForwardAgent=yes",
-          "-e", "ansible_control_path=/tmp/subspace-dbcopy-%%h-%%p-%%r")
+          "-e", extra_vars.to_json)
           abort "db_copy from #{@source} to #{@destination} failed."
         end
       end
