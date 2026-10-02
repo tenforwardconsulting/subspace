@@ -187,6 +187,9 @@ class Subspace::Cli
         destroys the old one.  Each phase stops at a point where it is safe to walk away,
         because the deploy and the verification in between are yours to do.
 
+        Every server must be on the tailnet and addressed by its tailscale IP in the inventory
+        and the capistrano stage, so neither changes when the elastic IP moves.
+
         Phases, in order:
 
         --check               is this environment upgradeable?  (runs before every other phase)
@@ -199,7 +202,7 @@ class Subspace::Cli
         --finalize            dump the old database, then destroy the old server
         --status              where is this upgrade, and what is next?
         --abort               before a cutover: destroy the new server and forget the upgrade
-        --close-instance-ssh  repair an interrupted cutover that left the servers able to ssh
+        --close-instance-ssh  close the ssh path between the servers that --launch opens before --finalize
         EOS
       c.example 'check whether production can be upgraded', 'subspace upgrade production --check'
       c.example 'build the replacement server', 'subspace upgrade production --launch'

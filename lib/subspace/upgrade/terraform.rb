@@ -28,6 +28,17 @@ module Subspace
         capture("state", "list").split("\n").map(&:strip)
       end
 
+      def key_pair_public_key
+        modules = [JSON.parse(capture("show", "-json")).dig("values", "root_module")].compact
+        resources = []
+        until modules.empty?
+          mod = modules.shift
+          resources.concat mod.fetch("resources", [])
+          modules.concat mod.fetch("child_modules", [])
+        end
+        resources.find { |resource| resource["type"] == "aws_key_pair" }&.dig("values", "public_key")
+      end
+
       def output(name)
         JSON.parse capture("output", "-json", name)
       end
@@ -45,10 +56,6 @@ module Subspace
         JSON.parse(capture("show", "-json", PLAN_FILE))
           .fetch("resource_changes", [])
           .reject { |change| change["change"]["actions"] == ["no-op"] }
-      end
-
-      def refresh
-        run("apply", "-refresh-only", "-auto-approve", "-input=false") or abort "terraform refresh failed"
       end
 
       def apply_plan

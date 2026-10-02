@@ -57,33 +57,14 @@ describe Subspace::Upgrade::Workhorse do
     allow(subject).to receive(:say)
   end
 
-  describe "#slot_addresses" do
-    it "returns one keyed, module-qualified entry per slot" do
-      expect(subject.slot_addresses("update")).to eq(
-        %(module.workhorse.aws_instance.single["1"]) => ["update"],
-        %(module.workhorse.aws_instance.single["2"]) => ["update"]
-      )
-    end
-  end
-
   describe "#apply!" do
     let(:terraform) { double discard_plan: nil, apply_plan: nil }
 
     let(:expected_changes) do
-      [
-        { "address" => %(module.workhorse.aws_instance.single["1"]), "change" => { "actions" => ["update"] } },
-        { "address" => %(module.workhorse.aws_instance.single["2"]), "change" => { "actions" => ["update"] } },
-        { "address" => "module.workhorse.aws_security_group.instance_ssh[0]", "change" => { "actions" => ["create"] } }
-      ]
+      [{ "address" => "module.workhorse.aws_security_group.single", "change" => { "actions" => ["update"] } }]
     end
 
-    let(:close_changes) do
-      [
-        { "address" => %(module.workhorse.aws_instance.single["1"]), "change" => { "actions" => ["update"] } },
-        { "address" => %(module.workhorse.aws_instance.single["2"]), "change" => { "actions" => ["update"] } },
-        { "address" => "module.workhorse.aws_security_group.instance_ssh[0]", "change" => { "actions" => ["delete"] } }
-      ]
-    end
+    let(:close_changes) { expected_changes }
 
     before do
       allow(subject).to receive(:terraform).and_return terraform
@@ -91,7 +72,7 @@ describe Subspace::Upgrade::Workhorse do
       allow(terraform).to receive(:plan_changes).and_return changes
     end
 
-    context "when the plan holds the keyed update for_each emits on every slot" do
+    context "when the plan toggles the rule on the server group in place" do
       let(:changes) { expected_changes }
 
       it "applies the saved plan", :aggregate_failures do
@@ -126,13 +107,9 @@ describe Subspace::Upgrade::Workhorse do
       end
     end
 
-    context "when the plan replaces a slot the step only asked to update" do
+    context "when the plan replaces the server group the step only asked to update" do
       let(:changes) do
-        expected_changes.map do |change|
-          next change unless change["address"] == %(module.workhorse.aws_instance.single["1"])
-
-          change.merge "change" => { "actions" => %w[delete create] }
-        end
+        [{ "address" => "module.workhorse.aws_security_group.single", "change" => { "actions" => %w[delete create] } }]
       end
 
       it "refuses and discards the plan", :aggregate_failures do
@@ -161,8 +138,6 @@ describe Subspace::Upgrade::Workhorse do
 
       before do
         Subspace::Upgrade::State.create("production", "phase" => "copied").save
-        allow(terraform).to receive(:refresh)
-        allow(subject).to receive(:update_addresses!)
       end
 
       it "applies the saved plan" do
@@ -392,6 +367,71 @@ describe Subspace::Upgrade::Workhorse do
     end
   end
 
+  describe "#check_instance_ssh!" do
+    context "with no upgrade in progress" do
+      it "aborts while the servers can ssh to each other" do
+        expect { subject.send :check_instance_ssh! }.to raise_error SystemExit, /only be open from --launch until --finalize/
+      end
+    end
+
+    %w[launching launched prepared copied cutting_over cutover].each do |phase|
+      context "when #{phase}" do
+        before { Subspace::Upgrade::State.create("production", "phase" => phase).save }
+
+        it "lets the servers ssh to each other" do
+          expect { subject.send :check_instance_ssh! }.not_to raise_error
+        end
+      end
+    end
+
+    %w[initialized finalizing finalized aborting].each do |phase|
+      context "when #{phase}" do
+        before { Subspace::Upgrade::State.create("production", "phase" => phase).save }
+
+        it "aborts while the servers can ssh to each other" do
+          expect { subject.send :check_instance_ssh! }.to raise_error SystemExit
+        end
+      end
+    end
+  end
+
+  describe "#check_subspace_key!" do
+    let(:terraform) { instance_double Subspace::Upgrade::Terraform, key_pair_public_key: authorized }
+    let(:pem) { "config/subspace/subspace.pem" }
+
+    before do
+      system "ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-C", "pem", "-f", pem, exception: true
+      allow(subject).to receive(:terraform).and_return terraform
+    end
+
+    context "when state holds the pem's public key" do
+      let(:authorized) { File.read("#{pem}.pub").sub("pem", "another comment") }
+
+      it "returns without aborting" do
+        expect { subject.send :check_subspace_key! }.not_to raise_error
+      end
+    end
+
+    context "when state holds a different key" do
+      let(:authorized) do
+        system "ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", "other", exception: true
+        File.read "other.pub"
+      end
+
+      it "aborts with how to fix it" do
+        expect { subject.send :check_subspace_key! }.to raise_error SystemExit, /not the public half.*ssh-keygen -y/m
+      end
+    end
+
+    context "when state has no key pair" do
+      let(:authorized) { nil }
+
+      it "aborts" do
+        expect { subject.send :check_subspace_key! }.to raise_error SystemExit, /No aws_key_pair/
+      end
+    end
+  end
+
   describe "#check_state_fingerprint!" do
     let(:terraform) { instance_double Subspace::Upgrade::Terraform, state_list: addresses }
 
@@ -464,6 +504,50 @@ describe Subspace::Upgrade::Workhorse do
 
       it "aborts with the exit status" do
         expect { subject.send :check_clean_plan! }.to raise_error SystemExit, /failed \(exit 1\)/
+      end
+    end
+  end
+
+  describe "#check_tailscale!" do
+    let(:roles) { "      - common\n      - tailscale\n" }
+    let(:app1_address) { "100.67.24.117" }
+
+    before do
+      File.write "config/subspace/production.yml", "---\n- hosts: production\n  roles:\n#{roles}"
+      File.write "config/subspace/inventory.yml", <<~YML
+        all:
+          hosts:
+            production-app1:
+              ansible_host: #{app1_address}
+            staging-app1:
+              ansible_host: 203.0.113.7
+          children:
+            production:
+              hosts:
+                production-app1:
+            staging:
+              hosts:
+                staging-app1:
+      YML
+    end
+
+    it "returns when every server in the environment is on the tailnet" do
+      expect { subject.send :check_tailscale! }.not_to raise_error
+    end
+
+    context "when the playbook does not include the tailscale role" do
+      let(:roles) { "      - common\n" }
+
+      it "aborts" do
+        expect { subject.send :check_tailscale! }.to raise_error SystemExit, /does not include the tailscale role/
+      end
+    end
+
+    context "when a server is addressed by its public IP" do
+      let(:app1_address) { "203.0.113.1" }
+
+      it "aborts naming it" do
+        expect { subject.send :check_tailscale! }.to raise_error SystemExit, /production-app1 is not addressed by tailscale IP/
       end
     end
   end

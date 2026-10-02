@@ -271,14 +271,15 @@ every step is abortable — the Elastic IP does not move here.
    maintenance page alone does not stop background jobs).
 5. Copy `/etc/letsencrypt` from old to new, so TLS works the instant the IP
    moves and certbot just renews on its normal schedule.
-6. Set `allow_instance_ssh = true` and `terraform apply` (apply 1) — opens the
-   instance-to-instance ssh path for the copy only.
+6. Confirm `allow_instance_ssh = true`. `--launch` already opened the
+   instance-to-instance ssh path in the same apply that built the new server, so
+   no apply lands in the maintenance window; this only re-opens it if someone
+   closed it by hand.
 7. `subspace db_copy --from <env>1 --to <env>2` (section 4), with no `--force`:
    steps 2-4 established exactly the state its guards check for, so forcing them
    would only hide a step that didn't work.
-8. Set `allow_instance_ssh = false` and `terraform apply` (apply 2), closing the
-   temporary rule as soon as the copy is done rather than leaving it open for the
-   length of the verification window.
+8. Leave the ssh path open. `--finalize` closes it in the same apply that destroys
+   the old server, and `--abort` in the one that destroys the new server.
 9. Record `phase: copied` and print the new slot's public address.
 
 Then stop. The new server is now running the real production data and is reachable
@@ -349,8 +350,8 @@ so the window state is recorded as `window_open: true` in `upgrade.yml` *before*
 the window opens rather than when the phase completes — `--abort` keys off that
 flag, not off the phase, and so still knows to start the old server again. Re-running
 `--copy-db` after a partial copy is not safe (the destination may now hold data, and
-`db_copy` refuses that), so the recovery is `--close-instance-ssh` if the rule was
-left open, then `--abort`, then start again from `--prepare`.
+`db_copy` refuses that), so the recovery is `--abort`, which also closes the ssh
+path, then start again from `--init`.
 
 ### `--finalize`
 
@@ -405,9 +406,9 @@ instances are in the same VPC and share one security group, so the bytes can go
 over the private network at instance-bandwidth speed instead of through the
 operator's uplink. Two things are needed:
 
-**1. A temporary security group.** The workhorse SG currently allows port 22 only
+**1. A temporary ingress rule.** The workhorse SG currently allows port 22 only
 from `var.ssh_cidr_blocks`, so the servers can't ssh to each other. Add a
-self-referencing rule that is **off by default and only open during the copy**:
+self-referencing rule that is **off by default and only open during an upgrade**:
 
 ```hcl
 variable "allow_instance_ssh" {
@@ -416,53 +417,41 @@ variable "allow_instance_ssh" {
   default     = false
 }
 
-resource "aws_security_group" "instance_ssh" {
-  count       = var.allow_instance_ssh ? 1 : 0
-  name        = "${var.project_name} ${var.project_environment} instance ssh"
-  vpc_id      = aws_default_vpc.default.id
-
-  ingress {
-    from_port       = 22
-    to_port         = 22
-    protocol        = "tcp"
-    security_groups = [aws_security_group.single.id]
+# in aws_security_group.single
+dynamic "ingress" {
+  for_each = var.allow_instance_ssh ? [1] : []
+  content {
+    from_port = 22
+    to_port   = 22
+    protocol  = "tcp"
+    self      = true
   }
 }
-
-# in aws_instance.single
-vpc_security_group_ids = concat(
-  [aws_security_group.single.id],
-  aws_security_group.instance_ssh[*].id
-)
 ```
 
-This is a whole second group rather than an
-`aws_vpc_security_group_ingress_rule` added to `aws_security_group.single`,
-because that group uses inline `ingress` blocks and the AWS provider refuses to
-mix the two forms — it reconciles the inline set on every apply and deletes any
-rule it doesn't own, so the toggle would silently close itself. The second group
-also means `aws_security_group.single` is never touched, so no existing
-environment sees a security group diff when it re-vendors. Toggling the variable
-creates or destroys the group and updates each instance's group list in place; no
-instance is replaced.
+It is a `dynamic` inline block rather than an `aws_vpc_security_group_ingress_rule`,
+because the group already uses inline `ingress` blocks and the AWS provider
+deletes any rule on it that the inline set doesn't declare. Toggling the variable
+is an in-place update to `aws_security_group.single` and nothing else. An earlier
+version used a separate group attached to every instance, but disabling it meant
+deleting a group the instances still held, and terraform orders that delete before
+the instance updates, so AWS refused it with `DependencyViolation`.
 
 Ships in the same `v2.0.0` module release, defaulting to closed, so no existing
 environment's exposure changes by adopting it. The upgrade drives the toggle:
 
-- `--copy-db` sets `allow_instance_ssh = true` and applies **immediately before**
-  `db_copy`, then sets it back to `false` and applies again as soon as the copy
-  finishes. Both applies are within that one phase, so the rule is never open
-  across the verification window, however long that window is held open.
-- `--cutover`'s apply only moves the EIP. All three applies are seconds long — SG
-  rule changes and EIP re-association modify in place, no instance is touched.
-- Every phase and `--check` assert the rule is closed at rest and refuse to
-  proceed while it's open (outside the copy window), printing the one-line fix.
-  An interrupted `--copy-db` is the realistic way it gets left open, so `--status`
-  reports it prominently and `--close-instance-ssh` exists as an explicit repair.
+- `--launch` sets `allow_instance_ssh = true` in the same apply that builds the
+  new server, and `--finalize` (or `--abort`) sets it back to `false` in the apply
+  that destroys a server. No apply lands in the maintenance window; `--copy-db`
+  only opens the rule itself if someone closed it by hand in between.
+- `--cutover`'s apply only moves the EIP.
+- Every phase and `--check` assert the rule is closed outside `--launch` through
+  `--finalize` and refuse to proceed while it's open, printing the one-line fix.
+  `--status` reports it, and `--close-instance-ssh` exists as an explicit repair.
 
 Even while open it grants only instance-to-instance access within the group, but
 "temporary and asserted closed" is the right posture for a rule that exists
-solely for a five-minute window.
+only for the length of an upgrade.
 
 **2. Agent forwarding, not a deployed key.** Run the pipe from the source host
 with the operator's forwarded agent:
