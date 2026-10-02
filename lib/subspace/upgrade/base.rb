@@ -305,7 +305,7 @@ module Subspace
             terraform.discard_plan
             abort "Aborted."
           end
-        rescue SystemExit, Interrupt
+        rescue StandardError, SystemExit, Interrupt
           config.revert
           raise
         end

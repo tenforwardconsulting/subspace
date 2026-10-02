@@ -142,6 +142,18 @@ describe Subspace::Upgrade::Workhorse do
       end
     end
 
+    context "when the prompt hits end of input" do
+      let(:changes) { expected_changes }
+
+      before { allow(subject).to receive(:ask).and_raise EOFError }
+
+      it "puts main.tf back", :aggregate_failures do
+        expect { subject.send :open_instance_ssh! }.to raise_error EOFError
+        expect(terraform).not_to have_received :apply_plan
+        expect(File.read(subject.config.path)).to eq main_tf
+      end
+    end
+
     context "when the plan replaces a resource the step permits every action on" do
       let(:changes) do
         [{ "address" => "module.workhorse.aws_eip_association.eip_assoc", "change" => { "actions" => %w[delete create] } }]

@@ -1,6 +1,8 @@
 ---
 # Requests the site by its real name, so the certificate is checked against the domain.
 # With verify_address the name is pinned to that address instead of going through DNS.
+# With site_response_file the status and redirect are recorded there, for a later run to
+# require as expected_response.
 - name: Verify the site is served by its domain name
   hosts: "{{ upgrade_host }}"
   gather_facts: false
@@ -12,18 +14,34 @@
     - name: Request {{ scheme }}://{{ server_name }}/
       delegate_to: localhost
       command:
-        argv: "{{ ['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}', '--max-time', '10'] + resolve + [scheme ~ '://' ~ server_name ~ '/'] }}"
+        argv: "{{ ['curl', '-s', '-o', '/dev/null', '-w', '%{http_code} %{redirect_url}', '--max-time', '10'] + resolve + [scheme ~ '://' ~ server_name ~ '/'] }}"
       register: response
       changed_when: false
       failed_when: false
-      until: response.stdout == "200"
+      until: site_response_file is defined or response.stdout | trim == expected_response
       retries: 20
       delay: 5
 
-    - name: Assert the site returned 200
+    - name: Assert the site answered as recorded
       assert:
-        that: response.stdout == "200"
+        that: response.stdout | trim == expected_response
         fail_msg: >-
           {{ scheme }}://{{ server_name }}/ {{ ('at ' ~ verify_address) if verify_address is defined else '' }}
-          returned {{ response.stdout }} (curl exit {{ response.rc }}).  000 with exit 60
-          means the certificate did not validate.
+          returned {{ response.stdout | trim }} (curl exit {{ response.rc }}), but the old server
+          returned {{ expected_response }}.  000 with exit 60 means the certificate did not validate.
+      when: site_response_file is not defined
+
+    - when: site_response_file is defined
+      block:
+        - name: Assert the site is up
+          assert:
+            that: response.stdout is match('[23]')
+            fail_msg: >-
+              {{ scheme }}://{{ server_name }}/ returned {{ response.stdout | trim }} (curl exit {{ response.rc }}),
+              so there is no working response to hold the new server to.
+
+        - name: Record the response
+          delegate_to: localhost
+          copy:
+            content: "{{ response.stdout | trim }}"
+            dest: "{{ site_response_file }}"
