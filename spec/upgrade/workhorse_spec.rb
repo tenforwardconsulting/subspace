@@ -108,6 +108,93 @@ describe Subspace::Upgrade::Workhorse do
     end
   end
 
+  describe "#launch" do
+    let(:options) { double ami: "ami-0new", ubuntu_release: "noble" }
+
+    let(:main_tf) do
+      <<~HCL
+        module workhorse {
+          source = "./modules/workhorse"
+
+          instances = {
+            "1" = {
+              hostname      = "production-app1"
+              ami           = "ami-0abc"
+              instance_type = "t3.medium"
+              volume_size   = 20
+            }
+          }
+          active_instance = "1"
+          allow_instance_ssh = false
+        }
+      HCL
+    end
+
+    before do
+      Subspace::Upgrade::State.create("production", "template" => "workhorse", "phase" => "initialized").save
+      allow(subject).to receive(:assert_clean_git_tree!)
+      allow(subject).to receive(:confirm_database_backup!)
+      allow(subject).to receive(:apply!)
+      allow(subject).to receive(:update_inventory!)
+      allow(subject).to receive(:add_to_group!)
+    end
+
+    it "records launching before terraform creates the new slot", :aggregate_failures do
+      subject.launch
+
+      expect(subject).to have_received(:apply!)
+        .with({ %(module.workhorse.aws_instance.single["2"]) => ["create"] }, starting: "launching")
+      expect(reread_phase).to eq "launched"
+    end
+
+    context "when a previous launch did not finish" do
+      let(:main_tf) do
+        <<~HCL
+          module workhorse {
+            source = "./modules/workhorse"
+
+            instances = {
+              "1" = {
+                hostname      = "production-app1"
+                ami           = "ami-0abc"
+                instance_type = "t3.medium"
+                volume_size   = 20
+              }
+              "2" = {
+                hostname      = "production-app2"
+                ami           = "ami-0new"
+                instance_type = "t3.medium"
+                volume_size   = 20
+              }
+            }
+            active_instance = "1"
+            allow_instance_ssh = false
+          }
+        HCL
+      end
+
+      before do
+        Subspace::Upgrade::State.create("production",
+          "template" => "workhorse",
+          "phase" => "launching",
+          "from_hostname" => "production-app1",
+          "to_slot" => "2",
+          "to_hostname" => "production-app2").save
+      end
+
+      it "finishes creating the slot it already picked", :aggregate_failures do
+        subject.launch
+
+        expect(subject).to have_received(:check!).with(clean_plan: false)
+        expect(subject).not_to have_received :confirm_database_backup!
+        expect(subject).to have_received(:apply!)
+          .with({ %(module.workhorse.aws_instance.single["2"]) => ["create"] }, starting: "launching")
+        expect(subject).to have_received(:add_to_group!).with("production-app2", "upgrade")
+        expect(reread_phase).to eq "launched"
+      end
+    end
+  end
+
   describe "#provision" do
     before do
       Subspace::Upgrade::State.read("production").tap { |state| state["phase"] = "launched" }.save
@@ -169,6 +256,19 @@ describe Subspace::Upgrade::Workhorse do
         expect(reread_phase).to eq "copied"
       end
     end
+
+    context "when a previous cutover did not finish" do
+      before { Subspace::Upgrade::State.read("production").tap { |state| state["phase"] = "cutting_over" }.save }
+
+      it "finishes moving the elastic IP", :aggregate_failures do
+        subject.cutover
+
+        expect(subject).to have_received(:check!).with(clean_plan: false)
+        expect(subject).not_to have_received(:serves_domain?).with("203.0.113.2")
+        expect(subject).to have_received(:flip_active_instance!)
+        expect(reread_phase).to eq "cutover"
+      end
+    end
   end
 
   describe "#flip_active_instance!" do
@@ -204,6 +304,13 @@ describe Subspace::Upgrade::Workhorse do
       expect(terraform).to have_received(:output).ordered
       expect(hosts["production-app1"].vars["ansible_host"]).to eq "203.0.113.1"
       expect(hosts["production-app2"].vars["ansible_host"]).to eq "203.0.113.100"
+    end
+
+    it "records cutting_over before terraform moves the elastic IP" do
+      subject.send :flip_active_instance!, "2"
+
+      expect(subject).to have_received(:apply!)
+        .with({ "module.workhorse.aws_eip_association.eip_assoc" => %w[create update delete] }, starting: "cutting_over")
     end
   end
 
@@ -252,6 +359,96 @@ describe Subspace::Upgrade::Workhorse do
 
           expect(retry_upgrade).not_to have_received :start_application!
         end
+      end
+    end
+
+    context "when a previous launch did not finish" do
+      before do
+        Subspace::Upgrade::State.read("production").tap do |state|
+          state["phase"] = "launching"
+          state["window_open"] = nil
+        end.save
+      end
+
+      it "destroys the new slot without touching the old server", :aggregate_failures do
+        subject.abort_upgrade
+
+        expect(subject).to have_received(:check!).with(clean_plan: false)
+        expect(subject).not_to have_received :start_application!
+        expect(subject).to have_received(:apply!)
+        expect(Subspace::Upgrade::State).not_to be_exist "production"
+      end
+    end
+
+    context "when a previous cutover did not finish" do
+      before { Subspace::Upgrade::State.read("production").tap { |state| state["phase"] = "cutting_over" }.save }
+
+      it "refuses, since the new server may already be live", :aggregate_failures do
+        expect { subject.abort_upgrade }.to raise_error SystemExit
+        expect(subject).not_to have_received :start_application!
+        expect(subject).not_to have_received :apply!
+      end
+    end
+  end
+
+  describe "#finalize" do
+    before do
+      Subspace::Upgrade::State.read("production").tap do |state|
+        state["phase"] = "cutover"
+        state["from_slot"] = "1"
+      end.save
+      allow(subject).to receive(:ask).and_return "production-app1"
+      allow(subject).to receive(:backup_database!)
+      allow(subject).to receive(:apply!)
+      allow(subject).to receive(:remove_host!)
+      allow(subject).to receive(:remove_from_group!)
+    end
+
+    it "records finalizing before terraform destroys the old slot", :aggregate_failures do
+      subject.finalize
+
+      expect(subject).to have_received(:backup_database!).with("production-app1")
+      expect(subject).to have_received(:apply!)
+        .with({ %(module.workhorse.aws_instance.single["1"]) => ["delete"] }, starting: "finalizing")
+      expect(reread_phase).to eq "finalized"
+    end
+
+    context "when a previous finalize did not finish" do
+      let(:main_tf) do
+        <<~HCL
+          module workhorse {
+            source = "./modules/workhorse"
+
+            instances = {
+              "2" = {
+                hostname      = "production-app2"
+                ami           = "ami-0def"
+                instance_type = "t3.medium"
+                volume_size   = 20
+              }
+            }
+            active_instance = "2"
+            allow_instance_ssh = false
+          }
+        HCL
+      end
+
+      before do
+        Subspace::Upgrade::State.read("production").tap do |state|
+          state["phase"] = "finalizing"
+          state["backup_path"] = "tmp/subspace/production-app1.dump"
+        end.save
+      end
+
+      it "finishes destroying the old slot without backing it up again", :aggregate_failures do
+        subject.finalize
+
+        expect(subject).to have_received(:check!).with(clean_plan: false)
+        expect(subject).not_to have_received :backup_database!
+        expect(subject).to have_received(:apply!)
+          .with({ %(module.workhorse.aws_instance.single["1"]) => ["delete"] }, starting: "finalizing")
+        expect(subject).to have_received(:remove_host!).with("production-app1")
+        expect(reread_phase).to eq "finalized"
       end
     end
   end

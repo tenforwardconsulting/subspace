@@ -13,36 +13,19 @@ module Subspace
       STATE_FORBIDS = ["aws_lb", "aws_db_instance"]
 
       def launch
-        state.require_phase! "initialized"
-        check!
-        assert_clean_git_tree!
+        state.require_phase! "initialized", "launching"
+        if state.phase == "initialized"
+          check!
+          assert_clean_git_tree!
+          add_next_instance!
+        else
+          check! clean_plan: false
+        end
 
-        from_slot = config.active_instance
-        to_slot = next_slot
-        to_hostname = next_hostname
-        say "Upgrading #{template} #{env}: slot #{from_slot} (#{from_hostname}) => slot #{to_slot} (#{to_hostname})"
-
-        confirm_database_backup! from_hostname
-
-        state["from_slot"] = from_slot
-        state["to_slot"] = to_slot
-        state["from_hostname"] = from_hostname
-        state["to_hostname"] = to_hostname
-        state["from_ami"] = TerraformConfig.unquote config.instances[from_slot]["ami"]
-        state["to_ami"] = target_ami
-        state["ubuntu_release"] = options.ami ? options.ubuntu_release : ubuntu_release
-        state.save
-
-        config.add_instance to_slot,
-          "hostname" => %("#{to_hostname}"),
-          "ami" => %("#{state["to_ami"]}"),
-          "instance_type" => config.instances[from_slot]["instance_type"],
-          "volume_size" => config.instances[from_slot]["volume_size"]
-
-        apply! address(%(aws_instance.single["#{to_slot}"])) => ["create"]
+        apply!({ address(%(aws_instance.single["#{state["to_slot"]}"])) => ["create"] }, starting: "launching")
 
         update_inventory!
-        add_to_group! to_hostname, "upgrade"
+        add_to_group! state["to_hostname"], "upgrade"
 
         state.advance! "launched"
         say next_step_for "launched"
@@ -102,16 +85,20 @@ module Subspace
       end
 
       def cutover
-        state.require_phase! "copied"
-        check!
+        state.require_phase! "copied", "cutting_over"
+        if state.phase == "copied"
+          check!
 
-        unless serves_domain? to_public_ip
-          abort "#{state["to_hostname"]} is not serving the site on its own address.  Nothing has moved yet."
+          unless serves_domain? to_public_ip
+            abort "#{state["to_hostname"]} is not serving the site on its own address.  Nothing has moved yet."
+          end
+
+          say "This points #{env}'s elastic IP at #{state["to_hostname"]} and ends the maintenance window."
+          say "After this there is no --abort: #{state["to_hostname"]} holds the only current data."
+          abort "Aborted." unless ask("Continue? [no] ").downcase.start_with? "y"
+        else
+          check! clean_plan: false
         end
-
-        say "This points #{env}'s elastic IP at #{state["to_hostname"]} and ends the maintenance window."
-        say "After this there is no --abort: #{state["to_hostname"]} holds the only current data."
-        abort "Aborted." unless ask("Continue? [no] ").downcase.start_with? "y"
 
         flip_active_instance! state["to_slot"]
 
@@ -131,8 +118,8 @@ module Subspace
       # still holds the data it always had -- nothing has written to it since --copy-db
       # stopped puma, the workers and cron.
       def abort_upgrade
-        state.require_phase! "launched", "prepared", "copied", "aborting"
-        check!
+        state.require_phase! "launching", "launched", "prepared", "copied", "aborting"
+        check! clean_plan: state.phase != "launching"
         say "This destroys #{state["to_hostname"]} (slot #{state["to_slot"]}) and leaves #{env} on #{state["from_hostname"]}."
         abort "Aborted." unless ask("Type the environment name to confirm: ").strip == env
 
@@ -156,18 +143,22 @@ module Subspace
       end
 
       def finalize
-        state.require_phase! "cutover"
-        check!
+        state.require_phase! "cutover", "finalizing"
+        if state.phase == "cutover"
+          check!
 
-        say "This permanently destroys #{state["from_hostname"]} (slot #{state["from_slot"]}) and its database."
-        say "After this there is no way back, only the dump this step takes and the backup you took"
-        say "yourself at --launch."
-        abort "Aborted." unless ask("Type #{state["from_hostname"]} to confirm: ").strip == state["from_hostname"]
+          say "This permanently destroys #{state["from_hostname"]} (slot #{state["from_slot"]}) and its database."
+          say "After this there is no way back, only the dump this step takes and the backup you took"
+          say "yourself at --launch."
+          abort "Aborted." unless ask("Type #{state["from_hostname"]} to confirm: ").strip == state["from_hostname"]
 
-        backup_database! state["from_hostname"]
+          backup_database! state["from_hostname"]
+          config.remove_instance state["from_slot"]
+        else
+          check! clean_plan: false
+        end
 
-        config.remove_instance state["from_slot"]
-        apply! address(%(aws_instance.single["#{state["from_slot"]}"])) => ["delete"]
+        apply!({ address(%(aws_instance.single["#{state["from_slot"]}"])) => ["delete"] }, starting: "finalizing")
 
         remove_host! state["from_hostname"]
         remove_from_group! state["to_hostname"], "upgrade"
@@ -181,6 +172,30 @@ module Subspace
 
       def from_hostname
         config.hostname_for config.active_instance
+      end
+
+      def add_next_instance!
+        from_slot = config.active_instance
+        to_slot = next_slot
+        to_hostname = next_hostname
+        say "Upgrading #{template} #{env}: slot #{from_slot} (#{from_hostname}) => slot #{to_slot} (#{to_hostname})"
+
+        confirm_database_backup! from_hostname
+
+        state["from_slot"] = from_slot
+        state["to_slot"] = to_slot
+        state["from_hostname"] = from_hostname
+        state["to_hostname"] = to_hostname
+        state["from_ami"] = TerraformConfig.unquote config.instances[from_slot]["ami"]
+        state["to_ami"] = target_ami
+        state["ubuntu_release"] = options.ami ? options.ubuntu_release : ubuntu_release
+        state.save
+
+        config.add_instance to_slot,
+          "hostname" => %("#{to_hostname}"),
+          "ami" => %("#{state["to_ami"]}"),
+          "instance_type" => config.instances[from_slot]["instance_type"],
+          "volume_size" => config.instances[from_slot]["volume_size"]
       end
 
       def next_slot
@@ -333,7 +348,7 @@ module Subspace
 
       def flip_active_instance!(slot)
         config.active_instance = slot
-        apply! address("aws_eip_association.eip_assoc") => %w[create update delete]
+        apply!({ address("aws_eip_association.eip_assoc") => %w[create update delete] }, starting: "cutting_over")
         terraform.refresh
         update_addresses!
       end
@@ -363,6 +378,15 @@ module Subspace
       def next_step_for(phase)
         case phase
         when "initialized" then "subspace upgrade #{env} --launch"
+        when "launching"
+          <<~EOS
+            A previous --launch did not finish.  #{state["to_hostname"]} (slot #{state["to_slot"]}) may or may not exist yet.
+
+              subspace upgrade #{env} --launch   # finish creating #{state["to_hostname"]}
+              subspace upgrade #{env} --abort    # or back out: destroy #{state["to_hostname"]}
+
+            #{state["from_hostname"]} is still serving all traffic.  Nothing is at risk yet.
+          EOS
         when "launched"
           <<~EOS
             #{state["to_hostname"]} is running (#{state["to_ami"]}#{", ubuntu #{state["ubuntu_release"]}" if state["ubuntu_release"]}) but not provisioned yet.
@@ -412,12 +436,26 @@ module Subspace
             the other.  Both are still safe: nothing has written to #{state["from_hostname"]} since
             its app stopped.
           EOS
+        when "cutting_over"
+          <<~EOS
+            A previous --cutover did not finish.  The elastic IP may already point at
+            #{state["to_hostname"]}, so it may be taking writes and there is no --abort.
+
+              subspace upgrade #{env} --cutover   # finish moving the elastic IP
+          EOS
         when "cutover"
           <<~EOS
             #{state["to_hostname"]} is live on the elastic IP.  #{state["from_hostname"]} is still
             running with the data it had at cutover -- leave it up as long as you like.
 
               subspace upgrade #{env} --finalize    # destroy #{state["from_hostname"]} for good
+          EOS
+        when "finalizing"
+          <<~EOS
+            A previous --finalize did not finish.  #{state["from_hostname"]} may already be destroyed.
+            Its database was dumped to #{state["backup_path"]}.
+
+              subspace upgrade #{env} --finalize   # finish destroying #{state["from_hostname"]}
           EOS
         when "aborting"
           <<~EOS
