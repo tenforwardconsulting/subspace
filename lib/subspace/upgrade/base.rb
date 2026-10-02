@@ -34,6 +34,7 @@ module Subspace
 
       def check
         check!
+        check_remote_storage!
         say "#{env} is on #{template} #{manifest["ref"]} and ready for `subspace upgrade`."
       end
 
@@ -67,6 +68,7 @@ module Subspace
 
       def init
         check!
+        check_remote_storage!
         if State.exist? env
           abort "#{State.path_for env} already exists.  `--status` to see it, or delete it to start over."
         end
@@ -241,6 +243,20 @@ module Subspace
           can still ssh to each other.  It should only be open during a db copy.
 
           Close it:  subspace upgrade #{env} --close-instance-ssh
+        EOS
+      end
+
+      # Uploads on local disk stay behind on the old server when it is destroyed
+      def check_remote_storage!
+        environment = File.join "config/environments", "#{env}.rb"
+        return unless File.exist?(environment) && File.exist?("config/storage.yml")
+
+        service = File.read(environment)[/^\s*config\.active_storage\.service\s*=\s*[:"']?(\w+)/, 1]
+        return unless service && YAML.safe_load(File.read("config/storage.yml"), aliases: true).dig(service, "service") == "Disk"
+
+        abort <<~EOS
+          #{environment} stores Active Storage uploads on local disk (:#{service}).  `subspace upgrade`
+          does not copy them to the new server.  Move them to S3 first.
         EOS
       end
 

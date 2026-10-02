@@ -468,6 +468,48 @@ describe Subspace::Upgrade::Workhorse do
     end
   end
 
+  describe "#check_remote_storage!" do
+    before do
+      FileUtils.mkdir_p "config/environments"
+      File.write "config/environments/production.rb", "  config.active_storage.service = :#{service}\n"
+      File.write "config/storage.yml", <<~YAML
+        local:
+          service: Disk
+          root: <%= Rails.root.join("storage") %>
+
+        amazon:
+          service: S3
+          bucket: <%= ENV["BUCKET"] %>
+      YAML
+    end
+
+    context "when the environment uses a Disk service" do
+      let(:service) { "local" }
+
+      it "aborts" do
+        expect { subject.send :check_remote_storage! }.to raise_error SystemExit, /local disk \(:local\)/
+      end
+    end
+
+    context "when the environment uses S3" do
+      let(:service) { "amazon" }
+
+      it "returns without aborting" do
+        expect { subject.send :check_remote_storage! }.not_to raise_error
+      end
+    end
+
+    context "without active storage" do
+      let(:service) { "local" }
+
+      before { File.delete "config/storage.yml" }
+
+      it "returns without aborting" do
+        expect { subject.send :check_remote_storage! }.not_to raise_error
+      end
+    end
+  end
+
   describe "#assert_clean_git_tree!" do
     before do
       system "git init -q && git add . && git -c user.name=t -c user.email=t@t commit -qm init", exception: true
