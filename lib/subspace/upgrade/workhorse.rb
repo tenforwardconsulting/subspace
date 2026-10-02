@@ -16,13 +16,16 @@ module Subspace
         state.require_phase! "initialized", "launching"
         if state.phase == "initialized"
           check!
+          check_subspace_key!
           assert_clean_git_tree!
           add_next_instance!
+          config.allow_instance_ssh = true
         else
           check! clean_plan: false
         end
 
-        apply!({ address(%(aws_instance.single["#{state["to_slot"]}"])) => ["create"] }, starting: "launching")
+        apply!(instance_ssh_change.merge(address(%(aws_instance.single["#{state["to_slot"]}"])) => ["create"]),
+          starting: "launching")
 
         update_inventory!
         add_to_group! state["to_hostname"], "upgrade"
@@ -38,6 +41,7 @@ module Subspace
         Subspace::Commands::Bootstrap.new [state["to_hostname"]], options
         copy_letsencrypt!
         provision! state["to_hostname"]
+        join_tailnet! state["to_hostname"]
         write_capistrano_stage!
 
         state.advance! "prepared"
@@ -57,28 +61,25 @@ module Subspace
         say "and stays down until `--cutover` or `--abort`.  The elastic IP does not move yet."
         abort "Aborted." unless ask("Continue? [no] ").downcase.start_with? "y"
 
-        begin
-          open_instance_ssh!
-          overwrite = !!state["db_copy_started"]
-          check_db_copy! state["from_hostname"], state["to_hostname"], overwrite: overwrite
+        # --launch opened it; this only covers someone having closed it by hand since.
+        open_instance_ssh! unless config.allow_instance_ssh
+        overwrite = !!state["db_copy_started"]
+        check_db_copy! state["from_hostname"], state["to_hostname"], overwrite: overwrite
 
-          # Recorded before the window opens, not after the phase completes, so an interrupted
-          # --copy-db still tells --abort that the old server needs starting again.
-          state["window_open"] = true
-          state.save
+        # Recorded before the window opens, not after the phase completes, so an interrupted
+        # --copy-db still tells --abort that the old server needs starting again.
+        state["window_open"] = true
+        state.save
 
-          maintenance_mode! :on, state["from_hostname"]
-          verify_maintenance_page! state["from_hostname"]
-          stop_application! state["from_hostname"]
+        maintenance_mode! :on, state["from_hostname"]
+        verify_maintenance_page! state["from_hostname"]
+        stop_application! state["from_hostname"]
 
-          state["db_copy_started"] = true
-          state.save
+        state["db_copy_started"] = true
+        state.save
 
-          db_copy! state["from_hostname"], state["to_hostname"], overwrite: overwrite
-          state.advance! "copied"
-        ensure
-          close_instance_ssh
-        end
+        db_copy! state["from_hostname"], state["to_hostname"], overwrite: overwrite
+        state.advance! "copied"
 
         say next_step_for "copied"
       end
@@ -130,7 +131,9 @@ module Subspace
         FileUtils.rm_f capistrano_stage_path
 
         config.remove_instance state["to_slot"]
-        apply! address(%(aws_instance.single["#{state["to_slot"]}"])) => ["delete"]
+        config.allow_instance_ssh = false
+        apply!(instance_ssh_change.merge(address(%(aws_instance.single["#{state["to_slot"]}"])) => ["delete"]),
+          starting: "aborting")
 
         state.destroy
         say "Aborted the upgrade.  Commit the config diff."
@@ -148,11 +151,13 @@ module Subspace
 
           backup_database! state["from_hostname"]
           config.remove_instance state["from_slot"]
+          config.allow_instance_ssh = false
         else
           check! clean_plan: false
         end
 
-        apply!({ address(%(aws_instance.single["#{state["from_slot"]}"])) => ["delete"] }, starting: "finalizing")
+        apply!(instance_ssh_change.merge(address(%(aws_instance.single["#{state["from_slot"]}"])) => ["delete"]),
+          starting: "finalizing")
 
         remove_host! state["from_hostname"]
         remove_from_group! state["to_hostname"], "upgrade"
@@ -260,6 +265,33 @@ module Subspace
         end
       end
 
+      # The tailscale role only joins the tailnet under the tailscale_reauth tag.  Joining is
+      # skipped when the server already has an address, since a reauth can hand out a new one.
+      def join_tailnet!(hostname)
+        address = tailscale_ip hostname
+        unless address
+          unless ansible_playbook("#{env}.yml", "--limit", hostname, "--tags", "tailscale_reauth")
+            abort "Joining #{hostname} to the tailnet failed."
+          end
+          address = tailscale_ip(hostname) or abort "#{hostname} has no tailscale address after joining the tailnet."
+        end
+
+        vars = inventory.hosts.fetch(hostname).vars
+        return if vars["ansible_host"] == address
+
+        vars["ansible_host"] = address
+        inventory.write
+        @inventory = nil
+        learn_host_key! address
+        say "#{hostname} is now addressed by its tailscale IP, #{address}"
+      end
+
+      def tailscale_ip(hostname)
+        stdout, _, status = Open3.capture3("ansible", hostname, "-o", "-m", "command", "-a", "tailscale ip -4",
+          chdir: "config/subspace")
+        stdout[/\(stdout\)\s*(\S+)/, 1] if status.success?
+      end
+
       def verify_deployed!(hostname)
         unless playbook("upgrade_verify", hostname, upgrade_host: hostname)
           abort "#{hostname} is not ready to take traffic.  Deploy to it and verify it first."
@@ -352,15 +384,12 @@ module Subspace
 
       def open_instance_ssh!
         config.allow_instance_ssh = true
-        apply!({ address("aws_security_group.instance_ssh[0]") => ["create"] }
-                 .merge(slot_addresses("update")))
+        apply! instance_ssh_change
       end
 
       def flip_active_instance!(slot)
         config.active_instance = slot
         apply!({ address("aws_eip_association.eip_assoc") => %w[create update delete] }, starting: "cutting_over")
-        terraform.refresh
-        update_addresses!
       end
 
       # ---------------------------------------------------------- capistrano
@@ -373,12 +402,15 @@ module Subspace
         "config/deploy/#{env}.rb"
       end
 
+      # Capistrano derives rails_env (and anything else lazily reading :stage) from the
+      # stage name, so the upgrade stage claims to be the base one.
       def write_capistrano_stage!
-        File.write capistrano_stage_path, "# Generated by Subspace from #{base_stage_path}\n#{stage_for_new_host}"
+        header = "# Generated by Subspace from #{base_stage_path}\nset :stage, :#{env}\n"
+        File.write capistrano_stage_path, header + stage_for_new_host
         say "Wrote #{capistrano_stage_path}"
       end
 
-      # After the elastic IP moves, since that changes the new server's public address.
+      # After the elastic IP moves, so `cap <env>` keeps deploying to the old server until then.
       def promote_capistrano_stage!
         File.write base_stage_path, stage_for_new_host
         FileUtils.rm_f capistrano_stage_path
@@ -440,10 +472,11 @@ module Subspace
               1. Join #{state["to_hostname"]} to the tailnet: create a reusable, tagged tailscale auth key
                  (1-day expiry), set tailscale_auth_key in the #{env} vault, then
                  subspace provision #{env} --tags=tailscale_reauth --limit #{state["to_hostname"]}
-              2. bundle exec cap #{env}_upgrade deploy
-              3. Verify the app: ssh in, check the logs, and browse https://<address>/ (expect a
+              2. replace the ips in deploy/#{env}.rb and inventory.yml
+              3. bundle exec cap #{env}_upgrade deploy
+              4. Verify the app: ssh in, check the logs, and browse https://<address>/ (expect a
                  certificate warning), or map your domain to it in /etc/hosts for a faithful test
-              4. subspace upgrade #{env} --copy-db
+              5. subspace upgrade #{env} --copy-db
 
             #{state["from_hostname"]} is still serving all traffic.  Nothing is at risk yet.
           EOS

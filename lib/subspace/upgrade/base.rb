@@ -1,9 +1,16 @@
+require 'ipaddr'
 module Subspace
   module Upgrade
     # Shared machinery for every topology's upgrade.  Subclasses own the actual
     # sequence; nothing in here branches on the template.
     class Base < Subspace::Commands::Base
       MINIMUM_MODULE_REF = "v2.0.0"
+      TAILNET = IPAddr.new "100.64.0.0/10"
+
+      # The servers can ssh to each other from --launch until --finalize or --abort, so the
+      # applies that open and close that path ride along with ones those phases already run
+      # instead of landing in the maintenance window.
+      INSTANCE_SSH_PHASES = %w[launching launched prepared copied cutting_over cutover]
 
       PHASES = {
         check: :check,
@@ -35,6 +42,7 @@ module Subspace
       def check
         check!
         check_remote_storage!
+        check_tailscale!
         say "#{env} is on #{template} #{manifest["ref"]} and ready for `subspace upgrade`."
       end
 
@@ -58,8 +66,12 @@ module Subspace
 
         if config.allow_instance_ssh
           say ""
-          say "WARNING: allow_instance_ssh is still true.  Instances can ssh to each other."
-          say "Close it with `subspace upgrade #{env} --close-instance-ssh`."
+          if instance_ssh_phase?
+            say "The servers can ssh to each other until --finalize or --abort closes it."
+          else
+            say "WARNING: allow_instance_ssh is still true.  Instances can ssh to each other."
+            say "Close it with `subspace upgrade #{env} --close-instance-ssh`."
+          end
         end
 
         say ""
@@ -69,6 +81,7 @@ module Subspace
       def init
         check!
         check_remote_storage!
+        check_tailscale!
         if State.exist? env
           abort "#{State.path_for env} already exists.  `--status` to see it, or delete it to start over."
         end
@@ -86,8 +99,7 @@ module Subspace
         end
 
         config.allow_instance_ssh = false
-        apply!({ address("aws_security_group.instance_ssh[0]") => ["delete"] }
-                 .merge(slot_addresses("update")))
+        apply! instance_ssh_change
       end
 
       def revendor
@@ -136,7 +148,7 @@ module Subspace
         check_module_variables!
         check_root_outputs!
         check_state_fingerprint!
-        check_instance_ssh_closed!
+        check_instance_ssh!
         check_clean_plan! if clean_plan
       end
 
@@ -235,14 +247,36 @@ module Subspace
         EOS
       end
 
-      def check_instance_ssh_closed!
+      def check_instance_ssh!
         return unless config.allow_instance_ssh
+        return if instance_ssh_phase?
 
         abort <<~EOS
           allow_instance_ssh is true in #{config.path}, which means the instances in #{env}
-          can still ssh to each other.  It should only be open during a db copy.
+          can still ssh to each other.  It should only be open from --launch until --finalize.
 
           Close it:  subspace upgrade #{env} --close-instance-ssh
+        EOS
+      end
+
+      # EC2 only installs the key pair at launch, so a mismatch leaves the new server
+      # unreachable with nothing in the plan to show it.
+      def check_subspace_key!
+        pem = "config/subspace/subspace.pem"
+        authorized = terraform.key_pair_public_key
+        abort "No aws_key_pair in #{env}'s terraform state to check #{pem} against." if authorized.nil?
+
+        derived, _, status = Open3.capture3("ssh-keygen", "-y", "-P", "", "-f", pem)
+        abort "Could not read a public key from #{pem}." unless status.success?
+        return if derived.split[0, 2] == authorized.split[0, 2]
+
+        abort <<~EOS
+          The aws_key_pair in #{env}'s terraform state is not the public half of #{pem},
+          so a new server would not accept it.
+
+          Regenerate the public key and point #{config.path} at it, then apply:
+            ssh-keygen -y -f #{pem} > #{pem}.pub
+            subspace_public_key = file("../../subspace.pem.pub")
         EOS
       end
 
@@ -258,6 +292,32 @@ module Subspace
           #{environment} stores Active Storage uploads on local disk (:#{service}).  `subspace upgrade`
           does not copy them to the new server.  Move them to S3 first.
         EOS
+      end
+
+      # Tailscale addresses belong to the machine, so the inventory and the capistrano stages
+      # survive the elastic IP moving to another server.
+      def check_tailscale!
+        playbook_path = "config/subspace/#{env}.yml"
+        unless File.read(playbook_path).match?(/^\s*-\s*tailscale\s*$/)
+          abort "#{playbook_path} does not include the tailscale role.  `subspace upgrade` needs every server on the tailnet."
+        end
+
+        off_tailnet = inventory.groups.fetch(env).host_list.reject do |name|
+          tailnet_address? inventory.hosts.fetch(name).vars["ansible_host"]
+        end
+        return if off_tailnet.empty?
+
+        abort <<~EOS
+          #{off_tailnet.join(", ")} #{off_tailnet.one? ? "is" : "are"} not addressed by tailscale IP in config/subspace/inventory.yml.
+          Set ansible_host to each server's `tailscale ip -4`, and point the server lines in
+          config/deploy/#{env}.rb at it too, so neither changes when the elastic IP moves.
+        EOS
+      end
+
+      def tailnet_address?(address)
+        TAILNET.include? IPAddr.new(address.to_s)
+      rescue IPAddr::InvalidAddressError
+        false
       end
 
       def check_clean_plan!
@@ -288,10 +348,13 @@ module Subspace
         "module.#{config.module_name}.#{resource}"
       end
 
-      def slot_addresses(*actions)
-        config.instances.keys.to_h do |key|
-          [address(%(#{self.class::KEYED_RESOURCE}["#{key}"])), actions]
-        end
+      def instance_ssh_phase?
+        State.exist?(env) && INSTANCE_SSH_PHASES.include?(state.phase)
+      end
+
+      # The module toggles a self-referencing ingress rule on the server group in place.
+      def instance_ssh_change
+        { address("aws_security_group.single") => ["update"] }
       end
 
       # Save main.tf and apply, but only if the plan does exactly what this phase expects.
@@ -338,12 +401,9 @@ module Subspace
         @inventory = nil
       end
 
-      def update_addresses!
-        terraform.output("instances").each_value do |instance|
-          inventory.hosts.fetch(instance["hostname"]).vars["ansible_host"] = instance["public_ip"]
-        end
-        inventory.write
-        @inventory = nil
+      def learn_host_key!(address)
+        system "ssh-keygen", "-R", address
+        system "ssh-keyscan -H #{address} >> ~/.ssh/known_hosts"
       end
 
       def add_to_group!(hostname, group)
