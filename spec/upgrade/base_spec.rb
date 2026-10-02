@@ -262,6 +262,71 @@ describe Subspace::Upgrade::Workhorse do
     end
   end
 
+  describe "#assert_clean_git_tree!" do
+    before do
+      system "git init -q && git add . && git -c user.name=t -c user.email=t@t commit -qm init", exception: true
+    end
+
+    context "when only the upgrade state file has changed" do
+      before { File.write "config/subspace/terraform/production/upgrade.yml", "phase: initialized\n" }
+
+      it "returns without aborting" do
+        expect { subject.send :assert_clean_git_tree! }.not_to raise_error
+      end
+    end
+
+    context "when main.tf has changed" do
+      before { File.write "config/subspace/terraform/production/main.tf", "#{main_tf}\n# edited\n" }
+
+      it "aborts" do
+        expect { subject.send :assert_clean_git_tree! }.to raise_error SystemExit, /working tree is dirty/
+      end
+    end
+  end
+
+  describe "#update_gitignore!" do
+    let(:path) { "config/subspace/terraform/.gitignore" }
+
+    context "when the project predates the upgrade entries" do
+      before { File.write path, "credentials.auto.tfvars\n.subspace-tf-modules\n" }
+
+      it "appends only the missing entries" do
+        subject.send :update_gitignore!
+
+        expect(File.read(path)).to eq "credentials.auto.tfvars\n.subspace-tf-modules\nsubspace-upgrade.tfplan\n*.bak\n"
+      end
+    end
+
+    context "when it already has every entry" do
+      before { File.write path, "credentials.auto.tfvars\n.subspace-tf-modules\nsubspace-upgrade.tfplan\n*.bak\n# local\n" }
+
+      it "leaves it alone" do
+        expect { subject.send :update_gitignore! }.not_to(change { File.read path })
+      end
+    end
+  end
+
+  describe "#revendor" do
+    let(:module_block) do
+      <<~HCL
+        module workhorse {
+          source = "github.com/tenforwardconsulting/terraform-subspace-workhorse?ref=v1.0.0"
+          instance_hostname = "production-app1"
+        }
+      HCL
+    end
+
+    before do
+      allow(subject).to receive(:system) { |*args| FileUtils.mkdir_p args.last }
+    end
+
+    it "points main.tf at the vendored module" do
+      subject.revendor
+
+      expect(File.read("config/subspace/terraform/production/main.tf")).to include 'source = "./modules/workhorse"'
+    end
+  end
+
   describe "the shipped workhorse template" do
     let(:template) do
       File.read File.expand_path("../../template/subspace/terraform/template/main-workhorse.tf.erb", __dir__)

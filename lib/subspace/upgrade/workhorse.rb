@@ -473,7 +473,9 @@ module Subspace
 
             1. Re-vendor the module:
                  subspace upgrade #{env} --revendor       # clones #{Subspace::Commands::Init::TERRAFORM_MODULES.fetch(template)[:ref]}, keeps a .bak
-            2. In #{config.path} replace
+            2. Install the vendored module:
+                 terraform init
+            3. In #{config.path} replace
                  instance_ami = "ami-0abc..."
                  instance_type = "t3.medium"
                  instance_hostname = "#{env}-app1"
@@ -488,15 +490,15 @@ module Subspace
                    }
                  }
                  active_instance = "1"
-            3. Re-export the module's outputs at the root of that same file, so
+            4. Re-export the module's outputs at the root of that same file, so
                `terraform output` can see them:
-                 output "inventory"          { value = module.workhorse.inventory }
-                 output "instances"          { value = module.workhorse.instances }
-                 output "active_instance"    { value = module.workhorse.active_instance }
-                 output "allow_instance_ssh" { value = module.workhorse.allow_instance_ssh }
-            4. Move the existing instance into its new state address:
-                 terraform state mv 'module.workhorse.aws_instance.single' 'module.workhorse.aws_instance.single["1"]'
-            5. terraform plan   # MUST show "No changes".  If it shows a replacement, stop
+                 output "inventory"          { value = module.#{config.module_name}.inventory }
+                 output "instances"          { value = module.#{config.module_name}.instances }
+                 output "active_instance"    { value = module.#{config.module_name}.active_instance }
+                 output "allow_instance_ssh" { value = module.#{config.module_name}.allow_instance_ssh }
+            5. Move the existing instance into its new state address:
+                 terraform state mv 'module.#{config.module_name}.aws_instance.single' 'module.#{config.module_name}.aws_instance.single["1"]'
+            6. terraform plan   # MUST show "No changes".  If it shows a replacement, stop
                                 # and ask -- do not apply.
         EOS
       end

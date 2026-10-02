@@ -54,6 +54,10 @@ module Subspace
         set_argument "active_instance", %("#{key}")
       end
 
+      def module_source=(source)
+        set_argument "source", %("#{source}")
+      end
+
       def allow_instance_ssh
         @source[/^[ \t]*allow_instance_ssh[ \t]*=[ \t]*(\S+)/, 1] == "true"
       end

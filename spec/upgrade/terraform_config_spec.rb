@@ -57,6 +57,12 @@ describe Subspace::Upgrade::TerraformConfig do
     expect(described_class.new(@path).active_instance).to eq "2"
   end
 
+  it "rewrites the module source" do
+    subject.module_source = "./modules/other"
+    subject.save
+    expect(File.read(@path)).to eq MAIN_TF.sub("./modules/workhorse", "./modules/other")
+  end
+
   it "adds allow_instance_ssh when the config does not mention it" do
     expect(subject.allow_instance_ssh).to eq false
     subject.allow_instance_ssh = true
