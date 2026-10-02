@@ -83,6 +83,7 @@ module Subspace
             Reconcile them by hand, then re-run with a matching manifest.
           EOS
         end
+        update_gitignore!
 
         backup = "#{module_dir}.bak"
         if Dir.exist? module_dir
@@ -105,6 +106,8 @@ module Subspace
         FileUtils.rm_rf File.join(module_dir, ".git")
         FileUtils.rm_f File.join(module_dir, ".gitmodules")
         ModuleManifest.write module_dir, template: template, repo: mod[:repo], ref: mod[:ref]
+        config.module_source = "./modules/#{template}"
+        config.save
 
         say ""
         say migration_instructions
@@ -377,8 +380,18 @@ module Subspace
         "subspace-#{project_name}"
       end
 
+      def update_gitignore!
+        path = "config/subspace/terraform/.gitignore"
+        existing = File.exist?(path) ? File.readlines(path, chomp: true) : []
+        missing = File.readlines(File.join(template_dir, "terraform/.gitignore"), chomp: true) - existing
+        return if missing.empty?
+
+        File.write path, (existing + missing).map { |line| "#{line}\n" }.join
+        say "Added #{missing.join(", ")} to #{path}"
+      end
+
       def assert_clean_git_tree!
-        return if `git status --porcelain`.strip.empty?
+        return if `git status --porcelain -- . ":(exclude)#{State.path_for env}"`.strip.empty?
 
         abort "The working tree is dirty.  Commit or stash first -- every config change an upgrade makes should be reviewable on its own."
       end
