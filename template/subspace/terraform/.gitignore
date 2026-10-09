@@ -1,2 +1,4 @@
 credentials.auto.tfvars
 .subspace-tf-modules
+subspace-upgrade.tfplan
+*.bak

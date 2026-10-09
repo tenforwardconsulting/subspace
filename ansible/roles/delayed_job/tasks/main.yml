@@ -20,7 +20,6 @@
       name: "delayed_job_{{ item }}{{ loop_index }}"
       daemon_reload: true
       enabled: yes
-      state: started
     loop: "{{ job_queues }}"
     loop_control:
       loop_var: item

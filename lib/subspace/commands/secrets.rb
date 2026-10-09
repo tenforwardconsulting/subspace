@@ -48,7 +48,6 @@ class Subspace::Commands::Secrets < Subspace::Commands::Base
     secret_files = Dir.glob("config/subspace/secrets/*.yml").map {|x| "secrets/#{File.basename(x)}"}
     exit unless agree("This will re-key your secrets with a new random vault_pass. (#{secret_files}).  Proceed? (yes to continue) ")
 
-
     say "Writing new password to .vault_pass.new"
     File.write "config/subspace/.vault_pass.new", SecureRandom.base64(24) + "\n"
     success = ansible_command "ansible-vault", "rekey", "--vault-password-file", ".vault_pass", "--new-vault-password-file", ".vault_pass.new", "-v", *secret_files

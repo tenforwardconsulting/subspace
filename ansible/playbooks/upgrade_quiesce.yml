@@ -1,0 +1,29 @@
+---
+# Stops the app, every background worker and cron, recording what was running so
+# upgrade_unquiesce.yml starts exactly that again.
+- name: Stop puma, the workers and cron
+  hosts: "{{ upgrade_host }}"
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Find the running units
+      shell: >-
+        systemctl list-units --type=service,socket --state=active --no-legend --plain
+        puma.socket puma.service 'sidekiq*' 'resque*' 'delayed_job*' cron.service | awk '{print $1}'
+      changed_when: false
+      register: running_units
+
+    # Merged rather than overwritten: a retried --copy-db quiesces again and finds
+    # nothing running.
+    - name: Record the running units
+      lineinfile:
+        path: /opt/subspace/upgrade-stopped-units
+        line: "{{ item }}"
+        create: true
+      loop: "{{ running_units.stdout_lines }}"
+
+    - name: Stop the running units
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+      loop: "{{ running_units.stdout_lines }}"

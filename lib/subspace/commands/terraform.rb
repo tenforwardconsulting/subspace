@@ -12,6 +12,10 @@ module Subspace
         end
       end
 
+      def self.terraform_cloud?(dir)
+        File.read(File.join(dir, "main.tf")).match?(/^\s*(cloud\s*\{|backend\s+"remote")/)
+      end
+
       def initialize(args, options)
         @env = args.shift
         @args = args
@@ -58,11 +62,9 @@ module Subspace
       end
 
       def check_aws_credentials
-        Dir.chdir "config/subspace/terraform/#{@env}" do
-          if File.read("./main.tf") =~ /^\s+cloud {$/
-            puts "Detected terraform cloud, skipping credential check"
-            return true
-          end
+        if self.class.terraform_cloud? "config/subspace/terraform/#{@env}"
+          puts "Detected terraform cloud, skipping credential check"
+          return true
         end
 
         ENV["AWS_ACCESS_KEY_ID"] = nil

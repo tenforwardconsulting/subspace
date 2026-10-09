@@ -20,7 +20,6 @@ Gem::Specification.new do |spec|
     Please review the Upgrade guide: https://github.com/tenforwardconsulting/subspace/UPGRADING.md
     EOS
 
-
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
   # to allow pushing to a single host or delete this section to allow pushing to any host.
   if spec.respond_to?(:metadata)
@@ -37,6 +36,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bundler", "~> 2.1"
   spec.add_development_dependency "rake", "~> 12.3.3"
   spec.add_development_dependency "rspec", "~> 3.0"
+  spec.add_development_dependency "rubocop", "~> 1.26"
 
   spec.add_runtime_dependency "commander", "~>4.2"
   spec.add_runtime_dependency "abbrev", "~>0.1.2"
