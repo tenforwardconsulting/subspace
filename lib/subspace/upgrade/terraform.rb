@@ -63,6 +63,10 @@ module Subspace
         discard_plan
       end
 
+      def refresh_state
+        run("apply", "-refresh-only", "-auto-approve", "-input=false") or abort "terraform refresh failed"
+      end
+
       def discard_plan
         File.delete File.join(@dir, PLAN_FILE) if File.exist? File.join(@dir, PLAN_FILE)
       end

@@ -142,6 +142,9 @@ module Subspace
       def finalize
         state.require_phase! "cutover", "finalizing"
         if state.phase == "cutover"
+          # The old server's public IP changes when the elastic IP leaves it or it is stopped
+          # and started, and that would otherwise show up as a dirty plan.
+          terraform.refresh_state
           check!
 
           say "This permanently destroys #{state["from_hostname"]} (slot #{state["from_slot"]}) and its database."
@@ -231,8 +234,8 @@ module Subspace
       end
 
       def backup_database!(hostname)
-        FileUtils.mkdir_p "tmp/subspace"
-        path = File.join "tmp/subspace", "#{env}-#{hostname}-#{Time.now.utc.strftime "%Y%m%dT%H%M%SZ"}.dump"
+        FileUtils.mkdir_p "db/backups"
+        path = File.join "db/backups", "#{hostname}-#{Time.now.utc.strftime "%Y%m%dT%H%M%SZ"}.dump"
         say "Backing #{hostname}'s database up to #{path} before anything else happens."
         playbook_or_abort "db_dump", hostname, db_dump_dest: File.expand_path(path)
 
