@@ -731,6 +731,16 @@ describe Subspace::Upgrade::Workhorse do
       allow(subject).to receive(:apply!)
       allow(subject).to receive(:remove_host!)
       allow(subject).to receive(:remove_from_group!)
+      allow(subject).to receive(:terraform).and_return terraform
+    end
+
+    let(:terraform) { double refresh_state: nil }
+
+    it "refreshes the state before checking for a clean plan" do
+      subject.finalize
+
+      expect(terraform).to have_received(:refresh_state).ordered
+      expect(subject).to have_received(:check!).with(no_args).ordered
     end
 
     it "records finalizing before terraform destroys the old slot", :aggregate_failures do
@@ -810,6 +820,7 @@ describe Subspace::Upgrade::Workhorse do
         subject.finalize
 
         expect(subject).to have_received(:check!).with(clean_plan: false)
+        expect(terraform).not_to have_received :refresh_state
         expect(subject).not_to have_received :backup_database!
         expect(subject).to have_received(:apply!).with({
           %(module.workhorse.aws_instance.single["1"]) => ["delete"],
@@ -837,7 +848,7 @@ describe Subspace::Upgrade::Workhorse do
       state = Subspace::Upgrade::State.read "production"
       expect(subject).to have_received(:playbook)
         .with("db_dump", "production-app1", upgrade_host: "production-app1", db_dump_dest: File.expand_path(state["backup_path"]))
-      expect(state["backup_path"]).to match %r{\Atmp/subspace/production-production-app1-\d{8}T\d{6}Z\.dump\z}
+      expect(state["backup_path"]).to match %r{\Adb/backups/production-app1-\d{8}T\d{6}Z\.dump\z}
       expect(state["backup_bytes"]).to eq dump.bytesize
       expect(state["backup_sha256"]).to eq Digest::SHA256.hexdigest(dump)
     end
