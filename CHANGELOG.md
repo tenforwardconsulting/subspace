@@ -11,6 +11,8 @@ This project attempts to follow [semantic versioning](https://semver.org/).
   * Stops showing color if you `sudo su`
 
 ## Unreleased
+
+## 3.1.1
   * Add `subspace upgrade <env>` to replace an environment's servers with new ones built from a current AMI (workhorse only so far)
   * Add `subspace db_copy --from <host> --to <host>`, streaming pg_dump/pg_restore between two servers over their private network
   * BREAKING: workhorse environments now need terraform-subspace-workhorse v2.0.0, which replaces `instance_ami`/`instance_type`/`instance_volume_size`/`instance_hostname` with a keyed `instances` map.  `subspace upgrade <env> --check` prints the migration steps.
