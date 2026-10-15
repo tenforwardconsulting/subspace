@@ -10,6 +10,16 @@
     state: present
     enabled: true
 
+# Newer Ubuntu archives carry a higher nodejs than older NodeSource majors, and
+# `apt upgrade` would otherwise swap the NodeSource build out for it.
+- name: Prefer NodeSource's nodejs over the distro's.
+  ansible.builtin.copy:
+    dest: /etc/apt/preferences.d/nodejs
+    content: |
+      Package: nodejs
+      Pin: origin deb.nodesource.com
+      Pin-Priority: 600
+
 # - name: Add Nodesource apt key.
 #   apt_key:
 #     url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key

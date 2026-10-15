@@ -1,0 +1,33 @@
+AllCops:
+  DisabledByDefault: true
+  SuggestExtensions: false
+  Exclude:
+    - "vendor/**/*"
+    - "tmp/**/*"
+    - "pkg/**/*"
+    - "ansible/**/*"
+
+Lint/Syntax:
+  Enabled: true
+Layout/LineLength:
+  Max: 200
+Layout/EmptyLines:
+  Enabled: true
+Layout/EmptyLineBetweenDefs:
+  Enabled: true
+Layout/EmptyLinesAroundArguments:
+  Enabled: true
+Layout/EmptyLinesAroundBlockBody:
+  Enabled: true
+Layout/IndentationConsistency:
+  Enabled: true
+Layout/BlockAlignment:
+  Enabled: true
+Layout/ArgumentAlignment:
+  Enabled: true
+  EnforcedStyle: with_fixed_indentation
+Layout/FirstHashElementIndentation:
+  Enabled: true
+  EnforcedStyle: consistent
+Layout/HashAlignment:
+  Enabled: true
