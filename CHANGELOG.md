@@ -13,9 +13,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 ## Unreleased
   * Add `subspace upgrade <env>` to replace an environment's servers with new ones built from a current AMI (workhorse only so far)
   * Add `subspace db_copy --from <host> --to <host>`, streaming pg_dump/pg_restore between two servers over their private network
-  * BREAKING: workhorse environments now need terraform-subspace-workhorse v2.0.0, which replaces `instance_ami`/`instance_type`/`instance_volume_size`/`instance_hostname` with a keyed `instances` map.  `subspace upgrade <env> --check` prints the migration steps.
+  * BREAKING: workhorse environments now need the workhorse terraform module that now ships in the gem (`terraform/modules/workhorse`, terraform-subspace-workhorse v2.0.0), which replaces `instance_ami`/`instance_type`/`instance_volume_size`/`instance_hostname` with a keyed `instances` map.  `subspace upgrade <env> --check` prints the migration steps.
   * `subspace init` builds new servers from Ubuntu 26.04 (resolute) instead of 24.04 (noble)
-  * `subspace init` vendors the terraform module into the project with a `module.yml` manifest instead of referencing it by git URL
+  * `subspace init` copies the workhorse terraform module out of the gem (oxenwagen is still cloned) into the project, with a `module.yml` manifest recording the subspace version and file checksums, instead of referencing it by git URL
 
 ## 3.1.2
   * Adds Newrelic infra config to enable server process metrics collection

@@ -5,10 +5,7 @@ require 'subspace/ami'
 require 'subspace/upgrade/module_manifest'
 class Subspace::Commands::Init < Subspace::Commands::Base
   TERRAFORM_MODULES = {
-    "workhorse" => {
-      repo: "https://github.com/tenforwardconsulting/terraform-subspace-workhorse.git",
-      ref: "v2.0.0"
-    },
+    "workhorse" => { bundled: true },
     "oxenwagen" => {
       repo: "https://github.com/tenforwardconsulting/terraform-subspace-oxenwagen.git",
       ref: "v2.4.1"
@@ -135,18 +132,23 @@ class Subspace::Commands::Init < Subspace::Commands::Base
 
     dest = File.join dest_dir, "terraform", @env, "modules", @template
     if Dir.exist? dest
-      say "#{dest} already exists.  Skipping clone."
+      say "#{dest} already exists.  Skipping vendoring."
       return "./modules/#{@template}"
     end
 
-    say "Cloning #{mod[:repo]} (#{mod[:ref]}) into #{dest}"
     FileUtils.mkdir_p File.dirname(dest)
-    unless system("git", "clone", "--depth", "1", "--branch", mod[:ref], mod[:repo], dest)
-      abort "Failed to clone #{mod[:repo]}"
+    if mod[:bundled]
+      say "Copying the #{@template} module into #{dest}"
+      Subspace::Upgrade::ModuleManifest.vendor @template, dest
+    else
+      say "Cloning #{mod[:repo]} (#{mod[:ref]}) into #{dest}"
+      unless system("git", "clone", "--depth", "1", "--branch", mod[:ref], mod[:repo], dest)
+        abort "Failed to clone #{mod[:repo]}"
+      end
+      FileUtils.rm_rf File.join(dest, ".git")
+      FileUtils.rm_f File.join(dest, ".gitmodules")
+      Subspace::Upgrade::ModuleManifest.write dest, template: @template, repo: mod[:repo], ref: mod[:ref]
     end
-    FileUtils.rm_rf File.join(dest, ".git")
-    FileUtils.rm_f File.join(dest, ".gitmodules")
-    Subspace::Upgrade::ModuleManifest.write dest, template: @template, repo: mod[:repo], ref: mod[:ref]
 
     "./modules/#{@template}"
   end

@@ -536,7 +536,7 @@ module Subspace
           To migrate #{env} (one time, ~5 minutes, no downtime):
 
             1. Re-vendor the module:
-                 subspace upgrade #{env} --revendor       # clones #{Subspace::Commands::Init::TERRAFORM_MODULES.fetch(template)[:ref]}, keeps a .bak
+                 subspace upgrade #{env} --revendor       # copies the module from subspace #{Subspace::VERSION}, keeps a .bak
             2. Install the vendored module:
                  terraform init
             3. In #{config.path} replace

@@ -94,7 +94,7 @@ module Subspace
 
       def map_range
         match = @source.match(/^[ \t]*instances[ \t]*=[ \t]*\{/)
-        raise "#{path} has no `instances` map.  Is its terraform module at least #{Base::MINIMUM_MODULE_REF}?" if match.nil?
+        raise "#{path} has no `instances` map.  Was its terraform module vendored by subspace #{Base::MINIMUM_MODULE_VERSION} or newer?" if match.nil?
 
         (match.begin(0)..matching_brace(@source, match.end(0) - 1))
       end

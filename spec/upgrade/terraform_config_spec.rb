@@ -194,6 +194,6 @@ describe Subspace::Upgrade::TerraformConfig do
 
   it "raises a useful error on a v1 config with no instances map" do
     File.write @path, %(module workhorse {\n  instance_ami = "ami-0abc"\n}\n)
-    expect { described_class.new(@path).instances }.to raise_error(/at least v2.0.0/)
+    expect { described_class.new(@path).instances }.to raise_error(/vendored by subspace 3\.1\.1 or newer/)
   end
 end
