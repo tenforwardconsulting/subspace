@@ -176,7 +176,7 @@ no undo: fix forward, or sort it out by hand.
 
 Only workhorse environments are supported so far. `--check` refuses to run a workhorse
 upgrade against anything whose terraform state doesn't look like a workhorse, and it
-requires `terraform-subspace-workhorse` v2.0.0 or newer. Older environments get printed migration
+requires the workhorse terraform module vendored by subspace 3.1.1 or newer. Older environments get printed migration
 instructions; `subspace upgrade <env> --revendor` automates the file-copying part.
 
 ### `subspace db_copy --from <host> --to <host>`

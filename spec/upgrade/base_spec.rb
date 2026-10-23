@@ -252,12 +252,12 @@ describe Subspace::Upgrade::Workhorse do
   describe "#check_module_version!" do
     let(:module_dir) { "config/subspace/terraform/production/modules/workhorse" }
 
-    def write_manifest(template: "workhorse", ref: "v2.0.0")
+    def write_manifest(template: "workhorse", version: "3.1.1")
       FileUtils.mkdir_p module_dir
-      Subspace::Upgrade::ModuleManifest.write module_dir, template:, repo: "https://example.com/workhorse.git", ref:
+      File.write File.join(module_dir, "module.yml"), YAML.dump("template" => template, "version" => version)
     end
 
-    context "when the vendored module is at the minimum ref" do
+    context "when the vendored module is at the minimum version" do
       before { write_manifest }
 
       it "returns without aborting" do
@@ -265,19 +265,22 @@ describe Subspace::Upgrade::Workhorse do
       end
     end
 
-    context "when the vendored module is older" do
-      before { write_manifest ref: "v1.0.0" }
+    context "when the vendored module was vendored by an older subspace" do
+      before { write_manifest version: "3.1.0" }
 
       it "aborts with the migration instructions" do
-        expect { subject.send :check_module_version! }.to raise_error SystemExit, /v1\.0\.0 \(needs >= v2\.0\.0\).*To migrate production/m
+        expect { subject.send :check_module_version! }.to raise_error SystemExit, /3\.1\.0 \(needs >= 3\.1\.1\).*To migrate production/m
       end
     end
 
-    context "when the vendored module is pinned to a branch" do
-      before { write_manifest ref: "main" }
+    context "when the vendored module was cloned by git ref" do
+      before do
+        FileUtils.mkdir_p module_dir
+        Subspace::Upgrade::ModuleManifest.write module_dir, template: "workhorse", repo: "https://example.com/workhorse.git", ref: "v2.0.0"
+      end
 
-      it "treats it as too old" do
-        expect { subject.send :check_module_version! }.to raise_error SystemExit, /needs >= v2\.0\.0/
+      it "tells the operator to delete the manifest" do
+        expect { subject.send :check_module_version! }.to raise_error SystemExit, /cloned from https:\/\/example\.com\/workhorse\.git at v2\.0\.0.*delete.*module\.yml/m
       end
     end
 
@@ -299,25 +302,13 @@ describe Subspace::Upgrade::Workhorse do
       let(:module_block) do
         <<~HCL
           module workhorse {
-            source = "github.com/tenforwardconsulting/terraform-subspace-workhorse?ref=#{ref}"
+            source = "github.com/tenforwardconsulting/terraform-subspace-workhorse?ref=v2.0.0"
           }
         HCL
       end
 
-      context "at the minimum ref" do
-        let(:ref) { "v2.0.0" }
-
-        it "reads the ref from the source" do
-          expect { subject.send :check_module_version! }.not_to raise_error
-        end
-      end
-
-      context "at an older ref" do
-        let(:ref) { "v1.0.0" }
-
-        it "aborts" do
-          expect { subject.send :check_module_version! }.to raise_error SystemExit, /v1\.0\.0 \(needs >= v2\.0\.0\)/
-        end
+      it "aborts with the migration instructions" do
+        expect { subject.send :check_module_version! }.to raise_error SystemExit, /no module\.yml.*To migrate production/m
       end
     end
   end
@@ -648,14 +639,68 @@ describe Subspace::Upgrade::Workhorse do
       HCL
     end
 
-    before do
-      allow(subject).to receive(:system) { |*args| FileUtils.mkdir_p args.last }
-    end
+    let(:module_dir) { "config/subspace/terraform/production/modules/workhorse" }
 
     it "points main.tf at the vendored module" do
       subject.revendor
 
       expect(File.read("config/subspace/terraform/production/main.tf")).to include 'source = "./modules/workhorse"'
+    end
+
+    it "copies the bundled module with a manifest", :aggregate_failures do
+      subject.revendor
+
+      expect(File.read(File.join(module_dir, "main.tf"))).to eq File.read(File.expand_path("../../terraform/modules/workhorse/main.tf", __dir__))
+      expect(Subspace::Upgrade::ModuleManifest.read(module_dir)["version"]).to eq Subspace::VERSION
+    end
+
+    context "when the vendored module was edited since it was vendored" do
+      before do
+        FileUtils.mkdir_p File.dirname(module_dir)
+        Subspace::Upgrade::ModuleManifest.vendor "workhorse", module_dir
+        File.write File.join(module_dir, "variables.tf"), File.read(File.join(module_dir, "variables.tf")) + "# local\n"
+      end
+
+      it "aborts naming the file and leaves it in place", :aggregate_failures do
+        expect { subject.revendor }.to raise_error SystemExit, /modified locally.*variables\.tf/m
+        expect(File.read(File.join(module_dir, "variables.tf"))).to end_with "# local\n"
+      end
+    end
+
+    context "when an upgrade is under way" do
+      before { Subspace::Upgrade::State.create("production", "phase" => "launched").save }
+
+      it "aborts without touching the module", :aggregate_failures do
+        expect { subject.revendor }.to raise_error SystemExit, /under way.*--abort/
+        expect(File.read("config/subspace/terraform/production/main.tf")).to include "?ref=v1.0.0"
+      end
+    end
+
+    context "when the vendored module was cloned by git ref" do
+      before do
+        FileUtils.mkdir_p module_dir
+        File.write File.join(module_dir, "variables.tf"), "# cloned\n"
+        Subspace::Upgrade::ModuleManifest.write module_dir, template: "workhorse", repo: "https://example.com/workhorse.git", ref: "v2.0.0"
+      end
+
+      it "aborts and leaves it in place", :aggregate_failures do
+        expect { subject.revendor }.to raise_error SystemExit, /cloned from/
+        expect(Dir.exist?("#{module_dir}.bak")).to be false
+      end
+    end
+
+    context "when an untouched module is already vendored" do
+      before do
+        FileUtils.mkdir_p File.dirname(module_dir)
+        Subspace::Upgrade::ModuleManifest.vendor "workhorse", module_dir
+      end
+
+      it "moves it aside and re-vendors", :aggregate_failures do
+        subject.revendor
+
+        expect(Dir.exist?("#{module_dir}.bak")).to be true
+        expect(Subspace::Upgrade::ModuleManifest.modified_files(module_dir)).to eq []
+      end
     end
   end
 
@@ -667,6 +712,22 @@ describe Subspace::Upgrade::Workhorse do
     it "re-exports every required root output", :aggregate_failures do
       described_class::REQUIRED_ROOT_OUTPUTS.each do |name|
         expect(template).to match(/^output\s+"#{name}"\s*\{/)
+      end
+    end
+  end
+
+  describe "the bundled workhorse module" do
+    let(:sources) { Dir[File.expand_path("../../terraform/modules/workhorse/*.tf", __dir__)].map { |file| File.read file }.join }
+
+    it "declares every required module variable", :aggregate_failures do
+      described_class::REQUIRED_MODULE_VARIABLES.each do |name|
+        expect(sources).to match(/^variable\s+"?#{name}"?\s/)
+      end
+    end
+
+    it "outputs everything the root re-exports", :aggregate_failures do
+      described_class::REQUIRED_ROOT_OUTPUTS.each do |name|
+        expect(sources).to match(/^output\s+"#{name}"\s*\{/)
       end
     end
   end

@@ -4,7 +4,7 @@ module Subspace
     # Shared machinery for every topology's upgrade.  Subclasses own the actual
     # sequence; nothing in here branches on the template.
     class Base < Subspace::Commands::Base
-      MINIMUM_MODULE_REF = "v2.0.0"
+      MINIMUM_MODULE_VERSION = "3.1.1"
       TAILNET = IPAddr.new "100.64.0.0/10"
 
       # The servers can ssh to each other from --launch until --finalize or --abort, so the
@@ -43,7 +43,7 @@ module Subspace
         check!
         check_remote_storage!
         check_tailscale!
-        say "#{env} is on #{template} #{manifest["ref"]} and ready for `subspace upgrade`."
+        say "#{env} is on the #{template} module from subspace #{manifest["version"]} and ready for `subspace upgrade`."
       end
 
       def status
@@ -103,12 +103,17 @@ module Subspace
       end
 
       def revendor
-        mod = Subspace::Commands::Init::TERRAFORM_MODULES.fetch template
-        if locally_modified_module?
+        if State.exist? env
+          abort "An upgrade of #{env} is under way (#{State.path_for env}).  Finish or --abort it before re-vendoring."
+        end
+        check_not_cloned!
+        modified = locally_modified_files
+        unless modified.empty?
           abort <<~EOS
-            #{module_dir} has been modified locally (its manifest says #{manifest["ref"]}
-            but the files do not match that ref).  Re-vendoring would throw those changes away.
-            Reconcile them by hand, then re-run with a matching manifest.
+            #{module_dir} has been modified locally since subspace #{manifest["version"]} vendored it:
+              #{modified.join("\n  ")}
+            Re-vendoring would throw those changes away.  Keep what you need elsewhere, delete
+            #{File.join module_dir, ModuleManifest::FILENAME}, then re-run.
           EOS
         end
         update_gitignore!
@@ -119,21 +124,11 @@ module Subspace
           FileUtils.mv module_dir, backup
           say "Moved the old module to #{backup}"
         else
-          backup = nil
           FileUtils.mkdir_p File.dirname(module_dir)
         end
 
-        say "Cloning #{mod[:repo]} (#{mod[:ref]}) into #{module_dir}"
-        unless system("git", "clone", "--depth", "1", "--branch", mod[:ref], mod[:repo], module_dir)
-          if backup
-            FileUtils.rm_rf module_dir
-            FileUtils.mv backup, module_dir
-          end
-          abort "Failed to clone #{mod[:repo]}.#{" Restored the previous module." if backup}"
-        end
-        FileUtils.rm_rf File.join(module_dir, ".git")
-        FileUtils.rm_f File.join(module_dir, ".gitmodules")
-        ModuleManifest.write module_dir, template: template, repo: mod[:repo], ref: mod[:ref]
+        say "Copying the #{template} module from subspace #{Subspace::VERSION} into #{module_dir}"
+        ModuleManifest.vendor template, module_dir
         config.module_source = "./modules/#{template}"
         config.save
 
@@ -155,7 +150,7 @@ module Subspace
       def check_module_version!
         if manifest.nil?
           abort <<~EOS
-            Could not tell which terraform module #{env} uses: no #{ModuleManifest::FILENAME}
+            #{env} is not on a #{template} module vendored by subspace: no #{ModuleManifest::FILENAME}
             in #{module_dir}.
 
             #{migration_instructions}
@@ -166,12 +161,25 @@ module Subspace
           abort "#{module_dir} is a #{manifest["template"]} module, not #{template}."
         end
 
-        return if gem_version(manifest["ref"]) >= gem_version(MINIMUM_MODULE_REF)
+        check_not_cloned!
+
+        return if Gem::Version.new(manifest["version"].to_s) >= Gem::Version.new(MINIMUM_MODULE_VERSION)
 
         abort <<~EOS
-          This environment is on terraform-subspace-#{template} #{manifest["ref"]} (needs >= #{MINIMUM_MODULE_REF}).
+          #{module_dir} was vendored by subspace #{manifest["version"]} (needs >= #{MINIMUM_MODULE_VERSION}).
 
           #{migration_instructions}
+        EOS
+      end
+
+      # Modules cloned by git before subspace bundled them have no checksums to compare
+      def check_not_cloned!
+        return if manifest.nil? || manifest["version"]
+
+        abort <<~EOS
+          #{module_dir} was cloned from #{manifest["repo"]} at #{manifest["ref"]}, so subspace cannot
+          tell whether it has been edited.  Keep what you need elsewhere, delete
+          #{File.join module_dir, ModuleManifest::FILENAME}, then run `subspace upgrade #{env} --revendor`.
         EOS
       end
 
@@ -189,7 +197,7 @@ module Subspace
 
         abort <<~EOS
           #{module_source_dir} does not declare #{missing.join(", ")}, so it cannot be upgraded
-          even though its manifest claims #{manifest["ref"]}.  It has probably been edited locally.
+          even though its manifest claims subspace #{manifest["version"]}.  It has probably been edited locally.
 
           #{migration_instructions}
         EOS
@@ -439,19 +447,7 @@ module Subspace
       end
 
       def manifest
-        @manifest ||= ModuleManifest.read(module_dir) || remote_manifest
-      end
-
-      # Older projects reference the module by git URL rather than vendoring it, so the
-      # ref is only recorded in the `?ref=` of main.tf's source argument.
-      def remote_manifest
-        source = File.read(config.path)[/^[ \t]*source[ \t]*=[ \t]*"([^"]+)"/, 1]
-        return nil if source.nil? || source.start_with?(".")
-
-        ref = source[/\?ref=(.+)\z/, 1]
-        return nil if ref.nil?
-
-        { "template" => template, "repo" => source.split("?").first, "ref" => ref }
+        @manifest ||= ModuleManifest.read(module_dir)
       end
 
       def module_dir
@@ -492,30 +488,10 @@ module Subspace
           "-e", extra_vars.to_json
       end
 
-      # A module pinned to a branch rather than a tag has no version to compare, so treat
-      # it as too old and send the operator through the migration instructions.
-      def gem_version(ref)
-        Gem::Version.new ref.to_s.sub(/\Av/, "")
-      rescue ArgumentError
-        Gem::Version.new "0"
-      end
+      def locally_modified_files
+        return [] if manifest.nil?
 
-      def locally_modified_module?
-        return false if manifest.nil? || !Dir.exist?(module_dir)
-
-        Dir.mktmpdir do |tmp|
-          reference = File.join tmp, "reference"
-          cloned = system("git", "clone", "--depth", "1", "--branch", manifest["ref"],
-            manifest["repo"], reference, out: File::NULL, err: File::NULL)
-          abort "Could not clone #{manifest["repo"]} at #{manifest["ref"]} to check #{module_dir} for local changes." unless cloned
-
-          FileUtils.rm_rf File.join(reference, ".git")
-          !system("diff", "-r", "-q",
-            "--exclude=#{ModuleManifest::FILENAME}",
-            "--exclude=.terraform",
-            "--exclude=.terraform.lock.hcl",
-            reference, module_dir, out: File::NULL, err: File::NULL)
-        end
+        ModuleManifest.modified_files module_dir
       end
     end
   end
