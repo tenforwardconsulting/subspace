@@ -30,7 +30,7 @@ class Subspace::Commands::Bootstrap < Subspace::Commands::Base
     cmd = ["ansible",
       host.name,
       "--private-key",
-      "config/subspace/subspace.pem",
+      "subspace.pem",
       "-m",
       "raw",
       "-a",
