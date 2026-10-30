@@ -31,6 +31,16 @@ describe Subspace::Commands::Init do
       end
     end
 
+    context "with the oxenwagen template" do
+      before { subject.instance_variable_set :@template, "oxenwagen" }
+
+      it "copies the bundled module without cloning", :aggregate_failures do
+        expect(subject.send(:vendor_terraform_module)).to eq "./modules/oxenwagen"
+        expect(Subspace::Upgrade::ModuleManifest.read(File.join(dir, "terraform/dev/modules/oxenwagen"))["version"]).to eq Subspace::VERSION
+        expect(subject).not_to have_received(:system)
+      end
+    end
+
     context "with a template that is not a vendored module" do
       before { subject.instance_variable_set :@template, "s3_backend" }
 
