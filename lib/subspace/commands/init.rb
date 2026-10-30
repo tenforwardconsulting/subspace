@@ -4,13 +4,7 @@ require 'securerandom'
 require 'subspace/ami'
 require 'subspace/upgrade/module_manifest'
 class Subspace::Commands::Init < Subspace::Commands::Base
-  TERRAFORM_MODULES = {
-    "workhorse" => { bundled: true },
-    "oxenwagen" => {
-      repo: "https://github.com/tenforwardconsulting/terraform-subspace-oxenwagen.git",
-      ref: "v2.4.1"
-    }
-  }
+  TERRAFORM_MODULES = %w[workhorse oxenwagen]
 
   def initialize(args, options)
     options.default env: "dev"
@@ -124,8 +118,7 @@ class Subspace::Commands::Init < Subspace::Commands::Base
   end
 
   def vendor_terraform_module
-    mod = TERRAFORM_MODULES[@template]
-    if mod.nil?
+    unless TERRAFORM_MODULES.include? @template
       say "Unknown template '#{@template}'.  No module to vendor."
       return nil
     end
@@ -137,18 +130,8 @@ class Subspace::Commands::Init < Subspace::Commands::Base
     end
 
     FileUtils.mkdir_p File.dirname(dest)
-    if mod[:bundled]
-      say "Copying the #{@template} module into #{dest}"
-      Subspace::Upgrade::ModuleManifest.vendor @template, dest
-    else
-      say "Cloning #{mod[:repo]} (#{mod[:ref]}) into #{dest}"
-      unless system("git", "clone", "--depth", "1", "--branch", mod[:ref], mod[:repo], dest)
-        abort "Failed to clone #{mod[:repo]}"
-      end
-      FileUtils.rm_rf File.join(dest, ".git")
-      FileUtils.rm_f File.join(dest, ".gitmodules")
-      Subspace::Upgrade::ModuleManifest.write dest, template: @template, repo: mod[:repo], ref: mod[:ref]
-    end
+    say "Copying the #{@template} module into #{dest}"
+    Subspace::Upgrade::ModuleManifest.vendor @template, dest
 
     "./modules/#{@template}"
   end
