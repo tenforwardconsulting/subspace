@@ -17,7 +17,7 @@ resource "aws_route53_record" "worker" {
 }
 
 resource "aws_route53_record" "lb" {
-  count = length(var.route53_zone_id) > 0 ? 1 : 0
+  count   = length(var.route53_zone_id) > 0 ? 1 : 0
   zone_id = var.route53_zone_id
   name    = var.lb_domain_name
   type    = "A"

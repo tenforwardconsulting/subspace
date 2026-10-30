@@ -44,11 +44,11 @@ resource "aws_lb" "production" {
 
   enable_deletion_protection = true
 
-#   access_logs {
-#     bucket  = aws_s3_bucket.lb_logs.bucket
-#     prefix  = "test-lb"
-#     enabled = true
-#   }
+  #   access_logs {
+  #     bucket  = aws_s3_bucket.lb_logs.bucket
+  #     prefix  = "test-lb"
+  #     enabled = true
+  #   }
 }
 
 resource "aws_lb_listener" "http" {
@@ -57,7 +57,7 @@ resource "aws_lb_listener" "http" {
   protocol          = "HTTP"
 
   default_action {
-    type             = "redirect"
+    type = "redirect"
     redirect {
       path        = "/#{host}:443/#{path}"
       port        = "443"
@@ -107,7 +107,7 @@ resource "aws_lb_target_group_attachment" "web" {
 ### HTTPS / TLS Configuration
 # Skip this is lb_domain_name is blank
 resource "aws_acm_certificate" "production" {
-  count = length(var.lb_domain_name) > 0 ? 1 : 0
+  count                     = length(var.lb_domain_name) > 0 ? 1 : 0
   domain_name               = var.lb_domain_name
   subject_alternative_names = var.lb_alternate_names
   validation_method         = "DNS"
@@ -136,7 +136,7 @@ resource "aws_route53_record" "cert_validation" {
 }
 
 resource "aws_acm_certificate_validation" "production" {
-  count = length(var.lb_domain_name) > 0 ? 1 : 0
+  count                   = length(var.lb_domain_name) > 0 ? 1 : 0
   certificate_arn         = aws_acm_certificate.production[0].arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
@@ -146,7 +146,7 @@ locals {
 }
 
 resource "aws_lb_listener" "tls" {
-  count = length(var.lb_domain_name) > 0 || var.lb_certificate_arn != null ? 1 : 0
+  count             = length(var.lb_domain_name) > 0 || var.lb_certificate_arn != null ? 1 : 0
   load_balancer_arn = aws_lb.production.arn
   port              = "443"
   protocol          = "HTTPS"

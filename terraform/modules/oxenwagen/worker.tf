@@ -19,7 +19,7 @@ resource "aws_instance" "worker" {
 }
 
 # Associate an elastic IP with each worker server
-resource aws_eip "worker" {
+resource "aws_eip" "worker" {
   for_each = var.worker_instances
   instance = aws_instance.worker[each.key].id
 

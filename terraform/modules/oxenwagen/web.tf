@@ -19,7 +19,7 @@ resource "aws_instance" "web" {
 }
 
 # Associate an elastic IP with each web server
-resource aws_eip "web" {
+resource "aws_eip" "web" {
   for_each = var.web_instances
   instance = aws_instance.web[each.key].id
 

@@ -1,18 +1,18 @@
-output web_instance_ips {
+output "web_instance_ips" {
   value = [for key, eip in aws_eip.web : eip.public_ip]
 }
-output worker_instance_ips {
+output "worker_instance_ips" {
   value = [for key, eip in aws_eip.worker : eip.public_ip]
 }
-output certification_dns_options {
+output "certification_dns_options" {
   value = aws_acm_certificate.production[*].domain_validation_options
 }
 
-output database_endpoint {
+output "database_endpoint" {
   value = aws_db_instance.production.endpoint
 }
 
-output inventory {
+output "inventory" {
   value = {
     hostnames    = concat([for key, instance in aws_instance.web : var.web_instances[key].hostname], [for key, instance in aws_instance.worker : var.worker_instances[key].hostname])
     ip_addresses = concat([for key, instance in aws_instance.web : aws_eip.web[key].public_ip], [for key, instance in aws_instance.worker : aws_eip.worker[key].public_ip])
@@ -56,15 +56,15 @@ output "lb_target_group_arn" {
 
 data "aws_caller_identity" "current" {}
 
-output switch_role_url {
+output "switch_role_url" {
   value = "https://signin.aws.amazon.com/switchrole?roleName=DelegatedAccess&account=${data.aws_caller_identity.current.account_id}&displayName=${var.project_name}"
 }
 
-output lb_http_arn {
+output "lb_http_arn" {
   value = aws_lb_listener.http.arn
 }
 
-output tls_http_arn {
+output "tls_http_arn" {
   value = aws_lb_listener.tls[0].arn
 }
 
