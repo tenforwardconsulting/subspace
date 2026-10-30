@@ -60,10 +60,10 @@ resource "aws_security_group" "production-webservers" {
   vpc_id      = aws_vpc.production-internal.id
 
   ingress {
-    description      = "HTTP from lb"
-    from_port        = 80
-    to_port          = 80
-    protocol         = "tcp"
+    description     = "HTTP from lb"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
     security_groups = [aws_security_group.production-load-balancer.id]
   }
 
@@ -96,19 +96,19 @@ resource "aws_security_group" "production-internal" {
   vpc_id      = aws_vpc.production-internal.id
 
   ingress {
-    description      = "All traffic from webservers and workers"
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    security_groups  = [aws_security_group.production-webservers.id, aws_security_group.production-workers.id]
+    description     = "All traffic from webservers and workers"
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    security_groups = [aws_security_group.production-webservers.id, aws_security_group.production-workers.id]
   }
 
   ingress {
-    description      = "SSH Access"
-    from_port        = 22
-    to_port          = 22
-    protocol         = "tcp"
-    cidr_blocks      = var.ssh_cidr_blocks
+    description = "SSH Access"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = var.ssh_cidr_blocks
   }
 
   egress {
@@ -126,10 +126,10 @@ resource "aws_security_group" "production-rds" {
   vpc_id      = aws_vpc.production-internal.id
 
   ingress {
-    description      = "PSQL traffic from webservers and workers"
-    from_port        = 5432
-    to_port          = 5432
-    protocol         = "tcp"
-    security_groups  = [aws_security_group.production-webservers.id, aws_security_group.production-workers.id]
+    description     = "PSQL traffic from webservers and workers"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.production-webservers.id, aws_security_group.production-workers.id]
   }
 }
