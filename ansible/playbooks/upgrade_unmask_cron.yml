@@ -1,0 +1,11 @@
+---
+- name: Unmask cron
+  hosts: "{{ upgrade_host }}"
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Unmask and start cron.service
+      systemd:
+        name: cron.service
+        state: started
+        masked: false

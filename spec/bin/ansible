@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "a spec ran the real $(basename "$0") $*: stub it" >&2
+exit 97

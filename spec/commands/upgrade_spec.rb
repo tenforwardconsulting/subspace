@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'subspace/commands/upgrade'
 
 describe Subspace::Commands::Upgrade do
-  let(:strategy) { double status: nil, cutover: nil, abort_upgrade: nil }
+  let(:strategy) { double status: nil, cutover: nil, abort_upgrade: nil, migrate: nil }
   let(:options) { Commander::Command::Options.new }
 
   before do
@@ -23,6 +23,13 @@ describe Subspace::Commands::Upgrade do
     described_class.new ["production"], options
 
     expect(strategy).to have_received :abort_upgrade
+  end
+
+  it "dispatches --migrate to the strategy" do
+    options.migrate = true
+    described_class.new ["production"], options
+
+    expect(strategy).to have_received :migrate
   end
 
   it "shows the status when no phase is given" do

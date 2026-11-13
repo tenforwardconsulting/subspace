@@ -7,6 +7,7 @@ describe Subspace::Upgrade::TerraformConfig do
     <<~HCL
       module workhorse {
         source = "./modules/workhorse"
+        aws_region = "us-west-2"
         project_name = "my_project"
         instance_user = "ubuntu"
 
@@ -35,6 +36,10 @@ describe Subspace::Upgrade::TerraformConfig do
 
   it "reads the module name" do
     expect(subject.module_name).to eq "workhorse"
+  end
+
+  it "reads the module's aws_region" do
+    expect(subject.aws_region).to eq "us-west-2"
   end
 
   it "reads the instances map, keeping literals as written" do
@@ -195,5 +200,144 @@ describe Subspace::Upgrade::TerraformConfig do
   it "raises a useful error on a v1 config with no instances map" do
     File.write @path, %(module workhorse {\n  instance_ami = "ami-0abc"\n}\n)
     expect { described_class.new(@path).instances }.to raise_error(/vendored by subspace 3\.1\.1 or newer/)
+  end
+
+  describe "#instances" do
+    it "defaults to the instances map" do
+      expect(subject.instances).to eq subject.instances("instances")
+    end
+  end
+
+  context "with multiple instance maps and a list argument" do
+    let(:main_tf) do
+      <<~HCL
+        module oxenwagen {
+          source = "./modules/oxenwagen"
+          project_name = "my_project"
+          instance_user = "ubuntu"
+
+          web_instances = {
+            "1" = {
+              hostname      = "production-web1"
+              ami           = "ami-0abc"
+              instance_type = "t3.medium"
+              volume_size   = 20
+            }
+            "2" = {
+              hostname      = "production-web2"
+              ami           = "ami-0abc"
+              instance_type = "t3.medium"
+              volume_size   = 20
+            }
+          }
+          worker_instances = {
+            "1" = {
+              hostname      = "production-worker1"
+              ami           = "ami-0abc"
+              instance_type = "t3.medium"
+              volume_size   = 20
+            }
+          }
+          lb_instances = ["1"]
+          active_instance = "1"
+        }
+      HCL
+    end
+
+    describe "#instances" do
+      it "reads the map it is asked for", :aggregate_failures do
+        expect(subject.instances("web_instances").keys).to eq %w[1 2]
+        expect(subject.instances("worker_instances").keys).to eq %w[1]
+      end
+    end
+
+    describe "#add_instance" do
+      it "inserts into the named map", :aggregate_failures do
+        subject.add_instance "3", {
+          "hostname" => '"production-web3"',
+          "ami" => '"ami-0def"',
+          "instance_type" => '"t3.medium"',
+          "volume_size" => "20"
+        }, "web_instances"
+        subject.save
+
+        reread = described_class.new @path
+        expect(reread.instances("web_instances").keys).to eq %w[1 2 3]
+        expect(reread.instances("worker_instances").keys).to eq %w[1]
+      end
+
+      it "raises for a map that is not there" do
+        expect { subject.add_instance "1", {}, "nope" }.to raise_error(/has no `nope` map/)
+      end
+    end
+
+    describe "#remove_instance" do
+      it "removes from the named map", :aggregate_failures do
+        subject.remove_instance "1", "worker_instances"
+        subject.save
+
+        reread = described_class.new @path
+        expect(reread.instances("worker_instances")).to eq({})
+        expect(reread.instances("web_instances").keys).to eq %w[1 2]
+      end
+    end
+
+    describe "#list_argument" do
+      it "reads a list of strings" do
+        expect(subject.list_argument("lb_instances")).to eq ["1"]
+      end
+
+      it "raises when the argument is missing" do
+        expect { subject.list_argument("nope") }.to raise_error(/has no `nope` list/)
+      end
+    end
+
+    describe "#set_list_argument" do
+      it "rewrites the list in place", :aggregate_failures do
+        subject.set_list_argument "lb_instances", %w[2 3]
+        subject.save
+
+        content = File.read @path
+        expect(content).to include '  lb_instances = ["2", "3"]'
+        reread = described_class.new @path
+        expect(reread.list_argument("lb_instances")).to eq %w[2 3]
+      end
+
+      context "with the list spread over several lines" do
+        before { File.write @path, main_tf.sub(%(lb_instances = ["1"]), %(lb_instances = [\n    "1",\n  ])) }
+
+        it "rewrites the whole list", :aggregate_failures do
+          subject.set_list_argument "lb_instances", %w[2 3]
+          subject.save
+
+          content = File.read @path
+          expect(content).to include %(  lb_instances = ["2", "3"]\n  active_instance = "1")
+          expect(described_class.new(@path).list_argument("lb_instances")).to eq %w[2 3]
+        end
+      end
+    end
+
+    describe "#has_argument?" do
+      it "finds an argument set in the module block" do
+        expect(subject.has_argument?("lb_instances")).to be true
+      end
+    end
+  end
+
+  context "with count-based arguments" do
+    let(:main_tf) do
+      <<~HCL
+        module oxenwagen {
+          source = "./modules/oxenwagen"
+          web_instance_count = 2
+        }
+      HCL
+    end
+
+    describe "#has_argument?" do
+      it "does not mistake a longer name for the argument" do
+        expect(subject.has_argument?("web_instance")).to be false
+      end
+    end
   end
 end

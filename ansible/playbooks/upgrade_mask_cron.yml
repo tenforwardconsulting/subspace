@@ -1,0 +1,12 @@
+---
+# Masked rather than stopped: a deploy rewrites the crontab and cron would start again.
+- name: Mask cron
+  hosts: "{{ upgrade_host }}"
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Mask cron.service
+      systemd:
+        name: cron.service
+        state: stopped
+        masked: true

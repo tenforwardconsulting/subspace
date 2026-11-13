@@ -16,6 +16,7 @@ describe Subspace::Upgrade::Workhorse do
     <<~HCL
       module workhorse {
         source = "./modules/workhorse"
+        aws_region = "us-west-2"
 
         instances = {
           "1" = {
@@ -109,6 +110,12 @@ describe Subspace::Upgrade::Workhorse do
     end
   end
 
+  describe "#migrate" do
+    it "tells the operator workhorse migrates by hand" do
+      expect { subject.migrate }.to raise_error SystemExit, /migrate by hand.*To migrate production/m
+    end
+  end
+
   describe "#launch" do
     let(:options) { double ami: "ami-0new", ubuntu_release: "noble" }
 
@@ -116,6 +123,7 @@ describe Subspace::Upgrade::Workhorse do
       <<~HCL
         module workhorse {
           source = "./modules/workhorse"
+          aws_region = "us-west-2"
 
           instances = {
             "1" = {
@@ -280,7 +288,7 @@ describe Subspace::Upgrade::Workhorse do
       it "launches the latest ami for the release", :aggregate_failures do
         subject.launch
 
-        expect(Subspace::Ami).to have_received(:latest).with(release: "noble", profile: "subspace-test_project")
+        expect(Subspace::Ami).to have_received(:latest).with(release: "noble", profile: "subspace-test_project", region: "us-west-2")
         expect(Subspace::Upgrade::State.read("production")["to_ami"]).to eq "ami-0latest"
       end
 
@@ -983,6 +991,35 @@ describe Subspace::Upgrade::Workhorse do
       it "stays prepared" do
         expect { subject.copy_db }.to raise_error "pg_restore failed"
         expect(reread_phase).to eq "prepared"
+      end
+    end
+  end
+
+  describe "#slot_summary" do
+    before { allow(subject).to receive(:state).and_return(state) }
+
+    context "with no upgrade in progress" do
+      let(:state) { {} }
+
+      it "is empty before a slot is picked" do
+        expect(subject.send :slot_summary).to eq([])
+      end
+    end
+
+    context "with a slot picked" do
+      let(:state) do
+        {
+          "from_slot" => "1",
+          "from_ami" => "ami-0abc",
+          "to_slot" => "2",
+          "to_ami" => "ami-0def"
+        }
+      end
+
+      it "names both slots and their amis once one is picked" do
+        expect(subject.send :slot_summary).to eq(
+          ["Slots:     1 (ami-0abc) => 2 (ami-0def)"]
+        )
       end
     end
   end
