@@ -214,14 +214,6 @@ module Subspace
         hostname
       end
 
-      def ubuntu_release
-        options.ubuntu_release || Subspace::Ami::DEFAULT_RELEASE
-      end
-
-      def target_ami
-        options.ami || Subspace::Ami.latest(release: ubuntu_release, profile: aws_profile)
-      end
-
       # ------------------------------------------------------------- data
 
       # Subspace does not take this one.  A dump nobody has restored is not a backup, and
@@ -260,47 +252,6 @@ module Subspace
 
       # --------------------------------------------------------- application
 
-      def provision!(hostname)
-        say "Provisioning #{hostname}"
-        set_subspace_version
-        unless ansible_playbook("#{env}.yml", "--limit", hostname)
-          abort "Provisioning #{hostname} failed."
-        end
-      end
-
-      # The tailscale role only joins the tailnet under the tailscale_reauth tag.  Joining is
-      # skipped when the server already has an address, since a reauth can hand out a new one.
-      def join_tailnet!(hostname)
-        address = tailscale_ip hostname
-        unless address
-          unless ansible_playbook("#{env}.yml", "--limit", hostname, "--tags", "tailscale_reauth")
-            abort "Joining #{hostname} to the tailnet failed."
-          end
-          address = tailscale_ip(hostname) or abort "#{hostname} has no tailscale address after joining the tailnet."
-        end
-
-        vars = inventory.hosts.fetch(hostname).vars
-        return if vars["ansible_host"] == address
-
-        vars["ansible_host"] = address
-        inventory.write
-        @inventory = nil
-        learn_host_key! address
-        say "#{hostname} is now addressed by its tailscale IP, #{address}"
-      end
-
-      def tailscale_ip(hostname)
-        stdout, _, status = Open3.capture3("ansible", hostname, "-o", "-m", "command", "-a", "tailscale ip -4",
-          chdir: "config/subspace")
-        stdout[/\(stdout\)\s*(\S+)/, 1] if status.success?
-      end
-
-      def verify_deployed!(hostname)
-        unless playbook("upgrade_verify", hostname, upgrade_host: hostname)
-          abort "#{hostname} is not ready to take traffic.  Deploy to it and verify it first."
-        end
-      end
-
       def maintenance_mode!(on_or_off, hostname)
         say "Maintenance mode #{on_or_off} for #{hostname}"
         # Always limited: the new host shares the <env>_web group, so an unlimited call
@@ -310,16 +261,6 @@ module Subspace
           "--limit", hostname, "--tags=maintenance_#{on_or_off}")
           abort "Could not turn maintenance mode #{on_or_off} on #{hostname}."
         end
-      end
-
-      def stop_application!(hostname)
-        say "Stopping puma, the workers and cron on #{hostname} (a maintenance page does not stop background jobs)"
-        playbook_or_abort "upgrade_quiesce", hostname
-      end
-
-      def start_application!(hostname)
-        say "Starting puma, the workers and cron back up on #{hostname}"
-        playbook_or_abort "upgrade_unquiesce", hostname
       end
 
       def verify_maintenance_page!(hostname)
@@ -397,14 +338,6 @@ module Subspace
 
       # ---------------------------------------------------------- capistrano
 
-      def capistrano_stage_path
-        "config/deploy/#{env}_upgrade.rb"
-      end
-
-      def base_stage_path
-        "config/deploy/#{env}.rb"
-      end
-
       # Capistrano derives rails_env (and anything else lazily reading :stage) from the
       # stage name, so the upgrade stage claims to be the base one.
       def write_capistrano_stage!
@@ -430,12 +363,6 @@ module Subspace
       end
 
       # ------------------------------------------------------------- output
-
-      def playbook_or_abort(name, hostname, **extra_vars)
-        return if playbook name, hostname, upgrade_host: hostname, **extra_vars
-
-        abort "#{name} failed on #{hostname}."
-      end
 
       def next_step_for(phase)
         case phase

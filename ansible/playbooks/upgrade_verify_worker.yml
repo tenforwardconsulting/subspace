@@ -1,0 +1,48 @@
+---
+# A worker has no puma.  Assert it is deployed, its background units are up, and cron is still
+# masked -- --provision masks it so two workers never run the same cron entry.
+- name: Verify a worker is ready to take over
+  hosts: "{{ upgrade_host }}"
+  gather_facts: false
+  tasks:
+    - name: Look for a deployed release
+      stat:
+        path: /u/apps/{{ project_name }}/current/Gemfile
+      register: current_release
+
+    - name: Assert the application has been deployed
+      assert:
+        that: current_release.stat.exists
+        fail_msg: >-
+          Nothing is deployed at /u/apps/{{ project_name }}/current on {{ inventory_hostname }}.
+          Deploy to it before cutting over.
+
+    - name: Find the running background units
+      become: true
+      shell: >-
+        systemctl list-units --type=service --state=active --no-legend --plain
+        'sidekiq*' 'resque*' 'delayed_job*' | awk '{print $1}'
+      changed_when: false
+      register: running_units
+
+    - name: Assert a background worker is running
+      assert:
+        that: running_units.stdout_lines | length > 0
+        fail_msg: >-
+          No sidekiq, resque or delayed_job unit is active on {{ inventory_hostname }}.
+          Deploy to it and read the unit logs before cutting over.
+
+    - name: Check whether cron is masked
+      become: true
+      command: systemctl is-enabled cron.service
+      changed_when: false
+      failed_when: false
+      register: cron
+
+    - name: Assert cron is still masked
+      assert:
+        that: cron.stdout | trim == "masked"
+        fail_msg: >-
+          cron.service on {{ inventory_hostname }} is {{ cron.stdout | trim }}, not masked.
+          Two workers running the same cron entries would run every scheduled job twice.
+          subspace masks it at --provision; re-run that step.

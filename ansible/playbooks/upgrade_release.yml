@@ -1,0 +1,21 @@
+---
+# Every web server has to be on the same release.  During the overlap a user can get a page
+# from one server and fingerprinted assets from another, which 404s if the manifests differ.
+- name: Compare the deployed release across hosts
+  hosts: "{{ upgrade_hosts }}"
+  gather_facts: false
+  tasks:
+    - name: Read the deployed revision
+      command: cat /u/apps/{{ project_name }}/current/REVISION
+      changed_when: false
+      register: revision
+
+    - name: Assert every host is on the same release
+      assert:
+        that: revision.stdout | trim == hostvars[ansible_play_hosts[0]].revision.stdout | trim
+        fail_msg: >-
+          {{ inventory_hostname }} is on release {{ revision.stdout | trim }} but
+          {{ ansible_play_hosts[0] }} is on
+          {{ hostvars[ansible_play_hosts[0]].revision.stdout | trim }}.  Deploy the same commit
+          to every web server before cutting over, or users will get asset 404s during the
+          overlap.
