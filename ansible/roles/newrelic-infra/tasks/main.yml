@@ -18,10 +18,9 @@
       update_cache: yes
 
   - name: create license key
-    copy:
+    template:
       dest: "/etc/newrelic-infra.yml"
-      content: |
-        license_key: {{newrelic_license}}
+      src: newrelic-infra.yml.j2
 
   - name: Install New Relic server agent
     apt:
