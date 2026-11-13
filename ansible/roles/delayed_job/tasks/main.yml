@@ -5,7 +5,6 @@
     become: true
     vars:
       job_queue: "{{ item }}"
-      loop_index: "{{ loop_index }}"
     template:
       src: delayed-job-systemd.service
       dest: /etc/systemd/system/delayed_job_{{ item }}{{ loop_index }}.service
