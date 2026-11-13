@@ -34,4 +34,59 @@ describe Subspace::Upgrade::Terraform do
 
     expect(subject.plan_changes.map { |change| change["address"] }).to eq ["aws_instance.single[\"2\"]"]
   end
+
+  describe "#resources" do
+    it "flattens the resources out of every nested module" do
+      show_json = {
+        "values" => {
+          "root_module" => {
+            "resources" => [{ "type" => "aws_root_resource" }],
+            "child_modules" => [
+              {
+                "resources" => [
+                  { "type" => "aws_child_resource_1" },
+                  { "type" => "aws_child_resource_2" }
+                ],
+                "child_modules" => []
+              }
+            ]
+          }
+        }
+      }
+      allow(subject).to receive(:capture).with("show", "-json").and_return show_json.to_json
+
+      types = subject.resources.map { |resource| resource["type"] }
+      expect(types).to eq ["aws_root_resource", "aws_child_resource_1", "aws_child_resource_2"]
+    end
+  end
+
+  describe "#key_pair_public_key" do
+    it "reads the key pair public key" do
+      show_json = {
+        "values" => {
+          "root_module" => {
+            "resources" => [
+              { "type" => "aws_key_pair", "values" => { "public_key" => "ssh-rsa AAAA..." } }
+            ],
+            "child_modules" => []
+          }
+        }
+      }
+      allow(subject).to receive(:capture).with("show", "-json").and_return show_json.to_json
+
+      expect(subject.key_pair_public_key).to eq "ssh-rsa AAAA..."
+    end
+  end
+
+  describe "#state_mv" do
+    it "passes -dry-run only when asked", :aggregate_failures do
+      allow(subject).to receive(:run)
+
+      subject.state_mv("a", "b")
+      expect(subject).to have_received(:run).with("state", "mv", "a", "b")
+
+      subject.state_mv("a", "b", dry_run: true)
+      expect(subject).to have_received(:run).with("state", "mv", "-dry-run", "a", "b")
+    end
+  end
 end

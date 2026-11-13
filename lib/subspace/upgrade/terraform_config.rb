@@ -20,27 +20,27 @@ module Subspace
         @source[/^module\s+"?([\w-]+)"?\s*\{/, 1] or raise "No module block found in #{path}"
       end
 
-      def instances
-        entry_ranges.transform_values { |range| attributes_in @source[range] }
+      def instances(map = "instances")
+        entry_ranges(map).transform_values { |range| attributes_in @source[range] }
       end
 
       def hostname_for(key)
         self.class.unquote instances.fetch(key)["hostname"]
       end
 
-      def add_instance(key, attributes)
-        raise "Slot #{key} is already defined in #{path}" if instances.key? key
+      def add_instance(key, attributes, map = "instances")
+        raise "Slot #{key} is already defined in #{path}" if instances(map).key? key
 
-        indent = @source[/^([ \t]*)instances[ \t]*=/, 1]
+        indent = @source[/^([ \t]*)#{map}[ \t]*=/, 1]
         width = attributes.keys.map(&:length).max
         lines = [%(#{indent}  "#{key}" = {)]
         attributes.each { |name, literal| lines << "#{indent}    #{name.ljust(width)} = #{literal}" }
         lines << "#{indent}  }"
-        @source.insert @source.rindex("\n", map_range.end) + 1, "#{lines.join("\n")}\n"
+        @source.insert @source.rindex("\n", map_range(map).end) + 1, "#{lines.join("\n")}\n"
       end
 
-      def remove_instance(key)
-        range = entry_ranges[key] or raise "There is no slot #{key} in #{path}"
+      def remove_instance(key, map: "instances")
+        range = entry_ranges(map)[key] or raise "There is no slot #{key} in #{path}"
 
         @source[(@source.rindex("\n", range.begin) + 1)..@source.index("\n", range.end)] = ""
       end
@@ -63,6 +63,17 @@ module Subspace
 
       def allow_instance_ssh=(value)
         set_argument "allow_instance_ssh", value.to_s
+      end
+
+      def list_argument(name)
+        literal = @source[/^[ \t]*#{name}[ \t]*=[ \t]*\[([^\]]*)\]/, 1] or
+          raise "#{path} has no `#{name}` list."
+
+        literal.scan(/"([^"]*)"/).flatten
+      end
+
+      def set_list_argument(name, values)
+        set_argument name, "[#{values.map { |value| %("#{value}") }.join ", "}]"
       end
 
       def save
@@ -92,18 +103,18 @@ module Subspace
         end
       end
 
-      def map_range
-        match = @source.match(/^[ \t]*instances[ \t]*=[ \t]*\{/)
-        raise "#{path} has no `instances` map.  Was its terraform module vendored by subspace #{Base::MINIMUM_MODULE_VERSION} or newer?" if match.nil?
+      def map_range(map)
+        match = @source.match(/^[ \t]*#{map}[ \t]*=[ \t]*\{/)
+        raise "#{path} has no `#{map}` map.  Was its terraform module vendored by subspace #{Base::MINIMUM_MODULE_VERSION} or newer?" if match.nil?
 
         (match.begin(0)..matching_brace(@source, match.end(0) - 1))
       end
 
-      def entry_ranges
-        map = map_range
+      def entry_ranges(map)
+        range = map_range(map)
         entries = {}
-        cursor = @source.index("{", map.begin) + 1
-        while (entry = @source.match(/"([^"]+)"[ \t]*=[ \t]*\{/, cursor)) && entry.begin(0) < map.end
+        cursor = @source.index("{", range.begin) + 1
+        while (entry = @source.match(/"([^"]+)"[ \t]*=[ \t]*\{/, cursor)) && entry.begin(0) < range.end
           close = matching_brace @source, entry.end(0) - 1
           entries[entry[1]] = entry.begin(0)..close
           cursor = close + 1

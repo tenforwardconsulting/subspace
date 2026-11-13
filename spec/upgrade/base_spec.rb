@@ -444,6 +444,14 @@ describe Subspace::Upgrade::Workhorse do
       end
     end
 
+    context "with a count-indexed instance" do
+      let(:addresses) { ["module.workhorse.aws_instance.single[0]", "module.workhorse.aws_eip.single"] }
+
+      it "aborts with the migration instructions" do
+        expect { subject.send :check_state_fingerprint! }.to raise_error SystemExit, /unkeyed aws_instance\.single/
+      end
+    end
+
     context "with a resource another template uses" do
       let(:addresses) { [%(module.workhorse.aws_instance.single["1"]), "module.workhorse.aws_lb.web"] }
 
@@ -465,6 +473,35 @@ describe Subspace::Upgrade::Workhorse do
 
       it "aborts" do
         expect { subject.send :check_state_fingerprint! }.to raise_error SystemExit, /Has it been applied\?/
+      end
+    end
+  end
+
+  describe "#slot_summary" do
+    before { allow(subject).to receive(:state).and_return(state) }
+
+    context "with no upgrade in progress" do
+      let(:state) { {} }
+
+      it "is empty before a slot is picked" do
+        expect(subject.send :slot_summary).to eq([])
+      end
+    end
+
+    context "with a slot picked" do
+      let(:state) do
+        {
+          "from_slot" => "1",
+          "from_ami" => "ami-0abc",
+          "to_slot" => "2",
+          "to_ami" => "ami-0def"
+        }
+      end
+
+      it "names both slots and their amis once one is picked" do
+        expect(subject.send :slot_summary).to eq(
+          ["Slots:     1 (ami-0abc) => 2 (ami-0def)"]
+        )
       end
     end
   end

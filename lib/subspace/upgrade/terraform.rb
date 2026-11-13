@@ -28,7 +28,7 @@ module Subspace
         capture("state", "list").split("\n").map(&:strip)
       end
 
-      def key_pair_public_key
+      def resources
         modules = [JSON.parse(capture("show", "-json")).dig("values", "root_module")].compact
         resources = []
         until modules.empty?
@@ -36,7 +36,17 @@ module Subspace
           resources.concat mod.fetch("resources", [])
           modules.concat mod.fetch("child_modules", [])
         end
+        resources
+      end
+
+      def key_pair_public_key
         resources.find { |resource| resource["type"] == "aws_key_pair" }&.dig("values", "public_key")
+      end
+
+      def state_mv(from, to, dry_run: false)
+        args = ["state", "mv"]
+        args << "-dry-run" if dry_run
+        run(*args, from, to)
       end
 
       def output(name)

@@ -54,7 +54,7 @@ module Subspace
 
         say "Template:  #{state["template"]}"
         say "Phase:     #{state["phase"]}"
-        say "Slots:     #{state["from_slot"]} (#{state["from_ami"]}) => #{state["to_slot"]} (#{state["to_ami"]})" if state["to_slot"]
+        slot_summary.each { |line| say line }
         say "Backup:    #{state["backup_path"]} (#{state["backup_bytes"]} bytes)" if state["backup_path"]
         state["log"].to_a.each { |entry| say "  #{entry["at"]}  #{entry["phase"]}" }
 
@@ -245,10 +245,13 @@ module Subspace
           EOS
         end
 
-        return if addresses.any? { |a| a.include? "#{self.class::KEYED_RESOURCE}[" }
+        unkeyed = self.class::KEYED_RESOURCES.select do |resource|
+          addresses.any? { |address| address.match?(/#{Regexp.escape resource}(\[\d+\])?\z/) }
+        end
+        return if unkeyed.empty?
 
         abort <<~EOS
-          #{env}'s terraform state still holds an unkeyed #{self.class::KEYED_RESOURCE}.
+          #{env}'s terraform state still holds an unkeyed #{unkeyed.join ", "}.
           Instance slots have to exist before anything can be added beside them.
 
           #{migration_instructions}
@@ -444,6 +447,12 @@ module Subspace
 
           State.read env
         end
+      end
+
+      def slot_summary
+        return [] unless state["to_slot"]
+
+        ["Slots:     #{state["from_slot"]} (#{state["from_ami"]}) => #{state["to_slot"]} (#{state["to_ami"]})"]
       end
 
       def manifest

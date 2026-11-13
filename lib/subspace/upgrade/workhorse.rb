@@ -6,7 +6,7 @@ module Subspace
     # maintenance window, and moves the elastic IP.
     class Workhorse < Base
       TEMPLATE = "workhorse"
-      KEYED_RESOURCE = "aws_instance.single"
+      KEYED_RESOURCES = ["aws_instance.single"]
       REQUIRED_MODULE_VARIABLES = %w[instances active_instance allow_instance_ssh]
       REQUIRED_ROOT_OUTPUTS = %w[inventory instances active_instance allow_instance_ssh]
       STATE_REQUIRES = ["aws_instance.single"]
