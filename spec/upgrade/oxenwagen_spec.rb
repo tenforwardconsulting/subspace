@@ -925,6 +925,25 @@ describe Subspace::Upgrade::Oxenwagen do
           expect(events).to eq [detach_new_changes, :target_health, new_slot_deletes]
           expect(subject.config.list_argument("lb_instances")).to eq %w[1 2]
         end
+
+        it "sends the operator back to --abort when draining times out", :aggregate_failures do
+          allow(Subspace::Elb).to receive(:target_health).and_return("i-0web3" => "draining", "i-0web4" => "draining")
+
+          expect { subject.abort_upgrade }.to raise_error SystemExit, /re-run `subspace upgrade production --abort`/i
+          expect(subject).not_to have_received(:apply!).with(new_slot_deletes, starting: "aborting")
+          expect(reread_phase).to eq "cutting_over"
+        end
+      end
+
+      context "when an earlier --abort detached the new servers but stopped while they drained" do
+        let(:lb_record) { { "lb_attached" => false } }
+
+        it "waits for them to drain before destroying them", :aggregate_failures do
+          allow(Subspace::Elb).to receive(:target_health).and_return("i-0web3" => "draining", "i-0web4" => "draining")
+
+          expect { subject.abort_upgrade }.to raise_error SystemExit, /still registered/
+          expect(subject).not_to have_received(:apply!).with(new_slot_deletes, starting: "aborting")
+        end
       end
 
       context "when upgrade.yml does not record the attach" do

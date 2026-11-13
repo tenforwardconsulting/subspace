@@ -116,7 +116,10 @@ module Subspace
         attach!
         wait_until_healthy! to_instance_ids("web")
         detach!
-        wait_until_drained! from_instance_ids("web")
+        wait_until_drained! from_instance_ids("web") do
+          "The new servers are live and serving.  Leave the old ones alone and " \
+            "re-run `subspace upgrade #{env} --cutover` to finish."
+        end
         promote_capistrano_stage!
 
         state.advance! "cutover"
@@ -402,12 +405,17 @@ module Subspace
 
       def detach_new!
         attached = config.list_argument "lb_instances"
-        return if (to_slots("web") & attached).empty?
+        unless (to_slots("web") & attached).empty?
+          config.set_list_argument "lb_instances", attached - to_slots("web")
+          apply! slot_changes("lb", to_slots("web"), ["delete"])
+          record_lb! "lb_attached", false
+        end
+        return unless state.phase == "cutting_over"
 
-        config.set_list_argument "lb_instances", attached - to_slots("web")
-        apply! slot_changes("lb", to_slots("web"), ["delete"])
-        record_lb! "lb_attached", false
-        wait_until_drained! to_instance_ids("web")
+        wait_until_drained! to_instance_ids("web") do
+          "#{from_hostnames("web").join ", "} #{from_hostnames("web").one? ? "is" : "are"} serving.  " \
+            "Re-run `subspace upgrade #{env} --abort` to finish."
+        end
       end
 
       def wait_until_healthy!(instance_ids)
@@ -444,8 +452,7 @@ module Subspace
           if attempts.zero?
             abort <<~EOS
               #{states.keys.join ", "} #{states.one? ? "is" : "are"} still registered with the target group after
-              #{HEALTH_TIMEOUT / 60} minutes.  The new servers are live and serving.  Leave the old
-              ones alone and re-run `subspace upgrade #{env} --cutover` to finish.
+              #{HEALTH_TIMEOUT / 60} minutes.  #{yield}
             EOS
           end
 
