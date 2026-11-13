@@ -298,5 +298,28 @@ describe Subspace::Upgrade::TerraformConfig do
         expect(reread.list_argument("lb_instances")).to eq %w[2 3]
       end
     end
+
+    describe "#has_argument?" do
+      it "finds an argument set in the module block" do
+        expect(subject.has_argument?("lb_instances")).to be true
+      end
+    end
+  end
+
+  context "with count-based arguments" do
+    let(:main_tf) do
+      <<~HCL
+        module oxenwagen {
+          source = "./modules/oxenwagen"
+          web_instance_count = 2
+        }
+      HCL
+    end
+
+    describe "#has_argument?" do
+      it "does not mistake a longer name for the argument" do
+        expect(subject.has_argument?("web_instance")).to be false
+      end
+    end
   end
 end

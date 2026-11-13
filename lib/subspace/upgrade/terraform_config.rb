@@ -65,6 +65,10 @@ module Subspace
         set_argument "allow_instance_ssh", value.to_s
       end
 
+      def has_argument?(name)
+        @source.match?(/^[ \t]*#{name}[ \t]*=/)
+      end
+
       def list_argument(name)
         literal = @source[/^[ \t]*#{name}[ \t]*=[ \t]*\[([^\]]*)\]/, 1] or
           raise "#{path} has no `#{name}` list."

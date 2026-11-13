@@ -110,6 +110,25 @@ describe Subspace::Upgrade::Oxenwagen do
     HCL
   end
 
+  let(:count_based_main_tf) do
+    <<~HCL
+      module oxenwagen {
+        source = "github.com/tenforwardconsulting/terraform-subspace-oxenwagen?ref=v2.4.1"
+
+        instance_ami = "ami-0abc"
+        web_instance_type = "t3.small"
+        web_instance_count = 2
+        worker_instance_type = "t3.medium"
+        worker_instance_count = 1
+        worker_volume_size = 100
+      }
+
+      output "inventory" {
+        value = module.oxenwagen
+      }
+    HCL
+  end
+
   let(:inventory_yml) do
     <<~YML
       all:
@@ -1045,6 +1064,366 @@ describe Subspace::Upgrade::Oxenwagen do
 
         expect(Subspace::Ec2).not_to have_received :elastic_ip_headroom
       end
+    end
+  end
+
+  describe "#revendor" do
+    context "when main.tf is still on the count-based variables" do
+      let(:main_tf) { count_based_main_tf }
+
+      it "refuses until the slot maps are pasted", :aggregate_failures do
+        expect { subject.revendor }.to raise_error SystemExit,
+          /Run `subspace upgrade production --migrate` and paste what it prints before re-vendoring/
+        expect(File.read("config/subspace/terraform/production/main.tf")).to eq main_tf
+      end
+    end
+
+    context "when main.tf has been converted" do
+      before do
+        allow(subject).to receive(:check_not_cloned!)
+        allow(subject).to receive(:locally_modified_files).and_return []
+        allow(subject).to receive(:update_gitignore!)
+        allow(Subspace::Upgrade::ModuleManifest).to receive(:vendor)
+      end
+
+      it "re-vendors" do
+        subject.revendor
+
+        expect(Subspace::Upgrade::ModuleManifest).to have_received(:vendor)
+          .with("oxenwagen", "config/subspace/terraform/production/modules/oxenwagen")
+      end
+    end
+  end
+
+  describe "#migrate" do
+    let(:first_web_hostname) { "production-web1" }
+    let(:resources) do
+      [
+        {
+          "address" => "module.oxenwagen.aws_instance.web[0]", "type" => "aws_instance", "name" => "web", "index" => 0,
+          "values" => {
+            "tags" => { "Name" => first_web_hostname },
+            "ami" => "ami-0abc", "instance_type" => "t3.small", "subnet_id" => "subnet-0a",
+            "root_block_device" => [{ "volume_size" => 16 }],
+          },
+        },
+        {
+          "address" => "module.oxenwagen.aws_instance.web[1]", "type" => "aws_instance", "name" => "web", "index" => 1,
+          "values" => {
+            "tags" => { "Name" => "production-web2" },
+            "ami" => "ami-0abc", "instance_type" => "t3.small", "subnet_id" => "subnet-0b",
+            "root_block_device" => [{ "volume_size" => 16 }],
+          },
+        },
+        {
+          "address" => "module.oxenwagen.aws_instance.worker[0]", "type" => "aws_instance", "name" => "worker", "index" => 0,
+          "values" => {
+            "tags" => { "Name" => "production-worker1" },
+            "ami" => "ami-0abc", "instance_type" => "t3.medium", "subnet_id" => "subnet-0a",
+            "root_block_device" => [{ "volume_size" => 100 }],
+          },
+        },
+      ]
+    end
+    let(:state_list) do
+      %w[
+        module.oxenwagen.aws_db_instance.production
+        module.oxenwagen.aws_eip.web[0]
+        module.oxenwagen.aws_eip.web[1]
+        module.oxenwagen.aws_eip.worker[0]
+        module.oxenwagen.aws_eip_association.eip_assoc[0]
+        module.oxenwagen.aws_eip_association.eip_assoc[1]
+        module.oxenwagen.aws_eip_association.worker_eip_assoc[0]
+        module.oxenwagen.aws_instance.web[0]
+        module.oxenwagen.aws_instance.web[1]
+        module.oxenwagen.aws_instance.worker[0]
+        module.oxenwagen.aws_lb.production
+        module.oxenwagen.aws_lb_target_group.production[0]
+        module.oxenwagen.aws_lb_target_group_attachment.web[0]
+        module.oxenwagen.aws_lb_target_group_attachment.web[1]
+      ]
+    end
+    let(:said) { [] }
+    let(:output) { said.join "\n" }
+    let(:expected_migration) do
+      <<~TEXT.chomp
+        config/subspace/terraform/production/main.tf is still on oxenwagen's count-based variables.  Replace
+        instance_ami, web_instance_count, web_instance_type, web_volume_size and their
+        worker_ equivalents in the module block with:
+
+          web_instances = {
+            "1" = {
+              hostname      = "production-web1"
+              ami           = "ami-0abc"
+              instance_type = "t3.small"
+              volume_size   = 16
+              subnet_id     = "subnet-0a"
+            }
+            "2" = {
+              hostname      = "production-web2"
+              ami           = "ami-0abc"
+              instance_type = "t3.small"
+              volume_size   = 16
+              subnet_id     = "subnet-0b"
+            }
+          }
+          lb_instances = ["1", "2"]
+
+          worker_instances = {
+            "1" = {
+              hostname      = "production-worker1"
+              ami           = "ami-0abc"
+              instance_type = "t3.medium"
+              volume_size   = 100
+              subnet_id     = "subnet-0a"
+            }
+          }
+
+        Re-export the module's outputs at the root of the same file, replacing the
+        single `output "inventory" { value = module.oxenwagen }`:
+
+        output "inventory" { value = module.oxenwagen.inventory }
+        output "web_instances" { value = module.oxenwagen.web_instances }
+        output "worker_instances" { value = module.oxenwagen.worker_instances }
+        output "lb_instances" { value = module.oxenwagen.lb_instances }
+        output "lb_target_group_arn" { value = module.oxenwagen.lb_target_group_arn }
+
+        Add a moved block for every resource still keyed by count:
+
+        moved {
+          from = module.oxenwagen.aws_eip.web[0]
+          to   = module.oxenwagen.aws_eip.web["1"]
+        }
+        moved {
+          from = module.oxenwagen.aws_eip.web[1]
+          to   = module.oxenwagen.aws_eip.web["2"]
+        }
+        moved {
+          from = module.oxenwagen.aws_eip.worker[0]
+          to   = module.oxenwagen.aws_eip.worker["1"]
+        }
+        moved {
+          from = module.oxenwagen.aws_eip_association.eip_assoc[0]
+          to   = module.oxenwagen.aws_eip_association.eip_assoc["1"]
+        }
+        moved {
+          from = module.oxenwagen.aws_eip_association.eip_assoc[1]
+          to   = module.oxenwagen.aws_eip_association.eip_assoc["2"]
+        }
+        moved {
+          from = module.oxenwagen.aws_eip_association.worker_eip_assoc[0]
+          to   = module.oxenwagen.aws_eip_association.worker_eip_assoc["1"]
+        }
+        moved {
+          from = module.oxenwagen.aws_instance.web[0]
+          to   = module.oxenwagen.aws_instance.web["1"]
+        }
+        moved {
+          from = module.oxenwagen.aws_instance.web[1]
+          to   = module.oxenwagen.aws_instance.web["2"]
+        }
+        moved {
+          from = module.oxenwagen.aws_instance.worker[0]
+          to   = module.oxenwagen.aws_instance.worker["1"]
+        }
+        moved {
+          from = module.oxenwagen.aws_lb_target_group_attachment.web[0]
+          to   = module.oxenwagen.aws_lb_target_group_attachment.web["1"]
+        }
+        moved {
+          from = module.oxenwagen.aws_lb_target_group_attachment.web[1]
+          to   = module.oxenwagen.aws_lb_target_group_attachment.web["2"]
+        }
+
+        Then `subspace upgrade production --revendor`, `terraform init`, and
+        `subspace upgrade production --migrate` again to apply them.
+      TEXT
+    end
+
+    before do
+      allow(subject).to receive(:say) { |message| said << message }
+      allow(subject).to receive(:check_module_version!)
+      allow(subject).to receive(:check_module_variables!)
+      allow(subject).to receive(:apply!)
+      allow(terraform).to receive(:resources).and_return resources
+      allow(terraform).to receive(:state_list).and_return state_list
+    end
+
+    context "when main.tf is still on the count-based variables" do
+      let(:main_tf) { count_based_main_tf }
+
+      it "prints the whole migration" do
+        subject.migrate
+
+        expect(output).to eq expected_migration
+      end
+
+      it "prints a slot map built from live state", :aggregate_failures do
+        subject.migrate
+
+        expect(output).to include 'hostname      = "production-web1"'
+        expect(output).to include 'subnet_id     = "subnet-0a"'
+        expect(output).to include "volume_size   = 16"
+      end
+
+      context "with a host renamed by hand" do
+        let(:first_web_hostname) { "production-frontend1" }
+
+        it "takes each hostname from the live Name tag", :aggregate_failures do
+          subject.migrate
+
+          expect(output).to include 'hostname      = "production-frontend1"'
+          expect(output).not_to include '"production-web1"'
+        end
+      end
+
+      it "keys slots from one, not zero", :aggregate_failures do
+        subject.migrate
+
+        expect(output).to match(/"1" = \{\s+hostname\s+= "production-web1"/)
+        expect(output).to match(/"2" = \{\s+hostname\s+= "production-web2"/)
+        expect(output).not_to include '"0" = {'
+      end
+
+      it "attaches every web slot to the load balancer" do
+        subject.migrate
+
+        expect(output).to include 'lb_instances = ["1", "2"]'
+      end
+
+      it "prints a root output for every required output", :aggregate_failures do
+        subject.migrate
+
+        described_class::REQUIRED_ROOT_OUTPUTS.each do |name|
+          expect(output).to include %(output "#{name}" { value = module.oxenwagen.#{name} })
+        end
+      end
+
+      it "prints a moved block for every count-keyed address" do
+        subject.migrate
+
+        expect(output.scan(/^moved \{\n.*?\n\}/m)).to eq [
+          %(moved {\n  from = module.oxenwagen.aws_eip.web[0]\n  to   = module.oxenwagen.aws_eip.web["1"]\n}),
+          %(moved {\n  from = module.oxenwagen.aws_eip.web[1]\n  to   = module.oxenwagen.aws_eip.web["2"]\n}),
+          %(moved {\n  from = module.oxenwagen.aws_eip.worker[0]\n  to   = module.oxenwagen.aws_eip.worker["1"]\n}),
+          %(moved {\n  from = module.oxenwagen.aws_eip_association.eip_assoc[0]\n  to   = module.oxenwagen.aws_eip_association.eip_assoc["1"]\n}),
+          %(moved {\n  from = module.oxenwagen.aws_eip_association.eip_assoc[1]\n  to   = module.oxenwagen.aws_eip_association.eip_assoc["2"]\n}),
+          %(moved {\n  from = module.oxenwagen.aws_eip_association.worker_eip_assoc[0]\n  to   = module.oxenwagen.aws_eip_association.worker_eip_assoc["1"]\n}),
+          %(moved {\n  from = module.oxenwagen.aws_instance.web[0]\n  to   = module.oxenwagen.aws_instance.web["1"]\n}),
+          %(moved {\n  from = module.oxenwagen.aws_instance.web[1]\n  to   = module.oxenwagen.aws_instance.web["2"]\n}),
+          %(moved {\n  from = module.oxenwagen.aws_instance.worker[0]\n  to   = module.oxenwagen.aws_instance.worker["1"]\n}),
+          %(moved {\n  from = module.oxenwagen.aws_lb_target_group_attachment.web[0]\n  to   = module.oxenwagen.aws_lb_target_group_attachment.web["1"]\n}),
+          %(moved {\n  from = module.oxenwagen.aws_lb_target_group_attachment.web[1]\n  to   = module.oxenwagen.aws_lb_target_group_attachment.web["2"]\n}),
+        ]
+      end
+
+      it "applies nothing" do
+        subject.migrate
+
+        expect(subject).not_to have_received :apply!
+      end
+
+      it "reads state without checking the vendored module", :aggregate_failures do
+        subject.migrate
+
+        expect(subject).not_to have_received :check_module_version!
+        expect(subject).not_to have_received :check_module_variables!
+      end
+
+      it "tells the operator to re-vendor before applying" do
+        subject.migrate
+
+        expect(output).to include "Then `subspace upgrade production --revendor`, `terraform init`, and"
+      end
+    end
+
+    context "with web_instances pasted but no lb_instances" do
+      let(:main_tf) do
+        <<~HCL
+          module oxenwagen {
+            source = "github.com/tenforwardconsulting/terraform-subspace-oxenwagen?ref=v2.4.1"
+
+            web_instances = {
+          #{old_web_tf}
+            }
+            worker_instance_type = "t3.medium"
+            worker_instance_count = 1
+            worker_volume_size = 100
+          }
+
+          output "inventory" {
+            value = module.oxenwagen
+          }
+        HCL
+      end
+
+      it "stays on stage one", :aggregate_failures do
+        subject.migrate
+
+        expect(output).to eq expected_migration
+        expect(subject).not_to have_received :apply!
+      end
+    end
+
+    context "when main.tf has been converted" do
+      let(:web_tf) { old_web_tf }
+      let(:worker_tf) { old_worker_tf }
+
+      it "applies with nothing allowed to change" do
+        subject.migrate
+
+        expect(subject).to have_received(:apply!).with({})
+      end
+
+      it "checks the vendored module before applying", :aggregate_failures do
+        subject.migrate
+
+        expect(subject).to have_received :check_module_version!
+        expect(subject).to have_received :check_module_variables!
+      end
+
+      context "without the lb_target_group_arn root output" do
+        before do
+          path = "config/subspace/terraform/production/main.tf"
+          File.write path, File.read(path).sub(/^output "lb_target_group_arn" \{\n.*\n\}\n/, "")
+        end
+
+        it "checks the root outputs before applying", :aggregate_failures do
+          expect { subject.migrate }.to raise_error SystemExit, /does not re-export lb_target_group_arn/
+          expect(subject).not_to have_received :apply!
+        end
+      end
+
+      it "tells the operator to delete the moved blocks" do
+        subject.migrate
+
+        expect(output).to include "Delete the moved blocks from config/subspace/terraform/production/main.tf"
+      end
+
+      context "when nothing is keyed by count" do
+        let(:state_list) do
+          %w[
+            module.oxenwagen.aws_instance.web["1"]
+            module.oxenwagen.aws_instance.web["2"]
+            module.oxenwagen.aws_instance.worker["1"]
+            module.oxenwagen.aws_lb_target_group.production[0]
+          ]
+        end
+
+        it "says it looks migrated", :aggregate_failures do
+          expect { subject.migrate }.to raise_error SystemExit, /looks migrated already/
+          expect(subject).not_to have_received :apply!
+        end
+      end
+    end
+  end
+
+  describe "#migration_instructions" do
+    let(:instructions) { subject.send(:migration_instructions) }
+
+    it "puts --migrate before --revendor", :aggregate_failures do
+      expect(instructions.index("--migrate")).to be < instructions.index("--revendor")
+      expect(instructions).to include "Delete the moved blocks"
     end
   end
 

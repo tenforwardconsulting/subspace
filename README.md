@@ -174,18 +174,74 @@ window is open, starts the old server back up and takes it out of maintenance mo
 Once the IP has moved the new server holds the only current copy of the data, so there is
 no undo: fix forward, or sort it out by hand.
 
-Only workhorse environments are supported so far. `--check` refuses to run a workhorse
-upgrade against anything whose terraform state doesn't look like a workhorse, and it
-requires the workhorse terraform module vendored by subspace 3.1.1 or newer. Older environments get printed migration
-instructions; `subspace upgrade <env> --revendor` automates the file-copying part.
+Workhorse and oxenwagen environments are both supported. `--check` refuses to run an
+upgrade against anything whose terraform state doesn't look like the topology, and it
+requires the terraform module vendored by subspace 3.1.1 or newer. Older workhorse
+environments get printed migration instructions; `subspace upgrade <env> --revendor`
+automates the file-copying part.
+
+#### Oxenwagen upgrades
+
+For oxenwagen, the first step is a one-time migration that converts the terraform config
+from `count`-based instance definitions to slot maps. Run these in order:
+
+    subspace upgrade <env> --migrate           # prints config to paste, read from live state
+                                               # (terraform cannot show old state once the source changes)
+    # paste the printed config into config/subspace/terraform/<env>/main.tf
+    subspace upgrade <env> --revendor          # refuses until the config is pasted
+    terraform -chdir=config/subspace/terraform/<env> init
+    subspace upgrade <env> --migrate           # applies moves and outputs, one reviewed plan
+
+Then delete the `moved` blocks and commit.
+
+Once the config is migrated, the upgrade sequence is:
+
+    subspace upgrade <env> --check             # is this environment upgradeable?
+    subspace upgrade <env> --init              # record the start of an upgrade
+    subspace upgrade <env> --launch            # build the new server set in terraform
+    subspace upgrade <env> --provision         # bootstrap/provision them, re-run until it succeeds
+                                               # connect to tailscale after a fresh tailscale_auth_key is in the vault
+    subspace provision <env> --tags=tailscale_reauth --limit <new host>
+    bundle exec cap <env>_upgrade deploy       # deploy then verify it by hand
+    bundle exec cap <env> deploy               # deploy the same commit to the base stage
+                                               # verify over the tailnet
+    subspace upgrade <env> --cutover           # attach new servers to load balancer
+    subspace upgrade <env> --finalize          # destroy the old servers
+
+New web servers stay out of the load balancer until `--cutover`, which attaches them,
+waits for AWS to report them healthy, then drains and removes the old ones. There is no
+maintenance window and no database copy: the database is RDS and uploads are S3, so
+nothing moves.
+
+Cron is masked on the new workers from `--provision` until `--cutover`, because jobs
+lock themselves but cron entries do not.
+
+`--abort` reaches up to and including `cutting_over`; `--cutover` commits the environment
+to the new set.
+
+**Two things that will trip a first real run:**
+
+1. RDS applies minor version upgrades on its own, so a `database_engine_version` pinned to
+   what was provisioned leaves a permanent non-empty plan and `--check` refuses to start.
+   Update the pin to what RDS is actually running, apply, then upgrade.
+
+2. Every instance needs an elastic IP because the subnets have no NAT gateway, so an
+   upgrade holds two full sets at once. The default regional quota is 5; a three-server
+   environment needs 6. `--check` reports this before `--launch` rather than during it.
+
+The RDS instance, ElastiCache cluster, S3 bucket, IAM user, ACM certificate, load
+balancer itself and the VPC are never in any phase's plan, and `apply!` refuses any plan
+that touches an address the step did not ask for.
 
 ### `subspace db_copy --from <host> --to <host>`
 
 Copies a postgres database between two servers, streaming `pg_dump | pg_restore`
 directly between them over their private network using your forwarded ssh agent, so no
 server-to-server credential is ever created and the bytes don't go through your uplink.
-The two hosts must be able to reach each other, i.e. `allow_instance_ssh = true` has been
+For workhorse, the two hosts must be able to reach each other with `allow_instance_ssh = true`
 applied; `subspace upgrade <env> --copy-db` opens that path for the duration of the copy.
+Oxenwagen has no such setting; the security group already permits traffic between web and
+worker servers.
 
 It refuses to copy from a host that is still serving traffic, or onto a database that
 already holds data, unless you pass `--force`. It prints both servers' `SELECT

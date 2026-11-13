@@ -43,12 +43,6 @@ module Subspace
         resources.find { |resource| resource["type"] == "aws_key_pair" }&.dig("values", "public_key")
       end
 
-      def state_mv(from, to, dry_run: false)
-        args = ["state", "mv"]
-        args << "-dry-run" if dry_run
-        run(*args, from, to)
-      end
-
       def output(name)
         JSON.parse capture("output", "-json", name)
       end

@@ -109,6 +109,12 @@ describe Subspace::Upgrade::Workhorse do
     end
   end
 
+  describe "#migrate" do
+    it "tells the operator workhorse migrates by hand" do
+      expect { subject.migrate }.to raise_error SystemExit, /migrate by hand.*To migrate production/m
+    end
+  end
+
   describe "#launch" do
     let(:options) { double ami: "ami-0new", ubuntu_release: "noble" }
 

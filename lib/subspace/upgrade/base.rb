@@ -16,6 +16,7 @@ module Subspace
         check: :check,
         status: :status,
         revendor: :revendor,
+        migrate: :migrate,
         init: :init,
         launch: :launch,
         provision: :provision,

@@ -11,11 +11,14 @@ This project attempts to follow [semantic versioning](https://semver.org/).
   * Stops showing color if you `sudo su`
 
 ## Unreleased
-  * Add `subspace upgrade <env>` to replace an environment's servers with new ones built from a current AMI (workhorse only so far)
+  * Add `subspace upgrade <env>` to replace an environment's servers with new ones built from a current AMI, for workhorse and oxenwagen environments
   * Add `subspace db_copy --from <host> --to <host>`, streaming pg_dump/pg_restore between two servers over their private network
+  * BREAKING: the oxenwagen terraform module now ships in the gem (`terraform/modules/oxenwagen`, from terraform-subspace-oxenwagen v2.4.1) and `subspace init` copies it instead of cloning.
+  * BREAKING: `instance_ami`, `web_instance_count`, `web_instance_type`, `web_volume_size` and their `worker_` equivalents are replaced by `web_instances`/`worker_instances` slot maps and `lb_instances`.  Existing environments migrate with `subspace upgrade <env> --migrate`, which reads live state and prints the slot maps, outputs and `moved` blocks to paste, then `subspace upgrade <env> --revendor`, `terraform init`, and `--migrate` again, which applies them in one reviewed plan.
   * BREAKING: workhorse environments now need the workhorse terraform module that now ships in the gem (`terraform/modules/workhorse`, terraform-subspace-workhorse v2.0.0), which replaces `instance_ami`/`instance_type`/`instance_volume_size`/`instance_hostname` with a keyed `instances` map.  `subspace upgrade <env> --check` prints the migration steps.
+  * `subspace inventory capistrano` now gives the `db` role to only the first worker host. (Behaviour change, not breaking, for anything with more than one worker.)
   * `subspace init` builds new servers from Ubuntu 26.04 (resolute) instead of 24.04 (noble)
-  * `subspace init` copies the workhorse terraform module out of the gem (oxenwagen is still cloned) into the project, with a `module.yml` manifest recording the subspace version and file checksums, instead of referencing it by git URL
+  * `subspace init` copies the workhorse terraform module out of the gem (`terraform/modules/workhorse`) into the project, with a `module.yml` manifest recording the subspace version and file checksums, instead of referencing it by git URL
 
 ## 3.1.2
   * Adds Newrelic infra config to enable server process metrics collection

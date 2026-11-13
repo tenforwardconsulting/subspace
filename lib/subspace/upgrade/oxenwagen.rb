@@ -28,6 +28,25 @@ module Subspace
         super
       end
 
+      # Once the module source changes, terraform can no longer show the count-based state
+      # that --migrate reads the slot maps from.
+      def revendor
+        unless converted?
+          abort "Run `subspace upgrade #{env} --migrate` and paste what it prints before re-vendoring.\n\n#{migration_instructions}"
+        end
+        super
+      end
+
+      def migrate
+        if converted?
+          check_module_version!
+          check_module_variables!
+          apply_moves!
+        else
+          print_migration!
+        end
+      end
+
       def launch
         state.require_phase! "initialized", "launching"
         if state.phase == "initialized"
@@ -210,6 +229,18 @@ module Subspace
         EOS
       end
 
+      def converted?
+        config.has_argument?("web_instances") && config.has_argument?("lb_instances")
+      end
+
+      # Everything the count-based module indexed by position, which the slot module keys instead
+      def count_addresses
+        resources = RESOURCES_PER_SLOT.values.flatten
+        terraform.state_list.select do |address|
+          resources.any? { |name| address.match?(/(\A|\.)#{Regexp.escape name}\[\d+\]\z/) }
+        end
+      end
+
       def add_next_instances!
         state["to_ami"] = target_ami
         state["ubuntu_release"] = options.ami ? options.ubuntu_release : ubuntu_release
@@ -354,6 +385,21 @@ module Subspace
         EOS
       end
 
+      def apply_moves!
+        if count_addresses.empty?
+          abort "Nothing in #{env}'s state is still keyed by count.  It looks migrated already."
+        end
+        check_root_outputs!
+
+        say "The plan must only move resources and change outputs.  A slot whose subnet_id, ami,"
+        say "instance_type or volume_size does not match its server shows up as a replacement,"
+        say "and is refused before anything is applied."
+        apply!({})
+        say ""
+        say "#{env} is on instance slots.  Delete the moved blocks from #{config.path},"
+        say "commit the config diff, then `subspace upgrade #{env} --check`."
+      end
+
       def detach_new!
         attached = config.list_argument "lb_instances"
         return if (to_slots("web") & attached).empty?
@@ -484,6 +530,54 @@ module Subspace
 
       # --------------------------------------------------------- output
 
+      def print_migration!
+        say "#{config.path} is still on #{template}'s count-based variables.  Replace"
+        say "instance_ami, web_instance_count, web_instance_type, web_volume_size and their"
+        say "worker_ equivalents in the module block with:"
+        say ""
+        instances = terraform.resources.select { |resource| resource["type"] == "aws_instance" }
+        %w[web worker].each do |kind|
+          say slot_map_hcl(kind, instances)
+          say ""
+        end
+        say "Re-export the module's outputs at the root of the same file, replacing the"
+        say "single `output \"inventory\" { value = module.#{config.module_name} }`:"
+        say ""
+        self.class::REQUIRED_ROOT_OUTPUTS.each do |name|
+          say %(output "#{name}" { value = module.#{config.module_name}.#{name} })
+        end
+        say ""
+        say "Add a moved block for every resource still keyed by count:"
+        say ""
+        count_addresses.each do |from|
+          say "moved {"
+          say "  from = #{from}"
+          say "  to   = #{from.sub(/\[(\d+)\]\z/) { %(["#{$1.to_i + 1}"]) }}"
+          say "}"
+        end
+        say ""
+        say "Then `subspace upgrade #{env} --revendor`, `terraform init`, and"
+        say "`subspace upgrade #{env} --migrate` again to apply them."
+      end
+
+      def slot_map_hcl(kind, instances)
+        slots = instances.select { |instance| instance["name"] == kind }.sort_by { |instance| instance["index"] }
+        lines = ["  #{kind}_instances = {"]
+        slots.each do |slot|
+          values = slot["values"]
+          lines << %(    "#{slot["index"] + 1}" = {)
+          lines << %(      hostname      = "#{values["tags"]["Name"]}")
+          lines << %(      ami           = "#{values["ami"]}")
+          lines << %(      instance_type = "#{values["instance_type"]}")
+          lines << %(      volume_size   = #{values["root_block_device"][0]["volume_size"]})
+          lines << %(      subnet_id     = "#{values["subnet_id"]}")
+          lines << "    }"
+        end
+        lines << "  }"
+        lines << "  lb_instances = [#{slots.map { |slot| %("#{slot["index"] + 1}") }.join ", "}]" if kind == "web"
+        lines.join "\n"
+      end
+
       def slot_summary
         %w[web worker].flat_map do |kind|
           slots_for(kind).map do |from_slot, slot|
@@ -569,13 +663,15 @@ module Subspace
         <<~EOS
           To migrate #{env} (one time, no downtime):
 
-            1. Re-vendor the module:
+            1. Print the slot maps, root outputs and moved blocks, read from live state:
+                 subspace upgrade #{env} --migrate
+            2. Paste them into #{config.path} as it says.
+            3. Re-vendor and install the module:
                  subspace upgrade #{env} --revendor   # copies the module from subspace #{Subspace::VERSION}, keeps a .bak
-            2. Install the vendored module:
                  terraform init
-            3. Convert this environment to instance slots:
-                 subspace upgrade #{env} --migrate    # prints the exact config and state moves,
-                                                      # then makes them and proves the plan is empty
+            4. Apply the moves in one reviewed plan that must change no resource:
+                 subspace upgrade #{env} --migrate
+            5. Delete the moved blocks and commit the config diff.
         EOS
       end
     end

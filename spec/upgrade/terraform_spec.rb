@@ -77,16 +77,4 @@ describe Subspace::Upgrade::Terraform do
       expect(subject.key_pair_public_key).to eq "ssh-rsa AAAA..."
     end
   end
-
-  describe "#state_mv" do
-    it "passes -dry-run only when asked", :aggregate_failures do
-      allow(subject).to receive(:run)
-
-      subject.state_mv("a", "b")
-      expect(subject).to have_received(:run).with("state", "mv", "a", "b")
-
-      subject.state_mv("a", "b", dry_run: true)
-      expect(subject).to have_received(:run).with("state", "mv", "-dry-run", "a", "b")
-    end
-  end
 end

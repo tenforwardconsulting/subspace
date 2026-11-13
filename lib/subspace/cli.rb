@@ -183,40 +183,44 @@ class Subspace::Cli
       c.syntax = 'subspace upgrade [environment]'
       c.summary = 'Replace an environment\'s servers with new ones built from a current AMI'
       c.description = <<~EOS
-        Builds a new server beside the existing one, moves the environment onto it, and
-        destroys the old one.  Each phase stops at a point where it is safe to walk away,
-        because the deploy and the verification in between are yours to do.
+        Workhorse replaces a single server in a maintenance window and copies the database across.
+        Oxenwagen replaces a whole set of web and worker servers behind a load balancer with no
+        maintenance window and no database copy, because the database and uploads are shared.
 
-        Every server must be on the tailnet and addressed by its tailscale IP in the inventory
-        and the capistrano stage, so neither changes when the elastic IP moves.
+        Each phase stops at a point where it is safe to walk away, because the deploy and the
+        verification in between are yours to do.  Every server must be on the tailnet and addressed
+        by its tailscale IP in the inventory and the capistrano stage, so neither changes when the
+        elastic IP moves.
 
         Phases, in order:
 
         --check               is this environment upgradeable?  (runs before every other phase)
         --revendor            re-vendor the terraform module at the version upgrades need
+        --migrate             convert an existing environment to instance slots (oxenwagen)
         --init                record the start of an upgrade
-        --launch              build the new server and add it to the inventory
-        --provision           bootstrap and provision the new server (re-runnable)
-        --copy-db             open the maintenance window and copy the database across
-        --cutover             move the elastic IP and close the maintenance window
-        --finalize            dump the old database, then destroy the old server
+        --launch              build the new server(s) and add them to the inventory
+        --provision           bootstrap and provision the new server(s) (re-runnable)
+        --copy-db             open the maintenance window and copy the database across (workhorse only)
+        --cutover             move traffic to the new server(s) and end the maintenance window (if any)
+        --finalize            destroy the old server(s)
         --status              where is this upgrade, and what is next?
-        --abort               before a cutover: destroy the new server and forget the upgrade
-        --close-instance-ssh  close the ssh path between the servers that --launch opens before --finalize
+        --abort               before a cutover: destroy the new server(s) and forget the upgrade
+        --close-instance-ssh  close the ssh path between the servers that --launch opens (workhorse only)
         EOS
       c.example 'check whether production can be upgraded', 'subspace upgrade production --check'
       c.example 'build the replacement server', 'subspace upgrade production --launch'
       c.option '--check', 'Verify this environment is upgradeable and stop'
       c.option '--revendor', 'Re-vendor the terraform module and print the migration steps'
+      c.option '--migrate', 'Convert an existing oxenwagen environment to instance slots'
       c.option '--init', 'Record the start of an upgrade in upgrade.yml'
       c.option '--status', 'Report the phase of the upgrade and the next step'
-      c.option '--launch', 'Build the new server and add it to the inventory'
-      c.option '--provision', 'Bootstrap and provision the new server'
-      c.option '--copy-db', 'Open the maintenance window and copy the database to the new server'
-      c.option '--cutover', 'Move the elastic IP to the new server and end the maintenance window'
-      c.option '--finalize', 'Destroy the old server'
-      c.option '--abort', 'Destroy the new server (only before a cutover)'
-      c.option '--close-instance-ssh', 'Close the temporary ssh path between the servers'
+      c.option '--launch', 'Build the new server(s) and add them to the inventory'
+      c.option '--provision', 'Bootstrap and provision the new server(s) (re-runnable)'
+      c.option '--copy-db', 'Open the maintenance window and copy the database to the new server (workhorse only)'
+      c.option '--cutover', 'Move traffic to the new server(s) and end the maintenance window (if any)'
+      c.option '--finalize', 'Destroy the old server(s)'
+      c.option '--abort', 'Destroy the new server(s) (only before a cutover)'
+      c.option '--close-instance-ssh', 'Close the temporary ssh path between the servers (workhorse only)'
       c.option '--ubuntu-release RELEASE', "Ubuntu release to build the new server from (default: #{Subspace::Ami::DEFAULT_RELEASE})"
       c.option '--ami AMI', 'Use this AMI instead of looking one up'
       c.when_called Subspace::Commands::Upgrade

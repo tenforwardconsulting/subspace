@@ -12,6 +12,10 @@ module Subspace
       STATE_REQUIRES = ["aws_instance.single"]
       STATE_FORBIDS = ["aws_lb", "aws_db_instance"]
 
+      def migrate
+        abort "#{template} environments migrate by hand.\n\n#{migration_instructions}"
+      end
+
       def launch
         state.require_phase! "initialized", "launching"
         if state.phase == "initialized"
