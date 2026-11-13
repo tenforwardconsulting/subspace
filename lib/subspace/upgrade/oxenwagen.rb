@@ -531,11 +531,11 @@ module Subspace
       # --------------------------------------------------------- output
 
       def print_migration!
+        instances = terraform.resources.select { |resource| resource["type"] == "aws_instance" }
         say "#{config.path} is still on #{template}'s count-based variables.  Replace"
         say "instance_ami, web_instance_count, web_instance_type, web_volume_size and their"
         say "worker_ equivalents in the module block with:"
         say ""
-        instances = terraform.resources.select { |resource| resource["type"] == "aws_instance" }
         %w[web worker].each do |kind|
           say slot_map_hcl(kind, instances)
           say ""

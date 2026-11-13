@@ -118,6 +118,7 @@ module Subspace
           EOS
         end
         update_gitignore!
+        first_vendor = manifest.nil?
 
         backup = "#{module_dir}.bak"
         if Dir.exist? module_dir
@@ -133,6 +134,7 @@ module Subspace
         config.module_source = "./modules/#{template}"
         config.save
 
+        return unless first_vendor
         say ""
         say migration_instructions
       end

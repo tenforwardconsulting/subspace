@@ -691,6 +691,12 @@ describe Subspace::Upgrade::Workhorse do
       expect(Subspace::Upgrade::ModuleManifest.read(module_dir)["version"]).to eq Subspace::VERSION
     end
 
+    it "prints the migration instructions" do
+      subject.revendor
+
+      expect(subject).to have_received(:say).with(/To migrate production/)
+    end
+
     context "when the vendored module was edited since it was vendored" do
       before do
         FileUtils.mkdir_p File.dirname(module_dir)
@@ -737,6 +743,12 @@ describe Subspace::Upgrade::Workhorse do
 
         expect(Dir.exist?("#{module_dir}.bak")).to be true
         expect(Subspace::Upgrade::ModuleManifest.modified_files(module_dir)).to eq []
+      end
+
+      it "does not print the migration instructions" do
+        subject.revendor
+
+        expect(subject).not_to have_received(:say).with(/To migrate production/)
       end
     end
   end
