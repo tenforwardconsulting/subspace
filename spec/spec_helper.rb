@@ -1,6 +1,7 @@
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'subspace'
 require 'stringio'
+require 'highline'
 
 # A spec that misses a stub fails naming the binary, rather than running real terraform or aws.
 ENV["PATH"] = "#{File.expand_path("bin", __dir__)}:#{ENV["PATH"]}"

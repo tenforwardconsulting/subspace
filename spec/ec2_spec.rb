@@ -14,7 +14,7 @@ describe Subspace::Ec2 do
         .and_return ["5.0\n", "", quota_status]
       allow(Open3).to receive(:capture3)
         .with("aws", "--profile", "subspace-test", "ec2", "describe-addresses",
-          "--query", "length(Addresses)", "--output", "text")
+          "--query", "length(Addresses[?ServiceManaged==null])", "--output", "text")
         .and_return ["3\n", "", addresses_status]
     end
 

@@ -7,7 +7,7 @@ module Subspace
         "aws service-quotas get-service-quota failed in profile #{profile}.  " \
           "Grant servicequotas:GetServiceQuota to that profile's user:\n#{stderr}"
       end
-      in_use = aws(profile, "ec2", "describe-addresses", "--query", "length(Addresses)", "--output", "text") do |stderr|
+      in_use = aws(profile, "ec2", "describe-addresses", "--query", "length(Addresses[?ServiceManaged==null])", "--output", "text") do |stderr|
         "aws ec2 describe-addresses failed in profile #{profile}:\n#{stderr}"
       end
 
