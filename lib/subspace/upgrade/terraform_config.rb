@@ -39,7 +39,7 @@ module Subspace
         @source.insert @source.rindex("\n", map_range(map).end) + 1, "#{lines.join("\n")}\n"
       end
 
-      def remove_instance(key, map: "instances")
+      def remove_instance(key, map = "instances")
         range = entry_ranges(map)[key] or raise "There is no slot #{key} in #{path}"
 
         @source[(@source.rindex("\n", range.begin) + 1)..@source.index("\n", range.end)] = ""
@@ -81,7 +81,7 @@ module Subspace
       end
 
       def set_list_argument(name, values)
-        set_argument name, "[#{values.map { |value| %("#{value}") }.join ", "}]"
+        @source.sub!(/^([ \t]*#{name}[ \t]*=[ \t]*)\[[^\]]*\]/) { "#{$1}[#{values.map { |value| %("#{value}") }.join ", "}]" }
       end
 
       def save

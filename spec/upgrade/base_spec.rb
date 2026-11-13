@@ -171,6 +171,15 @@ describe Subspace::Upgrade::Workhorse do
       end
     end
 
+    context "when the plan leaves out an address the step permits" do
+      let(:changes) { expected_changes }
+
+      it "applies the saved plan" do
+        subject.send :apply!, subject.send(:instance_ssh_change).merge(subject.send(:address, "aws_eip.single") => ["create"])
+        expect(terraform).to have_received :apply_plan
+      end
+    end
+
     context "when the operator declines the plan" do
       let(:changes) { close_changes }
 
@@ -473,35 +482,6 @@ describe Subspace::Upgrade::Workhorse do
 
       it "aborts" do
         expect { subject.send :check_state_fingerprint! }.to raise_error SystemExit, /Has it been applied\?/
-      end
-    end
-  end
-
-  describe "#slot_summary" do
-    before { allow(subject).to receive(:state).and_return(state) }
-
-    context "with no upgrade in progress" do
-      let(:state) { {} }
-
-      it "is empty before a slot is picked" do
-        expect(subject.send :slot_summary).to eq([])
-      end
-    end
-
-    context "with a slot picked" do
-      let(:state) do
-        {
-          "from_slot" => "1",
-          "from_ami" => "ami-0abc",
-          "to_slot" => "2",
-          "to_ami" => "ami-0def"
-        }
-      end
-
-      it "names both slots and their amis once one is picked" do
-        expect(subject.send :slot_summary).to eq(
-          ["Slots:     1 (ami-0abc) => 2 (ami-0def)"]
-        )
       end
     end
   end

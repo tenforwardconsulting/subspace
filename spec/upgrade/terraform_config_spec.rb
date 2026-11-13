@@ -273,7 +273,7 @@ describe Subspace::Upgrade::TerraformConfig do
 
     describe "#remove_instance" do
       it "removes from the named map", :aggregate_failures do
-        subject.remove_instance "1", map: "worker_instances"
+        subject.remove_instance "1", "worker_instances"
         subject.save
 
         reread = described_class.new @path
@@ -301,6 +301,19 @@ describe Subspace::Upgrade::TerraformConfig do
         expect(content).to include '  lb_instances = ["2", "3"]'
         reread = described_class.new @path
         expect(reread.list_argument("lb_instances")).to eq %w[2 3]
+      end
+
+      context "with the list spread over several lines" do
+        before { File.write @path, main_tf.sub(%(lb_instances = ["1"]), %(lb_instances = [\n    "1",\n  ])) }
+
+        it "rewrites the whole list", :aggregate_failures do
+          subject.set_list_argument "lb_instances", %w[2 3]
+          subject.save
+
+          content = File.read @path
+          expect(content).to include %(  lb_instances = ["2", "3"]\n  active_instance = "1")
+          expect(described_class.new(@path).list_argument("lb_instances")).to eq %w[2 3]
+        end
       end
     end
 

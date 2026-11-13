@@ -520,6 +520,15 @@ describe Subspace::Upgrade::Oxenwagen do
       end
     end
 
+    context "without a server line in the base stage" do
+      let(:base_stage) { %(set :branch, "main"\n) }
+
+      it "refuses", :aggregate_failures do
+        expect { subject.provision }.to raise_error SystemExit, /No server line in config\/deploy\/production.rb/
+        expect(File).not_to exist "config/deploy/production_upgrade.rb"
+      end
+    end
+
     it "advances to prepared" do
       subject.provision
 
@@ -640,7 +649,8 @@ describe Subspace::Upgrade::Oxenwagen do
       subject.cutover
 
       expect(subject).to have_received(:playbook)
-        .with("upgrade_verify_worker", "production-worker2", upgrade_host: "production-worker2")
+        .with("upgrade_verify_worker", %w[production-worker2 production-worker1],
+          upgrade_host: "production-worker2", from_host: "production-worker1")
       expect(subject).not_to have_received(:playbook).with("upgrade_verify", "production-worker2", any_args)
     end
 
@@ -1064,6 +1074,15 @@ describe Subspace::Upgrade::Oxenwagen do
       end
     end
 
+    context "when main.tf is still on the count-based variables" do
+      let(:main_tf) { count_based_main_tf }
+
+      it "points at --migrate" do
+        expect { subject.check }.to raise_error SystemExit,
+          /still on oxenwagen's count-based variables.*subspace upgrade production --migrate/m
+      end
+    end
+
     it "refuses when the region has no room for the new elastic IPs" do
       allow(Subspace::Ec2).to receive(:elastic_ip_headroom).and_return 2
 
@@ -1441,6 +1460,37 @@ describe Subspace::Upgrade::Oxenwagen do
           expect(subject).not_to have_received :apply!
         end
       end
+    end
+  end
+
+  describe "#next_hostname" do
+    it "skips taken names" do
+      expect(subject.send(:next_hostname, "production-web1", %w[production-web1 production-web2])).to eq "production-web3"
+    end
+
+    it "keeps zero padding" do
+      expect(subject.send(:next_hostname, "production-web01", %w[production-web01])).to eq "production-web02"
+    end
+  end
+
+  describe "#count_addresses" do
+    before do
+      allow(terraform).to receive(:state_list).and_return %w[
+        aws_instance.web[0]
+        module.oxenwagen.aws_route53_record.web[0]
+        module.oxenwagen.aws_route53_record.worker[0]
+        module.oxenwagen.aws_lb_target_group.production[0]
+        module.oxenwagen.aws_instance.web["1"]
+        module.oxenwagen.aws_instance.webby[0]
+      ]
+    end
+
+    it "finds every per-slot resource keyed by count, inside a module or not" do
+      expect(subject.send(:count_addresses)).to eq %w[
+        aws_instance.web[0]
+        module.oxenwagen.aws_route53_record.web[0]
+        module.oxenwagen.aws_route53_record.worker[0]
+      ]
     end
   end
 

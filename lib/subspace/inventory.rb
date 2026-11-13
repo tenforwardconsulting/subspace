@@ -55,6 +55,26 @@ module Subspace
       inventory
     end
 
+    # The db role runs migrations, so exactly one host may hold it.
+    def self.server_lines(hosts)
+      db_claimed = false
+      hosts.map do |host|
+        roles = host.group_list.flat_map do |group_name|
+          if group_name =~ /web/
+            ["web", "app"]
+          elsif group_name =~ /worker/
+            next ["app"] if db_claimed
+
+            db_claimed = true
+            ["app", "db"]
+          else
+            []
+          end
+        end.uniq
+        "server '#{host.vars["ansible_host"]}', user: 'deploy', roles: %w{#{roles.join(" ")}} # #{host.vars["hostname"]}"
+      end
+    end
+
     def write(path=nil)
       File.write(@path || path, self.to_yml)
     end

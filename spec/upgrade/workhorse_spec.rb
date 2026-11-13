@@ -994,4 +994,33 @@ describe Subspace::Upgrade::Workhorse do
       end
     end
   end
+
+  describe "#slot_summary" do
+    before { allow(subject).to receive(:state).and_return(state) }
+
+    context "with no upgrade in progress" do
+      let(:state) { {} }
+
+      it "is empty before a slot is picked" do
+        expect(subject.send :slot_summary).to eq([])
+      end
+    end
+
+    context "with a slot picked" do
+      let(:state) do
+        {
+          "from_slot" => "1",
+          "from_ami" => "ami-0abc",
+          "to_slot" => "2",
+          "to_ami" => "ami-0def"
+        }
+      end
+
+      it "names both slots and their amis once one is picked" do
+        expect(subject.send :slot_summary).to eq(
+          ["Slots:     1 (ami-0abc) => 2 (ami-0def)"]
+        )
+      end
+    end
+  end
 end

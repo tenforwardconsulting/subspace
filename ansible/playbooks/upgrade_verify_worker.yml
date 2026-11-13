@@ -1,6 +1,19 @@
 ---
-# A worker has no puma.  Assert it is deployed, its background units are up, and cron is still
-# masked -- --provision masks it so two workers never run the same cron entry.
+# A worker has no puma.  Assert it is deployed, runs every background unit the worker it
+# replaces runs, and cron is still masked -- --provision masks it so two workers never run the
+# same cron entry.  A worker with no background units (cron or redis only) needs none.
+- name: Find the background units the old worker runs
+  hosts: "{{ from_host }}"
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Find the running background units
+      shell: >-
+        systemctl list-units --type=service --state=active --no-legend --plain
+        'sidekiq*' 'resque*' 'delayed_job*' | awk '{print $1}'
+      changed_when: false
+      register: old_units
+
 - name: Verify a worker is ready to take over
   hosts: "{{ upgrade_host }}"
   gather_facts: false
@@ -25,12 +38,14 @@
       changed_when: false
       register: running_units
 
-    - name: Assert a background worker is running
+    - name: Assert it runs every background unit the old worker does
+      vars:
+        missing_units: "{{ hostvars[from_host].old_units.stdout_lines | difference(running_units.stdout_lines) }}"
       assert:
-        that: running_units.stdout_lines | length > 0
+        that: missing_units | length == 0
         fail_msg: >-
-          No sidekiq, resque or delayed_job unit is active on {{ inventory_hostname }}.
-          Deploy to it and read the unit logs before cutting over.
+          {{ missing_units | join(", ") }} {{ "is" if missing_units | length == 1 else "are" }} active on {{ from_host }}
+          but not on {{ inventory_hostname }}.  Deploy to it and read the unit logs before cutting over.
 
     - name: Check whether cron is masked
       become: true
