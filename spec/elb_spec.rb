@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'subspace/upgrade'
 
-describe Subspace::Upgrade::Elb do
+describe Subspace::Elb do
   describe ".target_health" do
     let(:status) { instance_double Process::Status, success?: true }
 
@@ -26,7 +26,7 @@ describe Subspace::Upgrade::Elb do
       end
 
       it "maps each target id to its state" do
-        result = described_class.target_health("arn:aws:elasticloadbalancing:...", profile: "subspace-test")
+        result = described_class.target_health("arn:aws:elasticloadbalancing:...", profile: "subspace-test", region: "us-west-2")
         expect(result).to eq({ "i-1" => "healthy", "i-2" => "unhealthy" })
       end
     end
@@ -37,7 +37,7 @@ describe Subspace::Upgrade::Elb do
       end
 
       it "is empty" do
-        result = described_class.target_health("arn:aws:elasticloadbalancing:...", profile: "subspace-test")
+        result = described_class.target_health("arn:aws:elasticloadbalancing:...", profile: "subspace-test", region: "us-west-2")
         expect(result).to eq({})
       end
     end
@@ -47,7 +47,7 @@ describe Subspace::Upgrade::Elb do
       let(:stdout) { "" }
 
       it "aborts naming the profile" do
-        expect { described_class.target_health("arn:aws:...", profile: "subspace-test") }
+        expect { described_class.target_health("arn:aws:...", profile: "subspace-test", region: "us-west-2") }
           .to raise_error(SystemExit)
           .and output(/describe-target-health failed in profile subspace-test/).to_stderr
       end

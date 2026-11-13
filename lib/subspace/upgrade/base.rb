@@ -511,7 +511,7 @@ module Subspace
       end
 
       def target_ami
-        options.ami || Subspace::Ami.latest(release: ubuntu_release, profile: aws_profile)
+        options.ami || Subspace::Ami.latest(release: ubuntu_release, profile: aws_profile, region: config.aws_region)
       end
 
       def playbook_or_abort(name, hostname, **extra_vars)

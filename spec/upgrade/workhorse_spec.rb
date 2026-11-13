@@ -16,6 +16,7 @@ describe Subspace::Upgrade::Workhorse do
     <<~HCL
       module workhorse {
         source = "./modules/workhorse"
+        aws_region = "us-west-2"
 
         instances = {
           "1" = {
@@ -122,6 +123,7 @@ describe Subspace::Upgrade::Workhorse do
       <<~HCL
         module workhorse {
           source = "./modules/workhorse"
+          aws_region = "us-west-2"
 
           instances = {
             "1" = {
@@ -286,7 +288,7 @@ describe Subspace::Upgrade::Workhorse do
       it "launches the latest ami for the release", :aggregate_failures do
         subject.launch
 
-        expect(Subspace::Ami).to have_received(:latest).with(release: "noble", profile: "subspace-test_project")
+        expect(Subspace::Ami).to have_received(:latest).with(release: "noble", profile: "subspace-test_project", region: "us-west-2")
         expect(Subspace::Upgrade::State.read("production")["to_ami"]).to eq "ami-0latest"
       end
 

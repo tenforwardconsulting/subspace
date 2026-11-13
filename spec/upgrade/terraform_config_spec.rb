@@ -7,6 +7,7 @@ describe Subspace::Upgrade::TerraformConfig do
     <<~HCL
       module workhorse {
         source = "./modules/workhorse"
+        aws_region = "us-west-2"
         project_name = "my_project"
         instance_user = "ubuntu"
 
@@ -35,6 +36,10 @@ describe Subspace::Upgrade::TerraformConfig do
 
   it "reads the module name" do
     expect(subject.module_name).to eq "workhorse"
+  end
+
+  it "reads the module's aws_region" do
+    expect(subject.aws_region).to eq "us-west-2"
   end
 
   it "reads the instances map, keeping literals as written" do

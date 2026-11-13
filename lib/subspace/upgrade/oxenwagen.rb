@@ -220,7 +220,7 @@ module Subspace
       # two sets at once, so a default quota of 5 stops a 3-server environment half-applied.
       def check_elastic_ip_headroom!
         needed = new_elastic_ips
-        headroom = Ec2.elastic_ip_headroom profile: aws_profile
+        headroom = Ec2.elastic_ip_headroom profile: aws_profile, region: config.aws_region
         return if headroom >= needed
 
         abort <<~EOS
@@ -455,7 +455,7 @@ module Subspace
       end
 
       def target_states(instance_ids)
-        health = Elb.target_health terraform.output("lb_target_group_arn"), profile: aws_profile
+        health = Elb.target_health terraform.output("lb_target_group_arn"), profile: aws_profile, region: config.aws_region
         instance_ids.to_h { |id| [id, health[id]] }
       end
 

@@ -8,19 +8,19 @@ describe Subspace::Ec2 do
 
     before do
       allow(Open3).to receive(:capture3)
-        .with("aws", "--profile", "subspace-test", "service-quotas", "get-service-quota",
+        .with("aws", "--profile", "subspace-test", "--region", "us-west-2", "service-quotas", "get-service-quota",
           "--service-code", "ec2", "--quota-code", "L-0263D0A3",
           "--query", "Quota.Value", "--output", "text")
         .and_return ["5.0\n", "", quota_status]
       allow(Open3).to receive(:capture3)
-        .with("aws", "--profile", "subspace-test", "ec2", "describe-addresses",
+        .with("aws", "--profile", "subspace-test", "--region", "us-west-2", "ec2", "describe-addresses",
           "--query", "length(Addresses[?ServiceManaged==null])", "--output", "text")
         .and_return ["3\n", "", addresses_status]
     end
 
     context "when both calls succeed" do
       it "is the quota less the addresses in use" do
-        result = described_class.elastic_ip_headroom(profile: "subspace-test")
+        result = described_class.elastic_ip_headroom(profile: "subspace-test", region: "us-west-2")
         expect(result).to eq 2
       end
     end
@@ -29,7 +29,7 @@ describe Subspace::Ec2 do
       let(:quota_status) { instance_double Process::Status, success?: false }
 
       it "names the permission" do
-        expect { described_class.elastic_ip_headroom(profile: "subspace-test") }
+        expect { described_class.elastic_ip_headroom(profile: "subspace-test", region: "us-west-2") }
           .to raise_error(SystemExit)
           .and output(/servicequotas:GetServiceQuota/).to_stderr
       end
@@ -39,7 +39,7 @@ describe Subspace::Ec2 do
       let(:addresses_status) { instance_double Process::Status, success?: false }
 
       it "aborts naming the profile" do
-        expect { described_class.elastic_ip_headroom(profile: "subspace-test") }
+        expect { described_class.elastic_ip_headroom(profile: "subspace-test", region: "us-west-2") }
           .to raise_error(SystemExit)
           .and output(/describe-addresses failed in profile subspace-test/).to_stderr
       end

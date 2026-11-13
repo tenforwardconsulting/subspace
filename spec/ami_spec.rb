@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'subspace/ami'
 
 describe Subspace::Ami do
-  subject { described_class.latest release: "noble", profile: "subspace-atlas" }
+  subject { described_class.latest release: "noble", profile: "subspace-atlas", region: "us-west-2" }
 
   let(:stdout) { "ami-0old\t2025-01-01T00:00:00.000Z\nami-0new\t2025-06-01T00:00:00.000Z\n" }
   let(:status) { instance_double Process::Status, success?: true }

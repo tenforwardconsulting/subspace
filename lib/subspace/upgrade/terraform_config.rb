@@ -65,6 +65,10 @@ module Subspace
         set_argument "allow_instance_ssh", value.to_s
       end
 
+      def aws_region
+        @source[/^[ \t]*aws_region[ \t]*=[ \t]*"([^"]*)"/, 1] or raise "#{path} has no `aws_region`."
+      end
+
       def has_argument?(name)
         @source.match?(/^[ \t]*#{name}[ \t]*=/)
       end

@@ -82,6 +82,7 @@ describe Subspace::Upgrade::Oxenwagen do
     <<~HCL
       module oxenwagen {
         source = "./modules/oxenwagen"
+        aws_region = "us-west-2"
 
         web_instances = {
       #{web_tf}
@@ -238,7 +239,7 @@ describe Subspace::Upgrade::Oxenwagen do
     allow(subject).to receive(:sleep)
     allow(subject).to receive(:terraform).and_return terraform
     allow(terraform).to receive(:output) { |name| terraform_outputs.fetch name }
-    allow(Subspace::Upgrade::Elb).to receive(:target_health).and_return target_health
+    allow(Subspace::Elb).to receive(:target_health).and_return target_health
     allow(Subspace::Ec2).to receive(:elastic_ip_headroom).and_return 10
   end
 
@@ -589,7 +590,7 @@ describe Subspace::Upgrade::Oxenwagen do
 
     it "waits for AWS to call the new targets healthy before detaching" do
       replies = [{ "i-0web3" => "initial", "i-0web4" => "initial" }, target_health, target_health]
-      allow(Subspace::Upgrade::Elb).to receive(:target_health) do
+      allow(Subspace::Elb).to receive(:target_health) do
         events << :target_health
         replies.shift
       end
@@ -601,7 +602,7 @@ describe Subspace::Upgrade::Oxenwagen do
     end
 
     it "refuses to detach the old servers when the new ones never become healthy", :aggregate_failures do
-      allow(Subspace::Upgrade::Elb).to receive(:target_health).and_return("i-0web3" => "unhealthy", "i-0web4" => "unhealthy")
+      allow(Subspace::Elb).to receive(:target_health).and_return("i-0web3" => "unhealthy", "i-0web4" => "unhealthy")
 
       expect { subject.cutover }.to raise_error SystemExit, /has not reported the new web servers healthy/
       expect(subject.config.list_argument("lb_instances")).to eq %w[1 2 3 4]
@@ -609,19 +610,19 @@ describe Subspace::Upgrade::Oxenwagen do
     end
 
     it "aborts when one of several new servers is unhealthy" do
-      allow(Subspace::Upgrade::Elb).to receive(:target_health).and_return("i-0web3" => "healthy", "i-0web4" => "initial")
+      allow(Subspace::Elb).to receive(:target_health).and_return("i-0web3" => "healthy", "i-0web4" => "initial")
 
       expect { subject.cutover }.to raise_error SystemExit, /i-0web4 initial/
     end
 
     it "treats a target AWS has dropped as drained", :aggregate_failures do
       expect { subject.cutover }.not_to raise_error
-      expect(Subspace::Upgrade::Elb).to have_received(:target_health).twice
+      expect(Subspace::Elb).to have_received(:target_health).twice
       expect(subject).not_to have_received :sleep
     end
 
     it "sends the operator back to --cutover when draining times out", :aggregate_failures do
-      allow(Subspace::Upgrade::Elb).to receive(:target_health)
+      allow(Subspace::Elb).to receive(:target_health)
         .and_return("i-0web1" => "draining", "i-0web2" => "draining", "i-0web3" => "healthy", "i-0web4" => "healthy")
 
       expect { subject.cutover }.to raise_error SystemExit, /re-run `subspace upgrade production --cutover`/
@@ -913,7 +914,7 @@ describe Subspace::Upgrade::Oxenwagen do
         let(:lb_record) { { "lb_attached" => true } }
 
         it "detaches and drains the new servers first when a cutover had attached them", :aggregate_failures do
-          allow(Subspace::Upgrade::Elb).to receive(:target_health) do
+          allow(Subspace::Elb).to receive(:target_health) do
             events << :target_health
             target_health
           end
@@ -1054,6 +1055,12 @@ describe Subspace::Upgrade::Oxenwagen do
       allow(Subspace::Ec2).to receive(:elastic_ip_headroom).and_return 3
 
       expect { subject.check }.not_to raise_error
+    end
+
+    it "checks the elastic IP quota in the module's region" do
+      subject.check
+
+      expect(Subspace::Ec2).to have_received(:elastic_ip_headroom).with(hash_including(region: "us-west-2"))
     end
 
     context "when an upgrade is in progress" do
