@@ -14,6 +14,7 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 
 ## 3.1.2
   * Adds Newrelic infra config to enable server process metrics collection
+  * Always ignore Client-IP header in nginx-rails
 
 ## 3.1.1
   * Remove old nginx source before installing new one

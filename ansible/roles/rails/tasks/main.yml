@@ -34,6 +34,7 @@
     tags:
       - maintenance
       - imagemagick
+    when: ('Ubuntu' in ansible_facts["distribution"])
 
 
   - name: Create /u/apps/{{project_name}}/shared/config
