@@ -24,6 +24,14 @@ resource "aws_subnet" "production-internal-c" {
   availability_zone = "${var.aws_region}c"
 }
 
+locals {
+  subnet_ids = {
+    a = aws_subnet.production-internal-a.id
+    b = aws_subnet.production-internal-b.id
+    c = aws_subnet.production-internal-c.id
+  }
+}
+
 resource "aws_db_subnet_group" "production-subnet-group" {
   name       = "${var.project_environment}-${var.project_name}"
   subnet_ids = [aws_subnet.production-internal-a.id, aws_subnet.production-internal-b.id, aws_subnet.production-internal-c.id]

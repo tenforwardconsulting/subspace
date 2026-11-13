@@ -39,7 +39,6 @@ module oxenwagen {
   lb_health_check_path = "/"
   subspace_public_key = file("../../subspace.pem.pub")
 
-  # Ubuntu Server 22.04 LTS (HVM), SSD Volume Type
   # Slots are permanent terraform state addresses; never renumber them.
   web_instances = {
     "1" = {
@@ -47,14 +46,14 @@ module oxenwagen {
       ami           = "<%= @latest_ami %>"
       instance_type = "t3.small"
       volume_size   = 16
-      subnet_id     = ## "subnet-0abc..."
+      az            = "a"
     }
     "2" = {
       hostname      = "<%= @env %>-web2"
       ami           = "<%= @latest_ami %>"
       instance_type = "t3.small"
       volume_size   = 16
-      subnet_id     = ## "subnet-0def..."
+      az            = "b"
     }
   }
   lb_instances = ["1", "2"]
@@ -65,7 +64,7 @@ module oxenwagen {
       ami           = "<%= @latest_ami %>"
       instance_type = "t3.medium"
       volume_size   = 100
-      subnet_id     = ## "subnet-0abc..."
+      az            = "a"
     }
   }
 

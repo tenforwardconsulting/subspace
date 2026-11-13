@@ -14,7 +14,8 @@ variable "web_instances" {
     ami           = string
     instance_type = string
     volume_size   = number
-    subnet_id     = string
+    subnet_id     = optional(string)
+    az            = optional(string)
   }))
 }
 
@@ -25,7 +26,8 @@ variable "worker_instances" {
     ami           = string
     instance_type = string
     volume_size   = number
-    subnet_id     = string
+    subnet_id     = optional(string)
+    az            = optional(string)
   }))
   default = {}
 }
