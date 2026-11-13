@@ -26,16 +26,25 @@ Or install it yourself from the command line: `$ gem install subspace`
 
 ### Mitogen
 
-[!CAUTION]
-***Mitogen is currently broken! It doesn't support the latest ansible version.***
+> [!CAUTION]
+> ***Mitogen is currently broken! It doesn't support the latest ansible version.***
 
-Optionally, you can install a python/pip packaged called "Mitogen" which dramatically speeds up running ansible over ssh.  See [Here](https://github.com/mitogen-hq/mitogen/blob/master/docs/ansible_detailed.rst) for details.
+Optionally, you can install a python/pip package called "Mitogen" which dramatically speeds up running ansible over ssh.  See [Here](https://github.com/mitogen-hq/mitogen/blob/master/docs/ansible_detailed.rst) for details.
 
     pip install mitogen
 
-Subspace will try and detect if mitogen is present and use it can.  If mitogen causes problems (sometimes it can cause problems depending on the system versions, and particaularly when brand new versions of anible come up and it hasn't updated), you can disable it:
+Subspace will try and detect if mitogen is present and use it if it can.  If mitogen causes problems (sometimes it can cause problems depending on the system versions, and particularly when brand new versions of ansible come up and it hasn't updated), you can disable it:
 
     DISABLE_MITOGEN=1 subspace provision env
+
+## Topologies
+
+Subspace manages AWS infrastructure with terraform, using one of two bundled modules:
+
+- **workhorse** - a single EC2 server running the app, workers and postgres.
+- **oxenwagen** - web servers behind a load balancer and separate worker servers, with RDS, ElastiCache and S3.
+
+You choose one per environment when you run `subspace init`.
 
 ## Usage
 
@@ -61,8 +70,13 @@ Subspace expects the `profile_name` to be `subspace-{project name}`.
 
 Check [`cli.rb init`](/lib/subspace/cli.rb#L35) for all available options when initializing a new subspace project.
 
+Running `subspace init` with no options initializes both ansible and terraform. Pass `--ansible` or `--terraform` to run only one of them.
+
 ##### `--env`
 The environment will default to `dev` unless you pass in `--env [env name]`
+
+##### `--template`
+The terraform module to use, `workhorse` or `oxenwagen`. You will be asked if you don't pass it.
 
 ### `subspace bootstrap <environment>`
 
@@ -72,20 +86,30 @@ command to work.
 
 ### `subspace provision <environment>`
 
-Runs the playbook at `config/provision/<environment.yml>`.
+Runs the playbook at `config/subspace/<environment>.yml`.
 
 You can pass certain options through to the `ansible-playbook` command. See [the
 provision command](lib/subspace/commands/provision.rb) for the current list.
 
-At the time of this writing, we pass through the `ansible-playbook` "tags" and
-"start-at-task" options. The tags option is probably the most useful.
+At the time of this writing, we pass through the `ansible-playbook` "tags",
+"start-at-task", "private-key" and "limit" options. The tags option is probably the most useful.
 
 e.g. To run only the alienvault tasks (all of which have been tagged with the
 'alienvault' tag): `subspace provision staging --tags=alienvault`
 
+#### Tagged roles
+
+| Role       | Tags             | Comment                                                        |
+| ---------- | ---------------- | -------------------------------------------------------------- |
+| alienvault | alienvault       | All tasks in the alienvault role have been tagged 'alienvault' |
+| common     | upgrade          | runs apt-get update and apt-get upgrade                        |
+| common     | authorized\_keys | updates the authorized\_keys file for the deploy user          |
+| rails      | appyml           | writes `application.yml` from the template and secrets         |
+| monit      | monit            | All tasks in the monit role have been tagged 'monit'           |
+
 ### `subspace maintain <environment>`
 
-Runs the playbook at `config/provision/<environment.yml>` but only the tasks tagged with "maintenance".
+Runs the playbook at `config/subspace/<environment>.yml` but only the tasks tagged with "maintenance".
 
 You can pass certain options through to the `ansible-playbook` command. See [the
 maintain command](lib/subspace/commands/maintain.rb) for the current list.
@@ -106,40 +130,75 @@ Only works for hosts using the `nginx` role, but you can pass in your entire env
 
 MUST be turned off manually by running `subspace maintenance_mode <environment> --off`, even a deploy will not disable maintenance mode.
 
-#### Tagged roles
+### `subspace tf <environment>`
 
-| Role       | Tags             | Comment                                                        |
-| ---------- | ---------------- | -------------------------------------------------------------- |
-| alienvault | alienvault       | All tasks in the alienvault role have been tagged 'alienvault' |
-| common     | upgrade          | runs apt-get update and apt-get upgrade                        |
-| common     | authorized\_keys | updates the authorized\_keys file for the deploy user          |
-| rails      | appyml           |
-| monit      | monit            | All tasks in the monit role have been tagged 'monit'           |
+Runs a terraform plan for the environment, with the option to apply it after review.
+
+### `subspace ssh <host>`
+
+ssh to a server as the administrative user. Pass `--user deploy` to connect as a different user.
+
+### `subspace exec <host-spec> "<statement>"`
+
+Runs `<statement>` on every host matching `<host-spec>`.
+
+### `subspace inventory <command>`
+
+- `capistrano` - generate `config/deploy/<env>.rb`. Requires `--env`.
+- `list` - list the current inventory as understood by subspace.
+- `keyscan` - update `~/.ssh/known_hosts` with new host key fingerprints.
+
+### `subspace override <role>`
+
+Copies one of the bundled roles to `config/subspace/roles/<role>` so you can modify it.
+
+### `subspace configure`
+
+Regenerates the ansible configuration files. You don't normally need to run this.
 
 ### `subspace upgrade <environment>`
 
-Replaces an environment's servers with new ones built from a current AMI.
+Replaces an environment's servers with new ones built from a current AMI. Both
+topologies are supported, but the steps differ, so follow the section for yours below.
 
-Split up into multiple steps so you can verify or do manual steps in between:
-
-    subspace upgrade <env> --status           # view current status of the upgrade. default when no step is given
-    subspace upgrade production --check       # is this environment upgradeable?
-    subspace upgrade production --revendor    # only if --check says the terraform module is too old
-    subspace upgrade production --init        # record the start of an upgrade
-    subspace upgrade production --launch      # build the new server in terraform
-    subspace upgrade production --provision   # bootstrap/provision it, re-run until it succeeds
-                                              # connect to tailscale after a fresh tailscale_auth_key is in the vault
-    subspace provision production --tags=tailscale_reauth --limit <new host>
-    bundle exec cap production_upgrade deploy # deploy then verify it by hand
-    subspace upgrade production --copy-db     # maintenance window opens: copy the db across
-                                              # then verify the new server on its own IP
-    subspace upgrade production --cutover     # move the elastic IP, window closes
-    subspace upgrade production --finalize    # destroy the old server
+The upgrade is split into steps so you can verify or do manual steps in between.
+`subspace upgrade <env>` with no step (or `--status`) shows the current phase and the next step.
 
 Current status is in `config/subspace/terraform/<env>/upgrade.yml`. Each command will
 throw an error if this file has not recorded the previous phase. If `--launch`, `--cutover`
 or `--finalize` is interrupted once terraform has started applying, re-run the same command
 to finish it.
+
+`--check` refuses to run an upgrade against anything whose terraform state doesn't look like
+the topology, and it requires the terraform module vendored by subspace 3.1.1 or newer.
+
+`--abort` destroys the new servers and leaves the environment on the old ones. It only exists
+until traffic has moved to the new servers. After that, the new servers hold the only current
+state, so there is no undo: fix forward, or sort it out by hand.
+
+Every step applies a reviewed terraform plan, and `apply!` refuses any plan that touches an
+address the step did not ask for.
+
+#### Workhorse
+
+Older workhorse environments get printed migration instructions;
+`subspace upgrade <env> --revendor` automates the file-copying part.
+
+Back your database up yourself before you start, and verify the dump by restoring it
+locally - a dump nobody has restored isn't a backup.
+
+    subspace upgrade <env> --check            # is this environment upgradeable?
+    subspace upgrade <env> --revendor         # only if --check says the terraform module is too old
+    subspace upgrade <env> --init             # record the start of an upgrade
+    subspace upgrade <env> --launch           # build the new server in terraform
+    subspace upgrade <env> --provision        # bootstrap/provision it, re-run until it succeeds
+                                              # connect to tailscale after a fresh tailscale_auth_key is in the vault
+    subspace provision <env> --tags=tailscale_reauth --limit <new host>
+    bundle exec cap <env>_upgrade deploy      # deploy then verify it by hand
+    subspace upgrade <env> --copy-db          # maintenance window opens: copy the db across
+                                              # then verify the new server on its own IP
+    subspace upgrade <env> --cutover          # move the elastic IP, window closes
+    subspace upgrade <env> --finalize         # destroy the old server
 
 The maintenance window is split across two commands. `--copy-db` stops puma, the
 workers and cron on the old server, moves the data, and stops. The new server is reachable on its own public address,
@@ -158,32 +217,20 @@ Let's Encrypt certificates from the old server before provisioning the new one, 
 serves your domain over TLS on its own address. `--cutover` checks that before it moves
 the IP.
 
-Back your database up yourself before you start, and verify the dump by restoring it
-locally - a dump nobody has restored isn't a backup.
-
 Recovery:
 
-    subspace upgrade production --abort               # before a cutover: destroy the new server
-    subspace upgrade production --close-instance-ssh  # close the temporary ssh path between the servers
+    subspace upgrade <env> --abort               # before a cutover: destroy the new server
+    subspace upgrade <env> --close-instance-ssh  # close the temporary ssh path between the servers
 
-`--abort` is the only way back, and it only exists before the elastic IP has moved. That
-covers the cases worth automating: the database copy failing, or the copied data not
-looking right when you verify it. It destroys the new server and, if the maintenance
-window is open, starts the old server back up and takes it out of maintenance mode.
+`--abort` is available until the elastic IP has moved. That covers the cases worth
+automating: the database copy failing, or the copied data not looking right when you
+verify it. If the maintenance window is open, it also starts the old server back up and
+takes it out of maintenance mode.
 
-Once the IP has moved the new server holds the only current copy of the data, so there is
-no undo: fix forward, or sort it out by hand.
+#### Oxenwagen
 
-Workhorse and oxenwagen environments are both supported. `--check` refuses to run an
-upgrade against anything whose terraform state doesn't look like the topology, and it
-requires the terraform module vendored by subspace 3.1.1 or newer. Older workhorse
-environments get printed migration instructions; `subspace upgrade <env> --revendor`
-automates the file-copying part.
-
-#### Oxenwagen upgrades
-
-For oxenwagen, the first step is a one-time migration that converts the terraform config
-from `count`-based instance definitions to slot maps. Run these in order:
+The first time you upgrade an oxenwagen environment, run a one-time migration that converts
+the terraform config from `count`-based instance definitions to slot maps. Run these in order:
 
     subspace upgrade <env> --migrate           # prints config to paste, read from live state
                                                # (terraform cannot show old state once the source changes)
@@ -205,7 +252,7 @@ Once the config is migrated, the upgrade sequence is:
     bundle exec cap <env>_upgrade deploy       # deploy then verify it by hand
     bundle exec cap <env> deploy               # deploy the same commit to the base stage
                                                # verify over the tailnet
-    subspace upgrade <env> --cutover           # attach new servers to load balancer
+    subspace upgrade <env> --cutover           # attach new servers to load balancer and remove the old ones
     subspace upgrade <env> --finalize          # destroy the old servers
 
 New web servers stay out of the load balancer until `--cutover`, which attaches them,
@@ -216,8 +263,7 @@ nothing moves.
 Cron is masked on the new workers from `--provision` until `--cutover`, because jobs
 lock themselves but cron entries do not.
 
-`--abort` reaches up to and including `cutting_over`; `--cutover` commits the environment
-to the new set.
+`--abort` is available until `--cutover` finishes, including after an interrupted `--cutover`.
 
 **Two things that will trip a first real run:**
 
@@ -230,8 +276,7 @@ to the new set.
    environment needs 6. `--check` reports this before `--launch` rather than during it.
 
 The RDS instance, ElastiCache cluster, S3 bucket, IAM user, ACM certificate, load
-balancer itself and the VPC are never in any phase's plan, and `apply!` refuses any plan
-that touches an address the step did not ask for.
+balancer itself and the VPC are never in any phase's plan.
 
 ### `subspace db_copy --from <host> --to <host>`
 
@@ -252,24 +297,22 @@ row counts for the largest tables afterwards as a completeness check.
 
 The `secrets` command will manage encrypted secrets for different environments.  The default action is simply to show the secrets defined for an environment.  Pass --edit to edit them in the system editor (vim, etc).
 
-This uses `ansible-vault` under the hood and requires a vault password file.  You will need to get the `.vault_pass` from from a teammate out of band (secrets.10fw.ne, 1password, sticky-note, etc), and put it into `config/provision/.vault_pass`
+This uses `ansible-vault` under the hood and requires a vault password file.  You will need to get the `.vault_pass` from a teammate out of band (1password, sticky-note, etc), and put it into `config/subspace/.vault_pass`
 
 These secrets are used during provisioning to populate variables in a few different places:
 1. `config/application.yml`, which uses the `figaro` gem to manage environment variables in rails.
 2. `config/database.yml`, which handles the database connection password.
 
-
-Subspace uses a template file in `config/provision/templates/application.yml.template` that contains environment variables for all environments.  If you have non-secret variables that change based on the target server, you can simply put that in plaintext in the template file. This was designed so the configuration that is not secret is visible and version controlled, while the secret values are stored in the vault files for their environments.
+Subspace uses a template file in `config/subspace/templates/application.yml.template` that contains environment variables for all environments.  If you have non-secret variables that change based on the target server, you can simply put that in plaintext in the template file. This was designed so the configuration that is not secret is visible and version controlled, while the secret values are stored in the vault files for their environments.
 
 NOTE: application.yml should be in the `.gitignore`, since subspace creates a new version on the server and symlinks it on top of whatever is checked in. You should make changes to the template file instead, which should be checked in to version control.
 
-
-The default template created by `subspace init`  looks like this:
+The default template created by `subspace init` looks like this:
 
 ```
 # These environment variables are applied to all environments, and can be secret or not
 
-# This is secret and can be changed on all three environment easily by using subspace vars <env> --edit
+# This is secret and can be changed on all three environment easily by using subspace secrets <env> --edit
 SECRET_KEY_BASE: {{secret_key_base}}
 
 # This is not secret, and is the same value for all environments
@@ -289,13 +332,13 @@ production:
 You can also use this command to automatically create a local version of `config/application.yml` based on the template and encrypted secrets for a specific environment.
 
     # Create a local copy of config/application.yml with the secrets encrypted in secrets/development.yml
-    $ subspace vars development --create
+    $ subspace secrets development --create
 
 This can get you up and running quickly in development securely.
 
 ## Procedure for updating on projects
 
-When subspace is updated, you should also update it for projects that use it. If subspace is locked to a specific version in the a project's gemfile, you'll need to update that to the new release number, first. Make sure this won't introduce any breaking changes by [looking at the changelog](https://github.com/tenforwardconsulting/subspace/blob/master/CHANGELOG.md).
+When subspace is updated, you should also update it for projects that use it. If subspace is locked to a specific version in a project's gemfile, you'll need to update that to the new release number, first. Make sure this won't introduce any breaking changes by [looking at the changelog](https://github.com/tenforwardconsulting/subspace/blob/master/CHANGELOG.md).
 
 * `bundle update subspace`
 
@@ -303,33 +346,19 @@ Then,
 
 * `subspace provision production`
 
-If you get an error saying you need a vault password file, you need to get it from somoene on the team (see above). You might also need to update `ansible`.
+If you get an error saying you need a vault password file, you need to get it from someone on the team (see above). You might also need to update `ansible`.
 
 You'll want to do this for each environment (ie: `subspace provision qa`, etc.). Best to start with staging and work your way up.
 
-# Host configuration
+## Host configuration
 
 We need to know some info about hosts, but not much.  See the files for details, it's mostly the hostname and the user that can administer the system, eg `ubuntu` on AWS/ubuntu, `ec2-user`, or even `root` (not recommended, but used on linode/Digital Ocean)
 
-# Role Configuration
+## Roles
 
 This is a description of all the roles that are included by installing subspace, along with their configuration.
 
-## common
-
-This role should almost always be there.  It ties a bunch of stuff together, runs apt-get update or yum upgrade, sets hostnames, and generally makes the server sane.
-
-    project_name: my_project
-    swap_space: 512M
-    deploy_user: deploy
-
-Note: we grant the deploy user limited sudo access to run `service xyz restart` and also add it to the `adm` group so it can view logs in `/var/log`.
-
-# Roles
-
-This is a description of all the roles that are included by installing subspace, along with their configuration.
-
-## alienvault
+### alienvault
 
 Fixes CVEs on remote servers by installing updated versions of packages
 depending on the operating system version.
@@ -339,19 +368,19 @@ vulnerability.
 
 Variables: None
 
-## apache
+### apache
 
 The most important file for an apache install is the "project.conf" file that gets created in `sites-available` and symlinked to `sites-enabled`.  This is generated in a sensible way, but if you want to customize it you can do so by setting this variable to anything other than "project.conf":
 
     apache_project_conf: my_custom_configuration.conf
 
-Then place my_custom_configuration.conf in config/provision/templates/my_custom_configuration.conf.  This will still get copied to the server as `sites-available/{project_name}.conf`
+Then place my_custom_configuration.conf in config/subspace/templates/my_custom_configuration.conf.  This will still get copied to the server as `sites-available/{project_name}.conf`
 
-Apache also support canonicalizing the domain now, so if you alwyas want to redirect to WWW for example, simply add a variable:
+Apache also supports canonicalizing the domain now, so if you always want to redirect to WWW for example, simply add a variable:
 
     canonical_domain: "www.example.com"
 
-## collectd
+### collectd
 
 Collectd is a super useful daemon that grabs and reports statistics about a server's health.  Adding this role will make your server start reporting to a [graphite](https://graphiteapp.org/) server that you specify, and you can make cool graphs and data feeds after that using something like [Grafana](https://grafana.com/)
 
@@ -367,16 +396,21 @@ Aside from basic statistics like free memory, disk, load averages, etc, we have 
 
 2. If apache is installed, it will collect stats from the /server-status page
 3. If nginx is installed, it will collect stats from the "status port"
-4. (TODO) add something for pumas
-5. (TODO) add something for sidekiq
-6. If you're using our standard lograge format, you can enable lograge collection which will provide stats on request count and timers (db/view/total)
+4. If you're using our standard lograge format, you can enable lograge collection which will provide stats on request count and timers (db/view/total)
 
     rails_lograge: true
 
+### common
 
-## common
+This role should almost always be there.  It ties a bunch of stuff together, runs apt-get update or yum upgrade, sets hostnames, and generally makes the server sane.
 
-## delayed_job
+    project_name: my_project
+    swap_space: 512M
+    deploy_user: deploy
+
+Note: we grant the deploy user limited sudo access to run `service xyz restart` and also add it to the `adm` group so it can view logs in `/var/log`.
+
+### delayed_job
 
 Install monitoring and automatic startup for delayed job workers via monit. You MUST set the `job_queues` variable as follows:
 
@@ -404,15 +438,12 @@ Defaults:
 
     delayed_job_command: bin/delayed_job
 
-
-
-## letsencrypt
+### letsencrypt
 
 This creates a single certificate for every server alias/server name in the configuration file.
 
     letsencrypt_email: "me@example.com"
     server_name: app.example.com
-
 
 If you'd like more control over the cert, you can customize the variable `le_ssl_cert` as follows:
 
@@ -436,8 +467,7 @@ For example, to force a manual DNS challenge you can do the following:
 
 Note that this role needs to be included _before_ the webserver (apache or nginx) role
 
-
-## logrotate
+### logrotate
 
 Installs logrotate and lets you configure logs for automatic rotation.  Example config for rails:
 
@@ -452,7 +482,7 @@ Installs logrotate and lets you configure logs for automatic rotation.  Example 
           - delaycompress
           - copytruncate
 
-## memcache
+### memcache
 
 Installs memcache on the server.  By default, memcache will only listen on localhost which needs to be changed if other servers needs to connect.
 
@@ -462,7 +492,7 @@ Installs memcache on the server.  By default, memcache will only listen on local
     # bind to all interfaces
     memcache_bind: "0.0.0.0"
 
-## newrelic-infra
+### newrelic-infra
 This role will install the next-gen "Newrelic One" infrastructure agent which can perform a few different functions for newrelic.  The previous "newrelic" role is deprecated.
 
 Variables:
@@ -476,9 +506,7 @@ Variables:
       - name: nginx-error
         path: /var/log/nginx/error.log
 
-
-
-## nginx-rails
+### nginx-rails
 
 Configures nginx to look at localhost:9292 for the socket/backend connection.  If you need to do fancy stuff you should simply override this role
 
@@ -507,7 +535,7 @@ Optional variables:
       proxy_buffering off;
       proxy_cache off;
 
-## nodejs
+### nodejs
 
 Used to install different versions of NodeJS. This uses NodeSource's apt repositories. You must define a variable called `nodejs_version` and choose a major version supported by NodeSource:
 
@@ -518,23 +546,19 @@ Used to install different versions of NodeJS. This uses NodeSource's apt reposit
 
 The full list of distributions is here: https://github.com/nodesource/distributions#installation-instructions
 
-## papertrail
+### postgresql
 
-## passenger
-
-## postgresql
-
-  Sets up a postgres *server* - only use this on the database machine.
+Sets up a postgres *server* - only use this on the database machine.
 
     backups_enabled: true
     s3_db_backup_bucket: disabled
     s3_db_backup_prefix: "{{project_name}}/{{rails_env}}"
     database_user: "{{project_name}}"
 
-## puma
-Use the puma app server for your rails app.  Usually combined with nginx to server as a static file server and reverse proxy.
+### puma
+Use the puma app server for your rails app.  Usually combined with nginx to serve as a static file server and reverse proxy.
 
-**Prerequesites:**
+**Prerequisites:**
   - add `gem puma` to your gemfile
   - add `config/puma/` to the `linked_dirs` config in capistrano's `deploy.rb`
 
@@ -549,11 +573,11 @@ This role will generate a reasonable `puma.rb` and configure it to be controlled
     puma_max_memory: 1.5G  # Use cgroups via systemd to limit memory
     puma_max_cpu: 80%      # Use cgroups via systemd to set a CPU quota
 
-## rails
+### rails
 
 Provisions for a rails app.  This one is probably pretty important.
 
-We no longer provider default values, so make sure to define all the following variables:
+We no longer provide default values, so make sure to define all the following variables:
 
     rails_env: production
     database_pool: 5
@@ -566,7 +590,7 @@ We no longer provider default values, so make sure to define all the following v
       - default
       - mailers
 
-## redis
+### redis
 
 Installs redis on the server.
 
@@ -578,7 +602,7 @@ As of Subspace 3.0, this uses the official redis apt repo instead of the debian/
     sudo apt-get purge redis-server
     sudo apt-get install redis-server
 
-## resque
+### resque
 
 Install monitoring and automatic startup for resque workers via monit. You MUST set the `job_queues` variable as follows:
 
@@ -589,19 +613,18 @@ Install monitoring and automatic startup for resque workers via monit. You MUST 
 
     redis_bind: "*"
 
-## ruby-common
+### ruby-common
 
-Installs ruby on the machine.  YOu can set a version by picking off the download url and sha hash from ruby-lang.org
+Installs ruby on the machine.  You can set a version by picking off the download url and sha hash from ruby-lang.org
 
     ruby_version: ruby-2.4.1
     ruby_checksum: a330e10d5cb5e53b3a0078326c5731888bb55e32c4abfeb27d9e7f8e5d000250
     ruby_download_location: 'https://cache.ruby-lang.org/pub/ruby/2.4/ruby-2.4.1.tar.gz'
     bundler_version: 2.0.1
 
+### sidekiq
 
-## sidekiq
-
-This will install a monit script that keeps sidekiq running.  We spawn one sidekiq instance that manages as many queues as you need.  Varaibles of note:
+This will install a monit script that keeps sidekiq running.  We spawn one sidekiq instance that manages as many queues as you need.  Variables of note:
 
     # Process these queues on this server
     job_queues:
@@ -615,11 +638,11 @@ This will install a monit script that keeps sidekiq running.  We spawn one sidek
 
 Sidekiq uses redis by default, and rails connects to a redis running on localhost by default.  However, this role does not depend on redis since in production it's likely redis will be running elsewhere.  If you're provisioning a standalone server, make sure to include the redis role.
 
-## tailscale
+### tailscale
 
 This installs/updates the Tailscale package, and adds/authenticates servers to the 10FW Tailnet.
 
-**Prerequesites:**
+**Prerequisites:**
 - Create an auth key within tailscale, appropriately tagged & granted ACL access for the given project.
 - Add `tailscale_auth_key` to the secrets vault for the environment you wish to provision.
 
@@ -631,39 +654,29 @@ At the top of `config/subspace/{env}.yml`, add a separate block to allow the tai
 
 To force authentication with the tailnet, use the following tag when provisioning:
 
-    subspace provision {env} --tags=tailscale_reauth`
+    subspace provision {env} --tags=tailscale_reauth
 
-## Other Internal Roles
+### Other Internal Roles
 
 Since ansible doesn't support versioning of roles, we cloned the role here so that it doesn't change unexpectedly.  We expect to update from upstream occasionally, please let us know if we're missing something we should have.
 
-You should not include these roles directly in your subspace config files.  For example, instead of including `zenoamaro.postgresql`, simply include our `postgresql` role which depens on zenoamaro's role.
+You should not include these roles directly in your subspace config files.  For example, instead of including `zenoamaro.postgresql`, simply include our `postgresql` role which depends on zenoamaro's role.
 
 Thanks to the following repositories for making their roles available:
 * https://github.com/zenoamaro/ansible-postgresql
 * https://github.com/mtpereira/ansible-passenger
-
-
-# Mitogen
-
-In order to dramatically speed up ansible, you can install Mitogen: https://github.com/mitogen-hq/mitogen/blob/master/docs/ansible_detailed.rst
-
-    pip install -g mitogen
-
-Subspace will automatically detect this and update your ansible.cfg file so it is blazing fast.
-
 
 ## Directory Structure
 
 `ansible/roles`
 
 Contains all of our custom roles. When the gem is installed and `subspace init`
-is ran, the newly created `ansible.cfg` will be configured to look for these
+is run, the newly created `ansible.cfg` will be configured to look for these
 roles.
 
 `template`
 
-Contains the template files that get copied over when `subspace init` is ran.
+Contains the template files that get copied over when `subspace init` is run.
 
 ## Development
 
@@ -675,8 +688,6 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
   2. `gem build subspace.gemspec`
   3. `gem push subspace-x.y.z.gem`
 
-This will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
-
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/tenforwardconsulting/subspace. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
@@ -684,5 +695,3 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/tenfor
 ## License
 
 The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
-
-# Roles and Variables
