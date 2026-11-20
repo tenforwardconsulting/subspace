@@ -31,6 +31,15 @@
     dest: /etc/apt/preferences.d/99nginx
   become: true
 
+- name: Allow unattended-upgrades to update nginx.org packages
+  copy:
+    content: |
+      Unattended-Upgrade::Origins-Pattern {
+        "origin=nginx";
+      };
+    dest: /etc/apt/apt.conf.d/51subspace-nginx
+  become: true
+
 - name: Install nginx from official repo
   apt:
     pkg: nginx
@@ -113,6 +122,33 @@
   systemd:
     name: nginx
     enabled: true
+
+- name: Grab nginx version
+  shell: nginx -v 2>&1 | cut -d/ -f2
+  register: stats_nginx_version
+  become: true
+  when: send_stats == true and stats_url is defined and stats_api_key is defined
+  tags:
+    - maintenance
+    - stats
+
+- name: Send nginx version stats to URL
+  uri:
+    url: "{{stats_url}}"
+    method: POST
+    headers:
+      X-API-Version: 1
+      X-Client-Api-key: "{{stats_api_key}}"
+    body_format: json
+    body:
+      client_stat:
+        stat_type: nginx_version
+        value: "{{stats_nginx_version.stdout}}"
+        hostname: "{{hostname}}"
+  when: send_stats == true and stats_url is defined and stats_api_key is defined
+  tags:
+    - maintenance
+    - stats
 
 - name: Nginx is installed
   set_fact:

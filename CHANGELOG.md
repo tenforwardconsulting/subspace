@@ -11,6 +11,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
   * Stops showing color if you `sudo su`
 
 ## Unreleased
+  * Allow unattended-upgrades to update nginx from the nginx.org repo
+  * Report nginx_version and openssl_version stats
+  * Add daily cron job that reports restart_needed, nginx_version and openssl_version stats
 
 ## 3.1.2
   * Adds Newrelic infra config to enable server process metrics collection
