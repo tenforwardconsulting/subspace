@@ -71,7 +71,7 @@
 
   - name: Grant all privileges on database to user
     postgresql_privs:
-      database: "{{database_name}}"
+      login_db: "{{database_name}}"
       privs: ALL
       roles: "{{database_user}}"
       state: present
@@ -83,7 +83,7 @@
     become: true
     become_user: postgres
     postgresql_ext:
-      db: "{{database_name}}"
+      login_db: "{{database_name}}"
       name: hstore
       state: present
 
@@ -91,7 +91,7 @@
     become: true
 
   - name: Grab Psql version
-    shell: psql --version
+    shell: psql --version | awk '{print $3}'
     register: stats_psql_version
     when: send_stats == true and stats_url is defined and stats_api_key is defined
     tags:

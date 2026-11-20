@@ -339,6 +339,86 @@
       - maintenance
       - stats
 
+  - name: Grab openssl version
+    shell: dpkg-query -W -f='${Version}' openssl
+    register: stats_openssl_version
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - maintenance
+      - stats
+
+  - name: Send openssl version stats to URL
+    uri:
+      url: "{{stats_url}}"
+      method: POST
+      headers:
+        X-API-Version: 1
+        X-Client-Api-key: "{{stats_api_key}}"
+      body_format: json
+      body:
+        client_stat:
+          stat_type: openssl_version
+          value: "{{stats_openssl_version.stdout}}"
+          hostname: "{{hostname}}"
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - maintenance
+      - stats
+
+  - name: Install needrestart
+    apt:
+      pkg: needrestart
+      state: present
+    become: true
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - maintenance
+      - stats
+
+  - name: Install daily server stats script
+    template:
+      src: server-stats.sh
+      dest: /opt/subspace/server-stats.sh
+      owner: root
+      group: root
+      mode: '0700'
+    become: true
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - maintenance
+      - stats
+
+  - name: Install daily server stats cron job
+    cron:
+      name: "Daily server stats"
+      hour: "7"
+      minute: "30"
+      job: /opt/subspace/server-stats.sh
+      state: present
+    become: true
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - maintenance
+      - stats
+
+  - name: Send server stats
+    command: /opt/subspace/server-stats.sh
+    become: true
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - maintenance
+      - stats
+
+  - name: Disable daily server stats cron job
+    cron:
+      name: "Daily server stats"
+      state: absent
+    become: true
+    when: not (send_stats == true and stats_url is defined and stats_api_key is defined)
+    tags:
+      - maintenance
+      - stats
+
   - import_tasks: swap.yml
     when: swap_space is defined
 
