@@ -34,6 +34,12 @@
       - maintenance
       - tailscale_reauth
 
+  - name: "Enable tailscale auto-updates"
+    become: true
+    command: tailscale set --auto-update
+    tags:
+      - maintenance
+
   - name: "Join the tailnet and force reauth"
     become: true
     command: tailscale up --ssh --auth-key={{tailscale_auth_key}} --hostname={{project_name | regex_replace('_', '')}}-{{hostname}} --accept-risk=lose-ssh {{tailscale_options}} --force-reauth
