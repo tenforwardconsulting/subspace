@@ -19,6 +19,11 @@ if [ "${kernel_status:-0}" -gt 1 ]; then kernel=true; else kernel=false; fi
 post_stat restart_needed "{\"services\":[$services],\"kernel\":$kernel}"
 post_stat openssl_version "\"$(dpkg-query -W -f='${Version}' openssl)\""
 
+subspace_version=$(sed -n 's/.*|_| *v//p' /etc/motd)
+if [ -n "$subspace_version" ]; then
+  post_stat subspace_provision_version "\"$subspace_version\""
+fi
+
 if command -v nginx > /dev/null; then
   post_stat nginx_version "\"$(nginx -v 2>&1 | cut -d/ -f2)\""
 fi

@@ -16,6 +16,7 @@ This project attempts to follow [semantic versioning](https://semver.org/).
   * Add daily cron job (also run during maintain) that reports restart_needed, nginx_version and openssl_version stats
   * Enable tailscale's built-in auto-updates
   * Report only the version number for psql_version on postgresql servers
+  * Report subspace_provision_version stat with the subspace version of the last full provision
 
 ## 3.1.2
   * Adds Newrelic infra config to enable server process metrics collection
