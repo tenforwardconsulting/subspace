@@ -13,8 +13,9 @@ This project attempts to follow [semantic versioning](https://semver.org/).
 ## Unreleased
   * Allow unattended-upgrades to update nginx from the nginx.org repo
   * Report nginx_version and openssl_version stats
-  * Add daily cron job that reports restart_needed, nginx_version and openssl_version stats
+  * Add daily cron job (also run during maintain) that reports restart_needed, nginx_version and openssl_version stats
   * Enable tailscale's built-in auto-updates
+  * Report only the version number for psql_version on postgresql servers
 
 ## 3.1.2
   * Adds Newrelic infra config to enable server process metrics collection

@@ -401,6 +401,14 @@
       - maintenance
       - stats
 
+  - name: Send server stats
+    command: /opt/subspace/server-stats.sh
+    become: true
+    when: send_stats == true and stats_url is defined and stats_api_key is defined
+    tags:
+      - maintenance
+      - stats
+
   - name: Disable daily server stats cron job
     cron:
       name: "Daily server stats"
